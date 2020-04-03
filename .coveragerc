@@ -1,0 +1,6 @@
+[run]
+omit = 
+        ./sksurgerycalibration/_version.py
+        ./sksurgerycalibration/__init__.py
+        ./sksurgerycalibration/__main__.py
+        ./sksurgerycalibration/ui/sksurgerycalibration_command_line.py
