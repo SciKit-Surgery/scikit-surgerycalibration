@@ -7,3 +7,4 @@ scikit-surgerycore
 ipykernel
 nbsphinx
 scipy
+opencv-contrib-python
