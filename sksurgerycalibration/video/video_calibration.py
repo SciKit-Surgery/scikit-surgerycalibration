@@ -183,14 +183,14 @@ def stereo_video_calibration(left_ids,
     :return:
     """
     # Calibrate left, using all available points
-    _, l_c, l_d, _, _ \
+    _, l_c, l_d, left_rvecs, left_tvecs \
         = cv2.calibrateCamera(left_object_points,
                               left_image_points,
                               image_size,
                               None, None)
 
     # Calibrate right using all available points.
-    _, r_c, r_d, _, _ \
+    _, r_c, r_d, right_rvecs, right_tvecs \
         = cv2.calibrateCamera(right_object_points,
                               right_image_points,
                               image_size,
@@ -218,4 +218,24 @@ def stereo_video_calibration(left_ids,
             image_size,
             flags=cv2.CALIB_USE_INTRINSIC_GUESS)
 
-    return s_rms, l_c, l_d, r_c, r_d, l2r_r, l2r_t, essential, fundamental
+    # And recompute rvecs and tvecs, consistently, given new camera params.
+    # Matt: I'm not sure if this is better/worse than just doing left,
+    # then computing the right camera from the left_to_right.
+    number_of_frames = len(left_object_points)
+    for i in range(0, number_of_frames):
+        _, left_rvecs[i], left_tvecs[i] = cv2.solvePnP(
+            common_object_points[i],
+            common_left_image_points[i],
+            l_c,
+            l_d)
+        _, right_rvecs[i], right_tvecs[i] = cv2.solvePnP(
+            common_object_points[i],
+            common_right_image_points[i],
+            r_c,
+            r_d)
+
+    return s_rms, \
+        l_c, l_d, left_rvecs, left_tvecs, \
+        r_c, r_d, right_rvecs, right_tvecs, \
+        l2r_r, l2r_t, \
+        essential, fundamental
