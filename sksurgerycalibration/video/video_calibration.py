@@ -1,37 +1,27 @@
 # -*- coding: utf-8 -*-
 
-""" Video Calibration functions """
+""" Video Calibration functions. """
 
-import collections
+import logging
+import copy
 import numpy as np
 import cv2
+from scipy.optimize import minimize
+import sksurgerycore.transforms.matrix as skcm
+import sksurgerycalibration.video.video_calibration_utils as vu
+import sksurgerycalibration.video.video_calibration_metrics as vm
+import sksurgerycalibration.video.video_calibration_cost_functions as vc
 
-
-def convert_numpy2d_to_opencv(image_points):
-    """
-    Converts numpy array to Vector of 1x2 vectors containing float32.
-
-    :param image_points: numpy Mx2 array.
-    :return: vector (length M), of 1x2 vectors of float32.
-    """
-    return np.reshape(image_points, (-1, 1, 2)).astype(np.float32)
-
-
-def convert_numpy3d_to_opencv(object_points):
-    """
-    Converts numpy array to Vector of 1x3 vectors containing float32.
-
-    :param object_points: numpy Mx3 array.
-    :return: vector (length M), of 1x3 vectors of float32.
-    """
-    return np.reshape(object_points, (-1, 1, 3)).astype(np.float32)
+LOGGER = logging.getLogger(__name__)
 
 
 def mono_video_calibration(object_points, image_points, image_size):
     """
     Calibrates a video camera using Zhang's 2000 method, as implemented in
     OpenCV. We wrap it here, so we have a place to add extra validation code,
-    and a space for documentation.
+    and a space for documentation. The aim is to check everything before
+    we pass it to OpenCV, and raise Exceptions consistently for any error
+    we can detect before we pass it to OpenCV.
 
       - N = number of images
       - M = number of points for that image
@@ -45,122 +35,13 @@ def mono_video_calibration(object_points, image_points, image_size):
     :param image_size: (x, y) tuple, size in pixels, e.g. (1920, 1080)
     :return: retval, camera_matrix, dist_coeffs, rvecs, tvecs
     """
-    retval, camera_matrix, dist_coeffs, rvecs, tvecs \
+    rms, camera_matrix, dist_coeffs, rvecs, tvecs \
         = cv2.calibrateCamera(object_points,
                               image_points,
                               image_size,
                               None, None)
 
-    return retval, camera_matrix, dist_coeffs, rvecs, tvecs
-
-
-def filter_common_points_per_image(left_ids,
-                                   left_object_points,
-                                   left_image_points,
-                                   right_ids,
-                                   right_image_points,
-                                   minimum_points
-                                   ):
-    """
-    For stereo calibration, we need common points in left and right.
-    Remember that a point detector, may provide different numbers of
-    points for left and right, and they may not be sorted.
-
-    :param left_ids: ndarray of integer point ids
-    :param left_object_points: Vector of Vector of 1x3 float 32
-    :param left_image_points: Vector of Vector of 1x2 float 32
-    :param right_ids: ndarray of integer point ids
-    :param right_image_points: Vector of Vector of 1x2 float 32
-    :param minimum_points: the number of minimum common points to accept
-    :return: common ids, object_points, left_image_points, right_image_points
-    """
-
-    # Filter obvious duplicates first.
-    non_duplicate_left = np.asarray(
-        [item for item, count in
-         collections.Counter(left_ids).items() if count == 1])
-    non_duplicate_right = np.asarray(
-        [item for item, count in
-         collections.Counter(right_ids).items() if count == 1])
-
-    filtered_left = left_ids[
-        np.isin(left_ids, non_duplicate_left)]
-    filtered_right = right_ids[
-        np.isin(right_ids, non_duplicate_right)]
-
-    # Now find common points in left and right.
-    ids = np.intersect1d(filtered_left, filtered_right)
-    ids = np.sort(ids)
-
-    if len(ids) < minimum_points:
-        raise ValueError("Not enough common points in left and right images.")
-
-    common_ids = \
-        np.zeros((len(ids), 1), dtype=np.int)
-    common_object_points = \
-        np.zeros((len(ids), 1, 3), dtype=np.float32)
-    common_left_image_points = \
-        np.zeros((len(ids), 1, 2), dtype=np.float32)
-    common_right_image_points = \
-        np.zeros((len(ids), 1, 2), dtype=np.float32)
-
-    counter = 0
-    for position in ids:
-        left_location = np.where(left_ids == position)
-        common_ids[counter] = left_ids[left_location[0][0]]
-        common_object_points[counter] \
-            = left_object_points[left_location[0][0]]
-        common_left_image_points[counter] \
-            = left_image_points[left_location[0][0]]
-        right_location = np.where(right_ids == position)
-        common_right_image_points[counter] \
-            = right_image_points[right_location[0][0]]
-        counter = counter + 1
-
-    number_of_left = len(common_left_image_points)
-    number_of_right = len(common_right_image_points)
-
-    if number_of_left != number_of_right:
-        raise ValueError("Unequal number of common points in left and right.")
-
-    return common_ids, common_object_points, common_left_image_points, \
-        common_right_image_points
-
-
-def filter_common_points_all_images(left_ids,
-                                    left_object_points,
-                                    left_image_points,
-                                    right_ids,
-                                    right_image_points,
-                                    minimum_points
-                                    ):
-    """
-    Loops over each images's data, filtering per image.
-    See: filter_common_points_per_image
-    :return: Vectors of outputs from filter_common_points_per_image
-    """
-    common_ids = []
-    common_object_points = []
-    common_left_image_points = []
-    common_right_image_points = []
-
-    # pylint:disable=consider-using-enumerate
-    for counter in range(len(left_ids)):
-        c_i, c_o, c_l, c_r = \
-            filter_common_points_per_image(left_ids[counter],
-                                           left_object_points[counter],
-                                           left_image_points[counter],
-                                           right_ids[counter],
-                                           right_image_points[counter],
-                                           minimum_points
-                                           )
-        common_ids.append(c_i)
-        common_object_points.append(c_o)
-        common_left_image_points.append(c_l)
-        common_right_image_points.append(c_r)
-
-    return common_ids, common_object_points, common_left_image_points, \
-        common_right_image_points
+    return rms, camera_matrix, dist_coeffs, rvecs, tvecs
 
 
 def stereo_video_calibration(left_ids,
@@ -173,6 +54,11 @@ def stereo_video_calibration(left_ids,
     """
     Default stereo calibration, using OpenCV methods.
 
+    We wrap it here, so we have a place to add extra validation code,
+    and a space for documentation. The aim is to check everything before
+    we pass it to OpenCV, and raise Exceptions consistently for any error
+    we can detect before we pass it to OpenCV.
+
     :param left_ids: Vector of ndarrays containing integer point ids.
     :param left_object_points: Vector of Vectors of 1x3 object points, float32
     :param left_image_points:  Vector of Vectors of 1x2 object points, float32
@@ -183,14 +69,14 @@ def stereo_video_calibration(left_ids,
     :return:
     """
     # Calibrate left, using all available points
-    _, l_c, l_d, left_rvecs, left_tvecs \
+    l_rms, l_c, l_d, l_rvecs, l_tvecs \
         = cv2.calibrateCamera(left_object_points,
                               left_image_points,
                               image_size,
                               None, None)
 
     # Calibrate right using all available points.
-    _, r_c, r_d, right_rvecs, right_tvecs \
+    r_rms, r_c, r_d, r_rvecs, r_tvecs \
         = cv2.calibrateCamera(right_object_points,
                               right_image_points,
                               image_size,
@@ -199,11 +85,11 @@ def stereo_video_calibration(left_ids,
     # But for stereo, we need common points.
     _, common_object_points, common_left_image_points, \
         common_right_image_points \
-        = filter_common_points_all_images(left_ids,
-                                          left_object_points,
-                                          left_image_points,
-                                          right_ids,
-                                          right_image_points, 10)
+        = vu.filter_common_points_all_images(left_ids,
+                                             left_object_points,
+                                             left_image_points,
+                                             right_ids,
+                                             right_image_points, 10)
 
     # So, now we can calibrate using only points that occur in left and right.
     s_rms, l_c, l_d, r_c, r_d, \
@@ -218,24 +104,201 @@ def stereo_video_calibration(left_ids,
             image_size,
             flags=cv2.CALIB_USE_INTRINSIC_GUESS)
 
-    # And recompute rvecs and tvecs, consistently, given new camera params.
-    # Matt: I'm not sure if this is better/worse than just doing left,
-    # then computing the right camera from the left_to_right.
+    # And recompute rvecs and tvecs, consistently, given new l2r params.
     number_of_frames = len(left_object_points)
+    left_to_right = skcm.construct_rigid_transformation(l2r_r, l2r_t)
     for i in range(0, number_of_frames):
-        _, left_rvecs[i], left_tvecs[i] = cv2.solvePnP(
+        _, l_rvecs[i], l_tvecs[i] = cv2.solvePnP(
             common_object_points[i],
             common_left_image_points[i],
             l_c,
             l_d)
-        _, right_rvecs[i], right_tvecs[i] = cv2.solvePnP(
-            common_object_points[i],
-            common_right_image_points[i],
-            r_c,
-            r_d)
+        left_chessboard_to_camera = \
+            vu.extrinsic_vecs_to_matrix(l_rvecs[i], l_tvecs[i])
+        right_chessboard_to_camera = \
+            np.matmul(left_to_right, left_chessboard_to_camera)
+        r_rvecs[i], r_tvecs[i] = \
+            vu.extrinsic_matrix_to_vecs(right_chessboard_to_camera)
+
+    # And recompute stereo projection error, given left camera and l2r.
+    s_rms_2 = vm.compute_stereo_rms_projection_error(l2r_r,
+                                                     l2r_t,
+                                                     left_object_points,
+                                                     left_image_points,
+                                                     l_c,
+                                                     l_d,
+                                                     right_object_points,
+                                                     right_image_points,
+                                                     r_c,
+                                                     r_d,
+                                                     l_rvecs,
+                                                     l_tvecs
+                                                     )
+
+    LOGGER.info("Stereo Calibration: left=%s, right=%s, opencv=%s, actual=%s",
+                str(l_rms), str(r_rms), str(s_rms), str(s_rms_2))
+
+    return s_rms_2, \
+        l_c, l_d, l_rvecs, l_tvecs, \
+        r_c, r_d, r_rvecs, r_tvecs, \
+        l2r_r, l2r_t, \
+        essential, fundamental
+
+
+def stereo_video_calibration_reoptimised(left_ids,
+                                         left_object_points,
+                                         left_image_points,
+                                         right_ids,
+                                         right_object_points,
+                                         right_image_points,
+                                         image_size):
+    """
+    Experimental.
+
+    :param left_ids: Vector of ndarrays containing integer point ids.
+    :param left_object_points: Vector of Vectors of 1x3 object points, float32
+    :param left_image_points:  Vector of Vectors of 1x2 object points, float32
+    :param right_ids: Vector of ndarrays containing integer point ids.
+    :param right_object_points: Vector of Vectors of 1x3 object points, float32
+    :param right_image_points: Vector of Vectors of 1x2 object points, float32
+    :param image_size: (x, y) tuple, size in pixels, e.g. (1920, 1080)
+    :return:
+    """
+    # First do standard OpenCV calibration, as shown above.
+    s_rms, \
+        l_c, l_d, l_rvecs, l_tvecs, \
+        r_c, r_d, r_rvecs, r_tvecs, \
+        l2r_r, l2r_t, \
+        essential, fundamental = stereo_video_calibration(left_ids,
+                                                          left_object_points,
+                                                          left_image_points,
+                                                          right_ids,
+                                                          right_object_points,
+                                                          right_image_points,
+                                                          image_size)
+
+    l2r_rvec = (cv2.Rodrigues(l2r_r.T))[0]
+
+    # Now compute a set of left extrinsics, where the parameters
+    # are all relative to the first camera.
+    camera_rvecs = copy.deepcopy(l_rvecs)
+    camera_tvecs = copy.deepcopy(l_tvecs)
+    number_of_frames = len(left_object_points)
+    first_world_to_camera = \
+        vu.extrinsic_vecs_to_matrix(camera_rvecs[0], camera_tvecs[0])
+    first_camera_to_world = np.linalg.inv(first_world_to_camera)
+    for i in range(1, number_of_frames):
+        extrinsic = \
+            vu.extrinsic_vecs_to_matrix(camera_rvecs[i], camera_tvecs[i])
+        relative_to_first = np.matmul(extrinsic, first_camera_to_world)
+        camera_rvecs[i], camera_tvecs[i] = \
+            vu.extrinsic_matrix_to_vecs(relative_to_first)
+
+    # Now we have to create a flat vector of parameters to optimise.
+    # Optimsing l2r_r (3), l2r_t(3), l_c (4), r_c (4) + 6 DOF per camera.
+    number_of_parameters = 3 + 3 + 4 + 4 + (number_of_frames * 6)
+    x_0 = np.zeros(number_of_parameters)
+    x_0[0] = l2r_rvec[0][0]
+    x_0[1] = l2r_rvec[1][0]
+    x_0[2] = l2r_rvec[2][0]
+    x_0[3] = l2r_t[0][0]
+    x_0[4] = l2r_t[1][0]
+    x_0[5] = l2r_t[2][0]
+    x_0[6] = l_c[0][0]
+    x_0[7] = l_c[1][1]
+    x_0[8] = l_c[0][2]
+    x_0[9] = l_c[1][2]
+    x_0[10] = r_c[0][0]
+    x_0[11] = r_c[1][1]
+    x_0[12] = r_c[0][2]
+    x_0[13] = r_c[1][2]
+
+    for i in range(0, number_of_frames):
+        x_0[14 + i * 6 + 0] = camera_rvecs[i][0]
+        x_0[14 + i * 6 + 1] = camera_rvecs[i][1]
+        x_0[14 + i * 6 + 2] = camera_rvecs[i][2]
+        x_0[14 + i * 6 + 3] = camera_tvecs[i][0]
+        x_0[14 + i * 6 + 4] = camera_tvecs[i][1]
+        x_0[14 + i * 6 + 5] = camera_tvecs[i][2]
+
+    res = minimize(vc._project_stereo_points_cost_function, x_0,
+                   args=(left_object_points,
+                         left_image_points,
+                         l_d,
+                         right_object_points,
+                         right_image_points,
+                         r_d),
+                   method='Nelder-Mead',
+                   tol=1e-1,
+                   options={'disp': True, 'maxiter': 100000})
+
+    x_1 = res.x
+    for i in range(0, number_of_parameters):
+        print(str(i) + ": " + str(x_0[i]) + " -> " + str(x_1[i]) + " = " + str(x_1[i]-x_0[i]))
+    print(str(res.success))
+    print(str(res.fun))
+    print(str(res.message))
+
+    # Now need to unpack the results, into the same set of vectors,
+    # as the stereo_video_calibration, so they are drop-in replacements.
+    l2r_rvec[0][0] = x_1[0]
+    l2r_rvec[1][0] = x_1[1]
+    l2r_rvec[2][0] = x_1[2]
+    l2r_r = (cv2.Rodrigues(l2r_rvec))[0]
+    l2r_t[0][0] = x_1[3]
+    l2r_t[1][0] = x_1[4]
+    l2r_t[2][0] = x_1[5]
+    l_c[0][0] = x_1[6]
+    l_c[1][1] = x_1[7]
+    l_c[0][2] = x_1[8]
+    l_c[1][2] = x_1[9]
+    r_c[0][0] = x_1[10]
+    r_c[1][1] = x_1[11]
+    r_c[0][2] = x_1[12]
+    r_c[1][2] = x_1[13]
+
+    for i in range(0, number_of_frames):
+        camera_rvecs[i][0] = x_1[14 + i * 6 + 0]
+        camera_rvecs[i][1] = x_1[14 + i * 6 + 1]
+        camera_rvecs[i][2] = x_1[14 + i * 6 + 2]
+        camera_tvecs[i][0] = x_1[14 + i * 6 + 3]
+        camera_tvecs[i][1] = x_1[14 + i * 6 + 4]
+        camera_tvecs[i][2] = x_1[14 + i * 6 + 5]
+
+    # Still need to convert these parameters (which are relative to first
+    # camera), into consistent world-to-camera rvecs and tvecs for left/right.
+    first_world_to_camera = \
+        vu.extrinsic_vecs_to_matrix(camera_rvecs[0], camera_tvecs[0])
+    left_to_right = skcm.construct_rigid_transformation(l2r_r, l2r_t)
+    for i in range(1, number_of_frames):
+        extrinsic = \
+            vu.extrinsic_vecs_to_matrix(camera_rvecs[i], camera_tvecs[i])
+        left_world_to_camera = np.matmul(extrinsic, first_world_to_camera)
+        l_rvecs[i], l_tvecs[i] = \
+            vu.extrinsic_matrix_to_vecs(left_world_to_camera)
+        right_world_to_camera = \
+            np.matmul(left_to_right, left_world_to_camera)
+        r_rvecs[i], r_tvecs[i] = \
+            vu.extrinsic_matrix_to_vecs(right_world_to_camera)
+
+    # And recompute stereo RMS re-projection error.
+    s_rms = vm.compute_stereo_rms_projection_error(l2r_r,
+                                                   l2r_t,
+                                                   left_object_points,
+                                                   left_image_points,
+                                                   l_c,
+                                                   l_d,
+                                                   right_object_points,
+                                                   right_image_points,
+                                                   r_c,
+                                                   r_d,
+                                                   l_rvecs,
+                                                   l_tvecs
+                                                   )
+    LOGGER.info("Stereo Re-Calibration: RMS re-projection=%s", str(s_rms))
 
     return s_rms, \
-        l_c, l_d, left_rvecs, left_tvecs, \
-        r_c, r_d, right_rvecs, right_tvecs, \
+        l_c, l_d, l_rvecs, l_tvecs, \
+        r_c, r_d, r_rvecs, r_tvecs, \
         l2r_r, l2r_t, \
         essential, fundamental

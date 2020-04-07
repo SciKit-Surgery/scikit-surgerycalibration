@@ -3,8 +3,8 @@
 # confused with the software requirements, which are listed in
 # doc/requirements.rst
 numpy
-scikit-surgerycore
 ipykernel
 nbsphinx
 scipy
 opencv-contrib-python
+scikit-surgerycore
