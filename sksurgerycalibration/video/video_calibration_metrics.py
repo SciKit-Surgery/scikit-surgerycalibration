@@ -36,7 +36,7 @@ def compute_stereo_rms_projection_error(l2r_rmat,
     :param right_distortion: [1x5] ndarray
     :param left_rvecs: Vector of [3x1] ndarray, Rodrigues rotations, left camera
     :param left_tvecs: Vector of [3x1] ndarray, translations, left camera
-    :return:
+    :return: RMS re-reprojection error
     """
     left_to_right = mu.construct_rigid_transformation(l2r_rmat, l2r_tvec)
 
@@ -79,3 +79,43 @@ def compute_stereo_rms_projection_error(l2r_rmat,
     LOGGER.debug("Stereo RMS reprojection: left sse=%s, right sse=%s, rms=%s",
                  str(lse), str(rse), str(rmse))
     return rmse
+
+
+def compute_stereo_rms_reconstruction_error(l2r_rmat,
+                                            l2r_tvec,
+                                            left_object_points,
+                                            left_image_points,
+                                            left_camera_matrix,
+                                            left_distortion,
+                                            right_object_points,
+                                            right_image_points,
+                                            right_camera_matrix,
+                                            right_distortion,
+                                            left_rvecs,
+                                            left_tvecs):
+    """
+    Function to compute the combined stereo RMS reconstruction error.
+
+    :param l2r_rmat: [3x3] ndarray, rotation for l2r transform
+    :param l2r_tvec: [3x1] ndarray, translation for l2r transform
+    :param left_object_points: Vector of Vector of 1x3 of type float32
+    :param left_image_points: Vector of Vector of 1x2 of type float32
+    :param left_camera_matrix: [3x3] ndarray
+    :param left_distortion: [1x5] ndarray
+    :param right_object_points: Vector of Vector of 1x3 of type float32
+    :param right_image_points: Vector of Vector of 1x2 of type float32
+    :param right_camera_matrix: [3x3] ndarray
+    :param right_distortion: [1x5] ndarray
+    :param left_rvecs: Vector of [3x1] ndarray, Rodrigues rotations, left camera
+    :param left_tvecs: Vector of [3x1] ndarray, translations, left camera
+    :return: RMS reconstruction error
+    """
+    left_to_right = mu.construct_rigid_transformation(l2r_rmat, l2r_tvec)
+
+    lse = 0
+    rse = 0
+    number_of_samples = 0
+    number_of_frames = len(left_object_points)
+
+    for i in range(0, number_of_frames):
+        pass

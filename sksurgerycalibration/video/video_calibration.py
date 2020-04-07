@@ -229,18 +229,15 @@ def stereo_video_calibration_reoptimised(left_ids,
                          right_image_points,
                          r_d),
                    method='Nelder-Mead',
-                   tol=1e-1,
+                   tol=1e-4,
                    options={'disp': True, 'maxiter': 100000})
 
-    x_1 = res.x
-    for i in range(0, number_of_parameters):
-        print(str(i) + ": " + str(x_0[i]) + " -> " + str(x_1[i]) + " = " + str(x_1[i]-x_0[i]))
-    print(str(res.success))
-    print(str(res.fun))
-    print(str(res.message))
+    LOGGER.info("Stereo Re-Calibration: success=%s", str(res.success))
+    LOGGER.info("Stereo Re-Calibration: msg=%s", str(res.message))
 
     # Now need to unpack the results, into the same set of vectors,
     # as the stereo_video_calibration, so they are drop-in replacements.
+    x_1 = res.x
     l2r_rvec[0][0] = x_1[0]
     l2r_rvec[1][0] = x_1[1]
     l2r_rvec[2][0] = x_1[2]
@@ -270,10 +267,13 @@ def stereo_video_calibration_reoptimised(left_ids,
     first_world_to_camera = \
         vu.extrinsic_vecs_to_matrix(camera_rvecs[0], camera_tvecs[0])
     left_to_right = skcm.construct_rigid_transformation(l2r_r, l2r_t)
-    for i in range(1, number_of_frames):
-        extrinsic = \
-            vu.extrinsic_vecs_to_matrix(camera_rvecs[i], camera_tvecs[i])
-        left_world_to_camera = np.matmul(extrinsic, first_world_to_camera)
+    for i in range(0, number_of_frames):
+        if i == 0:
+            left_world_to_camera = first_world_to_camera
+        else:
+            extrinsic = \
+                vu.extrinsic_vecs_to_matrix(camera_rvecs[i], camera_tvecs[i])
+            left_world_to_camera = np.matmul(extrinsic, first_world_to_camera)
         l_rvecs[i], l_tvecs[i] = \
             vu.extrinsic_matrix_to_vecs(left_world_to_camera)
         right_world_to_camera = \

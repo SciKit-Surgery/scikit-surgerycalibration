@@ -12,7 +12,7 @@ def convert_numpy2d_to_opencv(image_points):
     """
     Converts numpy array to Vector of 1x2 vectors containing float32.
 
-    :param image_points: numpy Mx2 array.
+    :param image_points: numpy [Mx2] array.
     :return: vector (length M), of 1x2 vectors of float32.
     """
     return np.reshape(image_points, (-1, 1, 2)).astype(np.float32)
@@ -22,7 +22,7 @@ def convert_numpy3d_to_opencv(object_points):
     """
     Converts numpy array to Vector of 1x3 vectors containing float32.
 
-    :param object_points: numpy Mx3 array.
+    :param object_points: numpy [Mx3] array.
     :return: vector (length M), of 1x3 vectors of float32.
     """
     return np.reshape(object_points, (-1, 1, 3)).astype(np.float32)
@@ -31,9 +31,10 @@ def convert_numpy3d_to_opencv(object_points):
 def extrinsic_vecs_to_matrix(rvec, tvec):
     """
     Method to convert rvec and tvec to a 4x4 matrix.
+
     :param rvec: [3x1] ndarray, Rodrigues rotation params
     :param rvec: [3x1] ndarray, translation params
-    :return: [3x3] ndarray, representing Rotation Matrix
+    :return: [3x3] ndarray, Rotation Matrix
     """
     rotation_matrix = (cv2.Rodrigues(rvec))[0]
     transformation_matrix = \
@@ -43,7 +44,7 @@ def extrinsic_vecs_to_matrix(rvec, tvec):
 
 def extrinsic_matrix_to_vecs(transformation_matrix):
     """
-    Method to convert a transformation matrix to an rvec and tvec.
+    Method to convert a [4x4] rigid body matrix to an rvec and tvec.
 
     :param transformation_matrix: [4x4] rigid body matrix.
     :return [3x1] Rodrigues rotation vec, [3x1] translation vec
