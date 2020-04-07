@@ -15,7 +15,7 @@ import sksurgerycalibration.video.video_calibration_cost_functions as vc
 LOGGER = logging.getLogger(__name__)
 
 
-def mono_video_calibration(object_points, image_points, image_size):
+def mono_video_calibration(object_points, image_points, image_size, flags=0):
     """
     Calibrates a video camera using Zhang's 2000 method, as implemented in
     OpenCV. We wrap it here, so we have a place to add extra validation code,
@@ -33,13 +33,15 @@ def mono_video_calibration(object_points, image_points, image_size):
     :param object_points: Vector (N) of Vector (M) of 1x3 points of type float
     :param image_points: Vector (N) of Vector (M) of 1x2 points of type float
     :param image_size: (x, y) tuple, size in pixels, e.g. (1920, 1080)
+    :param flags: OpenCV flags to pass to calibrateCamera().
     :return: retval, camera_matrix, dist_coeffs, rvecs, tvecs
     """
     rms, camera_matrix, dist_coeffs, rvecs, tvecs \
         = cv2.calibrateCamera(object_points,
                               image_points,
                               image_size,
-                              None, None)
+                              None, None,
+                              flags=flags)
 
     return rms, camera_matrix, dist_coeffs, rvecs, tvecs
 
@@ -123,32 +125,34 @@ def stereo_video_calibration(left_ids,
     # And recompute stereo projection error, given left camera and l2r.
     # We also use all points, not just common points, for comparison
     # with other methods outside of this function.
-    s_reproj = vm.compute_stereo_rms_projection_error(l2r_r,
-                                                      l2r_t,
-                                                      common_object_points,
-                                                      common_left_image_points,
-                                                      l_c,
-                                                      l_d,
-                                                      common_object_points,
-                                                      common_right_image_points,
-                                                      r_c,
-                                                      r_d,
-                                                      l_rvecs,
-                                                      l_tvecs
-                                                      )
+    s_reproj = \
+        vm.compute_stereo_rms_projection_error(l2r_r,
+                                               l2r_t,
+                                               common_object_points,
+                                               common_left_image_points,
+                                               l_c,
+                                               l_d,
+                                               common_object_points,
+                                               common_right_image_points,
+                                               r_c,
+                                               r_d,
+                                               l_rvecs,
+                                               l_tvecs
+                                               )
 
-    s_recon = vm.compute_stereo_rms_reconstruction_error(l2r_r,
-                                                         l2r_t,
-                                                         common_object_points,
-                                                         common_left_image_points,
-                                                         l_c,
-                                                         l_d,
-                                                         common_right_image_points,
-                                                         r_c,
-                                                         r_d,
-                                                         l_rvecs,
-                                                         l_tvecs
-                                                         )
+    s_recon = \
+        vm.compute_stereo_rms_reconstruction_error(l2r_r,
+                                                   l2r_t,
+                                                   common_object_points,
+                                                   common_left_image_points,
+                                                   l_c,
+                                                   l_d,
+                                                   common_right_image_points,
+                                                   r_c,
+                                                   r_d,
+                                                   l_rvecs,
+                                                   l_tvecs
+                                                   )
 
     LOGGER.info("Stereo Calib: l=%s, r=%s, opencv=%s, proj=%s, recon=%s",
                 str(l_rms), str(r_rms), str(s_rms), str(s_reproj), str(s_recon))
@@ -191,6 +195,15 @@ def stereo_video_calibration_reoptimised(left_ids,
                                                           right_object_points,
                                                           right_image_points,
                                                           image_size)
+
+    # For stereo reconstruction error we need common points.
+    _, common_object_points, common_left_image_points, \
+        common_right_image_points \
+        = vu.filter_common_points_all_images(left_ids,
+                                             left_object_points,
+                                             left_image_points,
+                                             right_ids,
+                                             right_image_points, 10)
 
     l2r_rvec = (cv2.Rodrigues(l2r_r.T))[0]
 
@@ -237,11 +250,11 @@ def stereo_video_calibration_reoptimised(left_ids,
         x_0[14 + i * 6 + 5] = camera_tvecs[i][2]
 
     res = minimize(vc._project_stereo_points_cost_function, x_0,
-                   args=(left_object_points,
-                         left_image_points,
+                   args=(common_object_points,
+                         common_left_image_points,
                          l_d,
-                         right_object_points,
-                         right_image_points,
+                         common_object_points,
+                         common_right_image_points,
                          r_d),
                    method='Powell',
                    tol=1e-4,
@@ -297,44 +310,38 @@ def stereo_video_calibration_reoptimised(left_ids,
             vu.extrinsic_matrix_to_vecs(right_world_to_camera)
 
     # And recompute stereo RMS re-projection error.
-    s_reproj_2 = vm.compute_stereo_rms_projection_error(l2r_r,
-                                                        l2r_t,
-                                                        left_object_points,
-                                                        left_image_points,
-                                                        l_c,
-                                                        l_d,
-                                                        right_object_points,
-                                                        right_image_points,
-                                                        r_c,
-                                                        r_d,
-                                                        l_rvecs,
-                                                        l_tvecs
-                                                        )
+    s_reproj_2 = \
+        vm.compute_stereo_rms_projection_error(l2r_r,
+                                               l2r_t,
+                                               common_object_points,
+                                               common_left_image_points,
+                                               l_c,
+                                               l_d,
+                                               common_object_points,
+                                               common_right_image_points,
+                                               r_c,
+                                               r_d,
+                                               l_rvecs,
+                                               l_tvecs
+                                               )
 
-    # For stereo reconstruction error we need common points.
-    _, common_object_points, common_left_image_points, \
-        common_right_image_points \
-        = vu.filter_common_points_all_images(left_ids,
-                                             left_object_points,
-                                             left_image_points,
-                                             right_ids,
-                                             right_image_points, 10)
+    s_recon_2 = \
+        vm.compute_stereo_rms_reconstruction_error(l2r_r,
+                                                   l2r_t,
+                                                   common_object_points,
+                                                   common_left_image_points,
+                                                   l_c,
+                                                   l_d,
+                                                   common_right_image_points,
+                                                   r_c,
+                                                   r_d,
+                                                   l_rvecs,
+                                                   l_tvecs
+                                                   )
 
-    s_recon_2 = vm.compute_stereo_rms_reconstruction_error(l2r_r,
-                                                           l2r_t,
-                                                           common_object_points,
-                                                           common_left_image_points,
-                                                           l_c,
-                                                           l_d,
-                                                           common_right_image_points,
-                                                           r_c,
-                                                           r_d,
-                                                           l_rvecs,
-                                                           l_tvecs
-                                                           )
-
-    LOGGER.info("Stereo Re-Calib: reproj_1=%s, recon_1=%s, reproj_2=%s, recon_2=%s",
-                str(s_reproj), str(s_recon), str(s_reproj_2), str(s_recon_2))
+    LOGGER.info(
+        "Stereo Re-Calib: reproj_1=%s, recon_1=%s, reproj_2=%s, recon_2=%s",
+        str(s_reproj), str(s_recon), str(s_reproj_2), str(s_recon_2))
 
     return s_reproj_2, s_recon_2, \
         l_c, l_d, l_rvecs, l_tvecs, \

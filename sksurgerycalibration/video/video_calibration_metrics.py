@@ -115,18 +115,23 @@ def compute_stereo_rms_reconstruction_error(l2r_rmat,
 
     for i in range(0, number_of_frames):
 
+        model_points = np.reshape(common_object_points[i], (-1, 3))
+
         left_undistorted = cv2.undistortPoints(common_left_image_points[i],
                                                left_camera_matrix,
-                                               left_distortion, None, None)
+                                               left_distortion, None, left_camera_matrix)
         right_undistorted = cv2.undistortPoints(common_right_image_points[i],
                                                 right_camera_matrix,
-                                                right_distortion, None, None)
+                                                right_distortion, None, right_camera_matrix)
 
         # convert from Mx1x2 to Mx2
         left_undistorted = np.reshape(left_undistorted, (-1, 2))
         right_undistorted = np.reshape(right_undistorted, (-1, 2))
 
-        image_points = np.hstack((left_undistorted, right_undistorted))
+        image_points = np.zeros((left_undistorted.shape[0], 4))
+        image_points[:, 0:2] = left_undistorted
+        image_points[:, 2:4] = right_undistorted
+
         triangulated = cvpy.triangulate_points_using_hartley(
             image_points,
             left_camera_matrix,
@@ -136,9 +141,9 @@ def compute_stereo_rms_reconstruction_error(l2r_rmat,
 
         # Triangulated points, are with respect to left camera.
         # Need to map back to model (chessboard space) for comparison.
-        # Or, map chessboard points into left-camera space.
+        # Or, map chessboard points into left-camera space. Chose latter.
         rmat = (cv2.Rodrigues(left_rvecs[i]))[0]
-        rotated = np.matmul(rmat, np.transpose(triangulated))
+        rotated = np.matmul(rmat, np.transpose(model_points))
         translated = rotated + left_tvecs[i]  # uses broadcasting
         transformed = np.transpose(translated)
 

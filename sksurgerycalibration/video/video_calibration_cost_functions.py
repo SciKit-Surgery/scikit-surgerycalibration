@@ -64,7 +64,7 @@ def _project_stereo_points_cost_function(x_0,
         rvecs[i] = rvec
         tvecs[i] = tvec
 
-    rmse = vm.compute_stereo_rms_projection_error(l2r_rmat,
+    proj = vm.compute_stereo_rms_projection_error(l2r_rmat,
                                                   l2r_tvec,
                                                   left_object_points,
                                                   left_image_points,
@@ -77,4 +77,19 @@ def _project_stereo_points_cost_function(x_0,
                                                   rvecs,
                                                   tvecs
                                                   )
-    return rmse
+
+    recon = \
+        vm.compute_stereo_rms_reconstruction_error(l2r_rmat,
+                                                   l2r_tvec,
+                                                   left_object_points,
+                                                   left_image_points,
+                                                   left_camera,
+                                                   left_distortion,
+                                                   right_image_points,
+                                                   right_camera,
+                                                   right_distortion,
+                                                   rvecs,
+                                                   tvecs
+                                                   )
+
+    return proj + recon
