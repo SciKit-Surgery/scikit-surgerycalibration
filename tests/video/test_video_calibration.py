@@ -52,7 +52,7 @@ def test_stereo_calibration():
     for i in range(9):
         ids.append(np.asarray(range(140)))
 
-    s_rms, \
+    s_reproj, s_recon, \
         l_c, l_d, left_rvecs, left_tvecs, \
         r_c, r_d, right_rvecs, right_tvecs, \
         l2r_r, l2r_t, \
@@ -64,11 +64,13 @@ def test_stereo_calibration():
                                     object_points,
                                     right_image_points,
                                     (1920, 1080))
-    print(s_rms)
+
+    print(s_reproj)
+    print(s_recon)
     print(l2r_r)
     print(l2r_t)
 
-    s_rms, \
+    s_reproj, s_recon, \
         l_c, l_d, left_rvecs, left_tvecs, \
         r_c, r_d, right_rvecs, right_tvecs, \
         l2r_r, l2r_t, \
@@ -80,8 +82,8 @@ def test_stereo_calibration():
                                                 object_points,
                                                 right_image_points,
                                                 (1920, 1080))
-    print(s_rms)
+    print(s_reproj)
+    print(s_recon)
     print(l2r_r)
     print(l2r_t)
-
 

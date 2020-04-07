@@ -3,6 +3,7 @@
 import logging
 import numpy as np
 import cv2
+import sksurgeryopencvpython as cvpy
 import sksurgerycore.transforms.matrix as mu
 import sksurgerycalibration.video.video_calibration_utils as vu
 
@@ -71,8 +72,8 @@ def compute_stereo_rms_projection_error(l2r_rmat,
         diff_right = right_image_points[i] - projected_right
         rse = rse + np.sum(np.square(diff_right))
         number_of_samples = number_of_samples \
-            + 3*len(left_image_points[i]) \
-            + 3*len(right_image_points[i])
+            + len(left_image_points[i]) \
+            + len(right_image_points[i])
 
     rmse = np.sqrt((lse + rse) / number_of_samples)
 
@@ -83,12 +84,11 @@ def compute_stereo_rms_projection_error(l2r_rmat,
 
 def compute_stereo_rms_reconstruction_error(l2r_rmat,
                                             l2r_tvec,
-                                            left_object_points,
-                                            left_image_points,
+                                            common_object_points,
+                                            common_left_image_points,
                                             left_camera_matrix,
                                             left_distortion,
-                                            right_object_points,
-                                            right_image_points,
+                                            common_right_image_points,
                                             right_camera_matrix,
                                             right_distortion,
                                             left_rvecs,
@@ -98,24 +98,57 @@ def compute_stereo_rms_reconstruction_error(l2r_rmat,
 
     :param l2r_rmat: [3x3] ndarray, rotation for l2r transform
     :param l2r_tvec: [3x1] ndarray, translation for l2r transform
-    :param left_object_points: Vector of Vector of 1x3 of type float32
-    :param left_image_points: Vector of Vector of 1x2 of type float32
+    :param common_object_points: Vector of Vector of 1x3 of type float32
+    :param common_left_image_points: Vector of Vector of 1x2 of type float32
     :param left_camera_matrix: [3x3] ndarray
     :param left_distortion: [1x5] ndarray
-    :param right_object_points: Vector of Vector of 1x3 of type float32
-    :param right_image_points: Vector of Vector of 1x2 of type float32
+    :param common_right_image_points: Vector of Vector of 1x2 of type float32
     :param right_camera_matrix: [3x3] ndarray
     :param right_distortion: [1x5] ndarray
     :param left_rvecs: Vector of [3x1] ndarray, Rodrigues rotations, left camera
     :param left_tvecs: Vector of [3x1] ndarray, translations, left camera
     :return: RMS reconstruction error
     """
-    left_to_right = mu.construct_rigid_transformation(l2r_rmat, l2r_tvec)
-
-    lse = 0
-    rse = 0
+    sse = 0
     number_of_samples = 0
-    number_of_frames = len(left_object_points)
+    number_of_frames = len(common_object_points)
 
     for i in range(0, number_of_frames):
-        pass
+
+        left_undistorted = cv2.undistortPoints(common_left_image_points[i],
+                                               left_camera_matrix,
+                                               left_distortion, None, None)
+        right_undistorted = cv2.undistortPoints(common_right_image_points[i],
+                                                right_camera_matrix,
+                                                right_distortion, None, None)
+
+        # convert from Mx1x2 to Mx2
+        left_undistorted = np.reshape(left_undistorted, (-1, 2))
+        right_undistorted = np.reshape(right_undistorted, (-1, 2))
+
+        image_points = np.hstack((left_undistorted, right_undistorted))
+        triangulated = cvpy.triangulate_points_using_hartley(
+            image_points,
+            left_camera_matrix,
+            right_camera_matrix,
+            l2r_rmat,
+            l2r_tvec)
+
+        # Triangulated points, are with respect to left camera.
+        # Need to map back to model (chessboard space) for comparison.
+        # Or, map chessboard points into left-camera space.
+        rmat = (cv2.Rodrigues(left_rvecs[i]))[0]
+        rotated = np.matmul(rmat, np.transpose(triangulated))
+        translated = rotated + left_tvecs[i]  # uses broadcasting
+        transformed = np.transpose(translated)
+
+        # Now compute squared error
+        diff = triangulated - transformed
+        squared = np.square(diff)
+        sum_square = np.sum(squared)
+        sse = sse + sum_square
+        number_of_samples = number_of_samples + len(common_left_image_points[i])
+
+    mse = sse / number_of_samples
+    rmse = np.sqrt(mse)
+    return rmse

@@ -51,7 +51,8 @@ def extrinsic_matrix_to_vecs(transformation_matrix):
     """
     rmat = transformation_matrix[0:3, 0:3]
     rvec = (cv2.Rodrigues(rmat))[0]
-    tvec = transformation_matrix[0:3, 3]
+    tvec = np.ones((3, 1))
+    tvec[0:3, 0] = transformation_matrix[0:3, 3]
     return rvec, tvec
 
 

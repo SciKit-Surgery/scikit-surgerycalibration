@@ -82,7 +82,7 @@ def stereo_video_calibration(left_ids,
                               image_size,
                               None, None)
 
-    # But for stereo, we need common points.
+    # But for stereo, OpenCV needs common points.
     _, common_object_points, common_left_image_points, \
         common_right_image_points \
         = vu.filter_common_points_all_images(left_ids,
@@ -121,24 +121,39 @@ def stereo_video_calibration(left_ids,
             vu.extrinsic_matrix_to_vecs(right_chessboard_to_camera)
 
     # And recompute stereo projection error, given left camera and l2r.
-    s_rms_2 = vm.compute_stereo_rms_projection_error(l2r_r,
-                                                     l2r_t,
-                                                     left_object_points,
-                                                     left_image_points,
-                                                     l_c,
-                                                     l_d,
-                                                     right_object_points,
-                                                     right_image_points,
-                                                     r_c,
-                                                     r_d,
-                                                     l_rvecs,
-                                                     l_tvecs
-                                                     )
+    # We also use all points, not just common points, for comparison
+    # with other methods outside of this function.
+    s_reproj = vm.compute_stereo_rms_projection_error(l2r_r,
+                                                      l2r_t,
+                                                      common_object_points,
+                                                      common_left_image_points,
+                                                      l_c,
+                                                      l_d,
+                                                      common_object_points,
+                                                      common_right_image_points,
+                                                      r_c,
+                                                      r_d,
+                                                      l_rvecs,
+                                                      l_tvecs
+                                                      )
 
-    LOGGER.info("Stereo Calibration: left=%s, right=%s, opencv=%s, actual=%s",
-                str(l_rms), str(r_rms), str(s_rms), str(s_rms_2))
+    s_recon = vm.compute_stereo_rms_reconstruction_error(l2r_r,
+                                                         l2r_t,
+                                                         common_object_points,
+                                                         common_left_image_points,
+                                                         l_c,
+                                                         l_d,
+                                                         common_right_image_points,
+                                                         r_c,
+                                                         r_d,
+                                                         l_rvecs,
+                                                         l_tvecs
+                                                         )
 
-    return s_rms_2, \
+    LOGGER.info("Stereo Calib: l=%s, r=%s, opencv=%s, proj=%s, recon=%s",
+                str(l_rms), str(r_rms), str(s_rms), str(s_reproj), str(s_recon))
+
+    return s_reproj, s_recon, \
         l_c, l_d, l_rvecs, l_tvecs, \
         r_c, r_d, r_rvecs, r_tvecs, \
         l2r_r, l2r_t, \
@@ -165,7 +180,7 @@ def stereo_video_calibration_reoptimised(left_ids,
     :return:
     """
     # First do standard OpenCV calibration, as shown above.
-    s_rms, \
+    s_reproj, s_recon, \
         l_c, l_d, l_rvecs, l_tvecs, \
         r_c, r_d, r_rvecs, r_tvecs, \
         l2r_r, l2r_t, \
@@ -228,7 +243,7 @@ def stereo_video_calibration_reoptimised(left_ids,
                          right_object_points,
                          right_image_points,
                          r_d),
-                   method='Nelder-Mead',
+                   method='Powell',
                    tol=1e-4,
                    options={'disp': True, 'maxiter': 100000})
 
@@ -282,22 +297,46 @@ def stereo_video_calibration_reoptimised(left_ids,
             vu.extrinsic_matrix_to_vecs(right_world_to_camera)
 
     # And recompute stereo RMS re-projection error.
-    s_rms = vm.compute_stereo_rms_projection_error(l2r_r,
-                                                   l2r_t,
-                                                   left_object_points,
-                                                   left_image_points,
-                                                   l_c,
-                                                   l_d,
-                                                   right_object_points,
-                                                   right_image_points,
-                                                   r_c,
-                                                   r_d,
-                                                   l_rvecs,
-                                                   l_tvecs
-                                                   )
-    LOGGER.info("Stereo Re-Calibration: RMS re-projection=%s", str(s_rms))
+    s_reproj_2 = vm.compute_stereo_rms_projection_error(l2r_r,
+                                                        l2r_t,
+                                                        left_object_points,
+                                                        left_image_points,
+                                                        l_c,
+                                                        l_d,
+                                                        right_object_points,
+                                                        right_image_points,
+                                                        r_c,
+                                                        r_d,
+                                                        l_rvecs,
+                                                        l_tvecs
+                                                        )
 
-    return s_rms, \
+    # For stereo reconstruction error we need common points.
+    _, common_object_points, common_left_image_points, \
+        common_right_image_points \
+        = vu.filter_common_points_all_images(left_ids,
+                                             left_object_points,
+                                             left_image_points,
+                                             right_ids,
+                                             right_image_points, 10)
+
+    s_recon_2 = vm.compute_stereo_rms_reconstruction_error(l2r_r,
+                                                           l2r_t,
+                                                           common_object_points,
+                                                           common_left_image_points,
+                                                           l_c,
+                                                           l_d,
+                                                           common_right_image_points,
+                                                           r_c,
+                                                           r_d,
+                                                           l_rvecs,
+                                                           l_tvecs
+                                                           )
+
+    LOGGER.info("Stereo Re-Calib: reproj_1=%s, recon_1=%s, reproj_2=%s, recon_2=%s",
+                str(s_reproj), str(s_recon), str(s_reproj_2), str(s_recon_2))
+
+    return s_reproj_2, s_recon_2, \
         l_c, l_d, l_rvecs, l_tvecs, \
         r_c, r_d, r_rvecs, r_tvecs, \
         l2r_r, l2r_t, \
