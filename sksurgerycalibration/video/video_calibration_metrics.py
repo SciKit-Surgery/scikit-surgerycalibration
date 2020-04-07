@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+""" Video calibration metrics. """
+
+# pylint: disable=too-many-arguments
+
 import logging
 import numpy as np
 import cv2
@@ -10,18 +14,18 @@ import sksurgerycalibration.video.video_calibration_utils as vu
 LOGGER = logging.getLogger(__name__)
 
 
-def compute_stereo_rms_projection_error(l2r_rmat,
-                                        l2r_tvec,
-                                        left_object_points,
-                                        left_image_points,
-                                        left_camera_matrix,
-                                        left_distortion,
-                                        right_object_points,
-                                        right_image_points,
-                                        right_camera_matrix,
-                                        right_distortion,
-                                        left_rvecs,
-                                        left_tvecs):
+def compute_stereo_2d_err(l2r_rmat,
+                          l2r_tvec,
+                          left_object_points,
+                          left_image_points,
+                          left_camera_matrix,
+                          left_distortion,
+                          right_object_points,
+                          right_image_points,
+                          right_camera_matrix,
+                          right_distortion,
+                          left_rvecs,
+                          left_tvecs):
     """
     Function to compute the combined stereo RMS re-projection error.
 
@@ -82,17 +86,17 @@ def compute_stereo_rms_projection_error(l2r_rmat,
     return rmse
 
 
-def compute_stereo_rms_reconstruction_error(l2r_rmat,
-                                            l2r_tvec,
-                                            common_object_points,
-                                            common_left_image_points,
-                                            left_camera_matrix,
-                                            left_distortion,
-                                            common_right_image_points,
-                                            right_camera_matrix,
-                                            right_distortion,
-                                            left_rvecs,
-                                            left_tvecs):
+def compute_stereo_3d_error(l2r_rmat,
+                            l2r_tvec,
+                            common_object_points,
+                            common_left_image_points,
+                            left_camera_matrix,
+                            left_distortion,
+                            common_right_image_points,
+                            right_camera_matrix,
+                            right_distortion,
+                            left_rvecs,
+                            left_tvecs):
     """
     Function to compute the combined stereo RMS reconstruction error.
 
@@ -117,12 +121,14 @@ def compute_stereo_rms_reconstruction_error(l2r_rmat,
 
         model_points = np.reshape(common_object_points[i], (-1, 3))
 
-        left_undistorted = cv2.undistortPoints(common_left_image_points[i],
-                                               left_camera_matrix,
-                                               left_distortion, None, left_camera_matrix)
-        right_undistorted = cv2.undistortPoints(common_right_image_points[i],
-                                                right_camera_matrix,
-                                                right_distortion, None, right_camera_matrix)
+        left_undistorted = \
+            cv2.undistortPoints(common_left_image_points[i],
+                                left_camera_matrix,
+                                left_distortion, None, left_camera_matrix)
+        right_undistorted = \
+            cv2.undistortPoints(common_right_image_points[i],
+                                right_camera_matrix,
+                                right_distortion, None, right_camera_matrix)
 
         # convert from Mx1x2 to Mx2
         left_undistorted = np.reshape(left_undistorted, (-1, 2))

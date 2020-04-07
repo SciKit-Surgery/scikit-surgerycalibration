@@ -1,18 +1,20 @@
 # -*- coding: utf-8 -*-
 
+""" Cost functions for video calibration, used with scipy. """
+
 import numpy as np
 import cv2
 import sksurgerycalibration.video.video_calibration_utils as vu
 import sksurgerycalibration.video.video_calibration_metrics as vm
 
 
-def _project_stereo_points_cost_function(x_0,
-                                         left_object_points,
-                                         left_image_points,
-                                         left_distortion,
-                                         right_object_points,
-                                         right_image_points,
-                                         right_distortion):
+def stereo_reprojection_error(x_0,
+                              left_object_points,
+                              left_image_points,
+                              left_distortion,
+                              right_object_points,
+                              right_image_points,
+                              right_distortion):
     """
     Private method to compute RMSE cost function.
     """
@@ -64,32 +66,32 @@ def _project_stereo_points_cost_function(x_0,
         rvecs[i] = rvec
         tvecs[i] = tvec
 
-    proj = vm.compute_stereo_rms_projection_error(l2r_rmat,
-                                                  l2r_tvec,
-                                                  left_object_points,
-                                                  left_image_points,
-                                                  left_camera,
-                                                  left_distortion,
-                                                  right_object_points,
-                                                  right_image_points,
-                                                  right_camera,
-                                                  right_distortion,
-                                                  rvecs,
-                                                  tvecs
-                                                  )
+    proj = vm.compute_stereo_2d_err(l2r_rmat,
+                                    l2r_tvec,
+                                    left_object_points,
+                                    left_image_points,
+                                    left_camera,
+                                    left_distortion,
+                                    right_object_points,
+                                    right_image_points,
+                                    right_camera,
+                                    right_distortion,
+                                    rvecs,
+                                    tvecs
+                                    )
 
     recon = \
-        vm.compute_stereo_rms_reconstruction_error(l2r_rmat,
-                                                   l2r_tvec,
-                                                   left_object_points,
-                                                   left_image_points,
-                                                   left_camera,
-                                                   left_distortion,
-                                                   right_image_points,
-                                                   right_camera,
-                                                   right_distortion,
-                                                   rvecs,
-                                                   tvecs
-                                                   )
+        vm.compute_stereo_3d_error(l2r_rmat,
+                                   l2r_tvec,
+                                   left_object_points,
+                                   left_image_points,
+                                   left_camera,
+                                   left_distortion,
+                                   right_image_points,
+                                   right_camera,
+                                   right_distortion,
+                                   rvecs,
+                                   tvecs
+                                   )
 
     return proj + recon

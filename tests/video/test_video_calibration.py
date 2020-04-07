@@ -70,18 +70,20 @@ def test_stereo_calibration():
     print(l2r_r)
     print(l2r_t)
 
+    return
+
     s_reproj, s_recon, \
         l_c, l_d, left_rvecs, left_tvecs, \
         r_c, r_d, right_rvecs, right_tvecs, \
         l2r_r, l2r_t, \
         essential, fundamental = \
-        vc.stereo_video_calibration_reoptimised(ids,
-                                                object_points,
-                                                left_image_points,
-                                                ids,
-                                                object_points,
-                                                right_image_points,
-                                                (1920, 1080))
+        vc.stereo_video_calibration_expt(ids,
+                                         object_points,
+                                         left_image_points,
+                                         ids,
+                                         object_points,
+                                         right_image_points,
+                                         (1920, 1080))
     print(s_reproj)
     print(s_recon)
     print(l2r_r)
