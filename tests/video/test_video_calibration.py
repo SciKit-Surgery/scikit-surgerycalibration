@@ -5,9 +5,10 @@ import pytest
 import numpy as np
 import sksurgerycalibration.video.video_calibration_utils as vu
 import sksurgerycalibration.video.video_calibration as vc
+import sksurgerycalibration.video.video_calibration_experimental as ve
 
 
-def test_mono_calibration():
+def test_mono_video_calibration():
 
     image_points = []
     object_points = []
@@ -58,7 +59,7 @@ def load_first_stereo_data():
            ids
 
 
-def test_stereo_calibration():
+def test_stereo_video_calibration():
 
     object_points, left_image_points, right_image_points, ids = \
         load_first_stereo_data()
@@ -82,17 +83,19 @@ def test_stereo_calibration():
     print(l2r_t)
 
 
-#def test_experimental_stereo_calib():
-
+#def test_experimental_video_stereo_calib():
+#
+#   This isn't worth the bother. Takes 1.5 hours to run.
+#
 #    object_points, left_image_points, right_image_points, ids = \
 #        load_first_stereo_data()
-
+#
 #    s_reproj, s_recon, \
 #        l_c, l_d, left_rvecs, left_tvecs, \
 #        r_c, r_d, right_rvecs, right_tvecs, \
 #        l2r_r, l2r_t, \
 #        essential, fundamental = \
-#        vc.stereo_video_calibration_expt(ids,
+#        ve.stereo_video_calibration_expt(ids,
 #                                         object_points,
 #                                         left_image_points,
 #                                         ids,
