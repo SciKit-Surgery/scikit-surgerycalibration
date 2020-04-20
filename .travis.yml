@@ -1,0 +1,17 @@
+language: python
+python:
+  - "3.6"
+  - "3.7"
+  - "3.8"
+
+
+install: 	  
+  - pip install -r requirements-dev.txt
+
+script:
+  - coverage erase
+  - coverage run -a --source ./sksurgerycalibration -m pytest -v -s ./tests/
+  - coverage report -m
+  - pylint --rcfile=tests/pylintrc sksurgerycalibration 
+  - cd doc
+  - sphinx-build -M html . build
