@@ -14,9 +14,9 @@ python:
 #	   python: 3.8
 
 
-before_install:
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then 
-  - 	sudo apt-get -y install pandoc
+	  #before_install:
+	  #  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then 
+	  #  - 	sudo apt-get -y install pandoc
 
 install: 	  
   - pip install -r requirements-dev.txt
