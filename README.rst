@@ -54,7 +54,7 @@ Pytest is used for running unit tests:
 
 
 Linting
-^^^^^^^:
+^^^^^^^
 
 This code conforms to the PEP8 standard. Pylint can be used to analyse the code:
 
