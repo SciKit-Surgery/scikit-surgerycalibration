@@ -1,17 +1,17 @@
 scikit-surgerycalibration
 ===============================
 
-.. image:: https://github.com/UCL/scikit-surgerycalibration /raw/master/project-icon.png
+.. image:: https://github.com/UCL/scikit-surgerycalibration /raw/2-testing/project-icon.png
    :height: 128px
    :width: 128px
    :target: https://github.com/UCL/scikit-surgerycalibration 
    :alt: Logo
 
-.. image:: https://github.com/UCL/scikit-surgerycalibration /badges/master/build.svg
+.. image:: https://github.com/UCL/scikit-surgerycalibration /badges/2-testing/build.svg
    :target: https://github.com/UCL/scikit-surgerycalibration /pipelines
    :alt: GitLab-CI test status
 
-.. image:: https://github.com/UCL/scikit-surgerycalibration /badges/master/coverage.svg
+.. image:: https://github.com/UCL/scikit-surgerycalibration /badges/2-testing/coverage.svg
     :target: https://github.com/UCL/scikit-surgerycalibration /commits/master
     :alt: Test coverage
 
