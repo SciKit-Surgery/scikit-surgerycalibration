@@ -18,9 +18,9 @@ script:
  - coverage erase
  - coverage run -a --source ./sksurgerycalibration -m pytest -v -s ./tests/
  - coverage report -m
- - if [ "$TRAVIS_PYTHON_VERSION" = "3.8" ]
-  - then
-  - pylint --rcfile=tests/pylintrc sksurgerycalibration
-  - cd doc
-  - sphinx-build -M html . build
+ - if [ "$TRAVIS_PYTHON_VERSION" = "3.8" ];
+    then;
+    pylint --rcfile=tests/pylintrc sksurgerycalibration;
+    cd doc;
+    sphinx-build -M html . build;
  - fi
