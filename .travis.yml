@@ -14,11 +14,15 @@ stages:
 
 install:
  - pip install -r requirements-dev.txt
+ - pip install python-coveralls
 
 script:
  - coverage erase
  - coverage run -a --source ./sksurgerycalibration -m pytest -v -s ./tests/
  - coverage report -m
+
+after_success:
+ - coveralls
 
 deploy:
  provider: pypi
