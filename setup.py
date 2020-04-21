@@ -57,8 +57,6 @@ setup(
     ],
 
     entry_points={
-        'console_scripts': [
-            'sksurgerycalibration=sksurgerycalibration.__main__:main',
-        ],
+        'console_scripts': [],
     },
 )
