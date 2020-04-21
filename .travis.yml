@@ -8,13 +8,16 @@ matrix:
     python: 3.8
 
 before_install:
- - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get -y install pandoc; fi
+ - if [ "$TRAVIS_OS_NAME" = "linux" ];
+    if [ "$TRAVIS_PYTHON_VERSION" = "3.8" ];
+     then sudo apt-get -y install pandoc;
+    fi
+   fi
 
 install:
  - pip install -r requirements-dev.txt
 
 script:
- - env
  - coverage erase
  - coverage run -a --source ./sksurgerycalibration -m pytest -v -s ./tests/
  - coverage report -m
@@ -23,4 +26,4 @@ script:
     pylint --rcfile=tests/pylintrc sksurgerycalibration;
     cd doc;
     sphinx-build -M html . build;
- - fi
+   fi
