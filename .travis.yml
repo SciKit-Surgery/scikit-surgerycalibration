@@ -9,10 +9,10 @@ matrix:
         - os: linux
           python: 3.8
         - os: osx
-          python: 3.8
+          python: 3.6
 
 before_install:
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get -y install pandoc
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get -y install pandoc; fi
 
 install:
   - pip install -r requirements-dev.txt
