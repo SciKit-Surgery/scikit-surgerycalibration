@@ -14,7 +14,6 @@ stages:
 
 install:
  - pip install -r requirements-dev.txt
- - pip install python-coveralls
 
 script:
  - coverage erase
