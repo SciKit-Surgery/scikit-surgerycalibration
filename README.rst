@@ -1,18 +1,18 @@
 scikit-surgerycalibration
 ===============================
 
-.. image:: https://github.com/UCL/scikit-surgerycalibration /raw/2-testing/project-icon.png
+.. image:: https://github.com/UCL/scikit-surgerycalibration /raw/master/project-icon.png
    :height: 128px
    :width: 128px
    :target: https://github.com/UCL/scikit-surgerycalibration 
    :alt: Logo
 
-.. image:: https://travis-ci.com/UCL/scikit-surgerycalibration.svg?branch=2-testing
+.. image:: https://travis-ci.com/UCL/scikit-surgerycalibration.svg?branch=master
    :target: https://travis-ci.com/github/UCL/scikit-surgerycalibration
    :alt: Travis CI build status
 
-.. image:: https://coveralls.io/repos/github/UCL/scikit-surgerycalibration/badge.svg?branch=2-testing
-    :target: https://coveralls.io/github/UCL/scikit-surgerycalibration?branch=2-testing
+.. image:: https://coveralls.io/repos/github/UCL/scikit-surgerycalibration/badge.svg?branch=master
+    :target: https://coveralls.io/github/UCL/scikit-surgerycalibration?branch=master
     :alt: Test coverage
 
 .. image:: https://readthedocs.org/projects/scikit-surgerycalibration /badge/?version=latest
