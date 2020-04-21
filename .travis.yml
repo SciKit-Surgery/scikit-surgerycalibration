@@ -10,7 +10,8 @@ matrix:
 before_install:
  - if [ "$TRAVIS_OS_NAME" = "linux" ];
     if [ "$TRAVIS_PYTHON_VERSION" = "3.8" ];
-     then sudo apt-get -y install pandoc;
+     then;
+     sudo apt-get -y install pandoc;
     fi;
    fi;
 
