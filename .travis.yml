@@ -2,25 +2,25 @@ language: python
 
 matrix:
  include:
-        - os: linux
-          python: 3.6
-        - os: linux
-          python: 3.8
+  - os: linux
+    python: 3.6
+  - os: linux
+    python: 3.8
 
 before_install:
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get -y install pandoc; fi
+ - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get -y install pandoc; fi
 
 install:
-  - pip install -r requirements-dev.txt
+ - pip install -r requirements-dev.txt
 
 script:
-  - env
-  - coverage erase
-  - coverage run -a --source ./sksurgerycalibration -m pytest -v -s ./tests/
-  - coverage report -m
-  - if [ "$TRAVIS_PYTHON_VERSION" = "3.8" ]
-  	- then
-	- pylint --rcfile=tests/pylintrc sksurgerycalibration
-  	- cd doc
-  	- sphinx-build -M html . build
-  - fi
+ - env
+ - coverage erase
+ - coverage run -a --source ./sksurgerycalibration -m pytest -v -s ./tests/
+ - coverage report -m
+ - if [ "$TRAVIS_PYTHON_VERSION" = "3.8" ]
+  - then
+  - pylint --rcfile=tests/pylintrc sksurgerycalibration
+  - cd doc
+  - sphinx-build -M html . build
+ - fi
