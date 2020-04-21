@@ -23,18 +23,13 @@ scikit-surgerycalibration
 
 Author: Stephen Thompson
 
-scikit-surgerycalibration is part of the `SNAPPY`_ software project, developed at the `Wellcome EPSRC Centre for Interventional and Surgical Sciences`_, part of `University College London (UCL)`_.
+scikit-surgerycalibration is part of the `SciKit-Surgery`_ software project, developed at the `Wellcome EPSRC Centre for Interventional and Surgical Sciences`_, part of `University College London (UCL)`_.
 
-scikit-surgerycalibration supports Python 2.7 and Python 3.6.
+scikit-surgerycalibration is tested on Python 3.6-8.
 
-scikit-surgerycalibration is currently a demo project, which will add/multiply two numbers. Example usage:
+scikit-surgerycalibration contains algorithms to perform calibrations useful during surgery, for example pointer calibration, ultrasound calibration, and camera calibration. 
 
-::
-
-    python sksurgerycalibration.py 5 8
-    python sksurgerycalibration.py 3 6 --multiply
-
-Please explore the project structure, and implement your own functionality.
+Please explore the project structure, and request or implement your desired functionality.
 
 Developing
 ----------
@@ -108,8 +103,8 @@ Supported by `Wellcome`_ and `EPSRC`_.
 
 .. _`Wellcome EPSRC Centre for Interventional and Surgical Sciences`: http://www.ucl.ac.uk/weiss
 .. _`source code repository`: https://github.com/UCL/scikit-surgerycalibration 
-.. _`Documentation`: https://scikit-surgerycalibration .readthedocs.io
-.. _`SNAPPY`: https://weisslab.cs.ucl.ac.uk/WEISS/PlatformManagement/SNAPPY/wikis/home
+.. _`Documentation`: https://scikit-surgerycalibration.readthedocs.io
+.. _`SciKit-Surgery`: https://github.com/UCL/scikit-surgery/wiki/home
 .. _`University College London (UCL)`: http://www.ucl.ac.uk/
 .. _`Wellcome`: https://wellcome.ac.uk/
 .. _`EPSRC`: https://www.epsrc.ac.uk/

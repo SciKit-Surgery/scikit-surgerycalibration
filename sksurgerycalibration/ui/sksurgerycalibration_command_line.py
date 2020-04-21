@@ -9,9 +9,9 @@ from sksurgerycalibration.ui.sksurgerycalibration_demo import run_demo
 
 
 def main(args=None):
-    """Entry point for scikit-surgery-calibration application"""
+    """Entry point for scikit-surgerycalibration application"""
 
-    parser = argparse.ArgumentParser(description='scikit-surgery-calibration')
+    parser = argparse.ArgumentParser(description='scikit-surgerycalibration')
 
     ## ADD POSITIONAL ARGUMENTS
     parser.add_argument("x",
@@ -38,7 +38,7 @@ def main(args=None):
     parser.add_argument(
         "--version",
         action='version',
-        version='scikit-surgery-calibration version ' + friendly_version_string)
+        version='scikit-surgerycalibration version ' + friendly_version_string)
 
     args = parser.parse_args(args)
 
