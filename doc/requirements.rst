@@ -3,12 +3,12 @@
 .. _requirements:
 
 ===============================================
-Requirements for scikit-surgery-calibration
+Requirements for scikit-surgerycalibration
 ===============================================
 
-This is the software requirements file for scikit-surgery-calibration, part of the
+This is the software requirements file for scikit-surgerycalibration, part of the
 SNAPPY project. The requirements listed below should define
-what scikit-surgery-calibration does. Each requirement can be matched to a unit test that
+what scikit-surgerycalibration does. Each requirement can be matched to a unit test that
 checks whether the requirement is met.
 
 Requirements

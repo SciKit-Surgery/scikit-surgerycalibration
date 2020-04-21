@@ -1,6 +1,6 @@
 # coding=utf-8
 
-"""scikit-surgery-calibration tests"""
+"""scikit-surgerycalibration tests"""
 
 from sksurgerycalibration.ui.sksurgerycalibration_demo import run_demo
 from sksurgerycalibration.algorithms import addition, multiplication

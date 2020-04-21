@@ -1,6 +1,6 @@
 # coding=utf-8
 """
-Setup for scikit-surgery-calibration
+Setup for scikit-surgerycalibration
 """
 
 from setuptools import setup, find_packages
@@ -11,13 +11,13 @@ with open('README.rst') as f:
     long_description = f.read()
 
 setup(
-    name='scikit-surgery-calibration',
+    name='scikit-surgerycalibration',
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
-    description='scikit-surgery-calibration provides algorithms designed for the calibration of surgical instruments',
+    description='scikit-surgerycalibration provides algorithms designed for the calibration of surgical instruments',
     long_description=long_description,
     long_description_content_type='text/x-rst',
-    url='https://github.com/UCL/scikit-surgery-calibration ',
+    url='https://github.com/UCL/scikit-surgerycalibration ',
     author='Stephen Thompson',
     author_email='YOUR-EMAIL@ucl.ac.uk',
     license='BSD-3 license',

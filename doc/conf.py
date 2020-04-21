@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# scikit-surgery-calibration  documentation build configuration file, created by
+# scikit-surgerycalibration  documentation build configuration file, created by
 # sphinx-quickstart on Tue Dec 19 17:02:44 2017.
 #
 # This file is execfile()d with the current directory set to its
@@ -111,7 +111,7 @@ modindex_common_prefix = [
 ]
 
 # General information about the project.
-project = u'scikit-surgery-calibration'
+project = u'scikit-surgerycalibration'
 copyright = u"2020, University College London"
 author = u'Stephen Thompson'
 
@@ -205,7 +205,7 @@ html_sidebars = {
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'scikit-surgery-calibration doc'
+htmlhelp_basename = 'scikit-surgerycalibration doc'
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -231,8 +231,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    ('index', 'scikit-surgery-calibration .tex',
-     u'scikit-surgery-calibration Documentation',
+    ('index', 'scikit-surgerycalibration .tex',
+     u'scikit-surgerycalibration Documentation',
      u'Stephen Thompson', 'manual'),
 ]
 
@@ -241,8 +241,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'scikit-surgery-calibration ',
-     u'scikit-surgery-calibration Documentation',
+    ('index', 'scikit-surgerycalibration ',
+     u'scikit-surgerycalibration Documentation',
      [u'Stephen Thompson'], 1)
 ]
 
@@ -253,10 +253,10 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    ('index', 'scikit-surgery-calibration ',
-     u'scikit-surgery-calibration Documentation',
+    ('index', 'scikit-surgerycalibration ',
+     u'scikit-surgerycalibration Documentation',
      u'Stephen Thompson',
-     'scikit-surgery-calibration ',
+     'scikit-surgerycalibration ',
      'One line description of project.',
      'Miscellaneous'),
 ]

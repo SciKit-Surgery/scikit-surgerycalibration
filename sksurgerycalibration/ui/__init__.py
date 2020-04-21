@@ -1,3 +1,3 @@
 # coding=utf-8
 
-"""scikit-surgery-calibration"""
+"""scikit-surgerycalibration"""
