@@ -58,6 +58,8 @@ setup(
     ],
 
     entry_points={
-        'console_scripts': [],
+        'console_scripts': [
+                'sksPivotCalibration=sksurgerycalibration.ui.pivot_calibration_command_line:main', 
+                ],
     },
 )
