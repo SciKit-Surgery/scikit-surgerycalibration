@@ -1,0 +1,7 @@
+{
+	"ransac": true,
+	"number_iterations" : 10,
+	"error_threshold" : 4, 
+	"consensus_threshold" : 0.25
+}
+
