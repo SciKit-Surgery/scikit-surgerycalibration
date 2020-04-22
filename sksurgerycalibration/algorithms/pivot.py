@@ -31,36 +31,17 @@ def pivot_calibration(tracking_matrices):
     # See equation in section 2.1.2 of Yaniv 2015.
     # Ax = b.
 
-    size_a = 3 * number_of_matrices, 6
-    a_values = np.zeros(size_a, dtype=np.float64)
+    size_a = 3 * number_of_matrices, 3
+    # A contains rotation matrix from each tracking matrix.
+    # and -I for each tracking matrix.
+    a_first = (tracking_matrices [:, 0:3, 0:3]).reshape(size_a)
+    a_second = (np.eye(3) * -1.0).reshape((1, 3, 3)).repeat(
+        number_of_matrices, 0).reshape(size_a)
+    a_values = np.concatenate((a_first, a_second), axis=1)
 
     # Column vector containing -1 * translation from each tracking matrix.
     size_b = 3 * number_of_matrices, 1
-    b_values = (tracking_matrices[:, 0:3, 3]*-1.0).reshape((size_b))
-
-    for i in range(number_of_matrices):
-
-        # A contains rotation matrix from each tracking matrix.
-        a_values[i * 3 + 0, 0] = tracking_matrices[i, 0, 0]
-        a_values[i * 3 + 1, 0] = tracking_matrices[i, 1, 0]
-        a_values[i * 3 + 2, 0] = tracking_matrices[i, 2, 0]
-        a_values[i * 3 + 0, 1] = tracking_matrices[i, 0, 1]
-        a_values[i * 3 + 1, 1] = tracking_matrices[i, 1, 1]
-        a_values[i * 3 + 2, 1] = tracking_matrices[i, 2, 1]
-        a_values[i * 3 + 0, 2] = tracking_matrices[i, 0, 2]
-        a_values[i * 3 + 1, 2] = tracking_matrices[i, 1, 2]
-        a_values[i * 3 + 2, 2] = tracking_matrices[i, 2, 2]
-
-        # A contains -I for each tracking matrix.
-        a_values[i * 3 + 0, 3] = -1
-        a_values[i * 3 + 1, 3] = 0
-        a_values[i * 3 + 2, 3] = 0
-        a_values[i * 3 + 0, 4] = 0
-        a_values[i * 3 + 1, 4] = -1
-        a_values[i * 3 + 2, 4] = 0
-        a_values[i * 3 + 0, 5] = 0
-        a_values[i * 3 + 1, 5] = 0
-        a_values[i * 3 + 2, 5] = -1
+    b_values = (tracking_matrices[:, 0:3, 3] * -1.0).reshape((size_b))
 
     # To calculate Singular Value Decomposition
 
@@ -71,7 +52,7 @@ def pivot_calibration(tracking_matrices):
 
     # Calculating the rank, and removing close to zero singular values.
     rank = 0
-    for i, item in enumerate(s_values):
+    for item in s_values:
         if item < 0.01:
             item = 0
         if item != 0:
