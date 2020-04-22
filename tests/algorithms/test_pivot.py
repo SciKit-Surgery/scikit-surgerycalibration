@@ -1,6 +1,7 @@
 #  -*- coding: utf-8 -*-
 """Tests for sksrurgerycalibration pivot calibration"""
 from glob import glob
+from random import seed
 import numpy as np
 import pytest
 import sksurgerycalibration.algorithms.pivot as p
@@ -91,6 +92,11 @@ def test_replace_small_values():
 
 def test_pivot_with_ransac():
     """Tests that pivot with ransac runs"""
+    #seed the random number generator. Seeding
+    #with 0 leads to one failed pivot calibration, so we
+    #hit lines 127-129
+    seed(0)
+
     file_names = glob('tests/data/PivotCalibration/*')
     arrays = [np.loadtxt(f) for f in file_names]
     matrices = np.concatenate(arrays)
@@ -102,3 +108,22 @@ def test_pivot_with_ransac():
     _, _ = p.pivot_calibration_with_ransac(matrices,
                                            10, 4, 0.25,
                                            early_exit=True)
+    #tests for the value checkers at the start of RANSAC
+    with pytest.raises(ValueError):
+        _, _ = p.pivot_calibration_with_ransac(None, 0, None, None)
+
+    with pytest.raises(ValueError):
+        _, _ = p.pivot_calibration_with_ransac(None, 2, -1.0, None)
+
+    with pytest.raises(ValueError):
+        _, _ = p.pivot_calibration_with_ransac(None, 2, 1.0, 1.1)
+
+    with pytest.raises(TypeError):
+        _, _ = p.pivot_calibration_with_ransac(None, 2, 1.0, 0.8)
+
+    #with consensus threshold set to 1.0, we get a value error
+    #as no best model is found.
+    with pytest.raises(ValueError):
+        _, _ = p.pivot_calibration_with_ransac(matrices,
+                                               10, 4, 1.0,
+                                               early_exit=True)
