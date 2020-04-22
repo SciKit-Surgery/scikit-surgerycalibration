@@ -28,14 +28,14 @@ def test_four_columns_matrices4x4():
     """Throw a value error if matrix is not 4 column"""
 
     with pytest.raises(ValueError):
-        p.pivot_calibration(np.arange(2, 11, dtype=float).reshape(3, 3))
+        p.pivot_calibration(np.arange(2, 14, dtype=float).reshape((1, 4, 3)))
 
 
 def test_four_rows_matrices4x4():
     """Throw a value error if matrix is not 4 rows"""
 
     with pytest.raises(ValueError):
-        p.pivot_calibration(np.arange(2, 11, dtype=float).reshape(3, 3))
+        p.pivot_calibration(np.arange(2, 14, dtype=float).reshape((1, 3, 4)))
 
 
 def test_return_value():
