@@ -70,10 +70,11 @@ def pivot_calibration(tracking_matrices):
 def replace_small_values(the_list, threshold=0.01, replacement_value=0.0):
     """
     replace small values in a list, this changes the list in place.
-    :param the_list to process
-    :param replace value lower than threshold
-    :param with replacement_value
-    :returns: rank the number of items not replaced.
+
+    :param the_list: the list to process.
+    :param theshold: replace values lower than threshold.
+    :param replacement_value: value to replace with.
+    :returns: the number of items not replaced.
     """
     rank = 0
     for index, item in enumerate(the_list):
