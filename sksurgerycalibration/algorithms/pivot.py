@@ -56,13 +56,15 @@ def pivot_calibration(tracking_matrices):
     if rank < 6:
         raise ValueError("PivotCalibration: Failed. Rank < 6")
 
+    pointer_offset = x_values[0:3]
+    pivot_location = x_values[3:6]
     # Compute RMS error.
     residual_matrix = (np.dot(a_values, x_values) - b_values)
     residual_error = np.sum(residual_matrix * residual_matrix)
     residual_error = residual_error / float(number_of_matrices * 3)
     residual_error = np.sqrt(residual_error)
 
-    return x_values, residual_error
+    return pointer_offset, pivot_location, residual_error
 
 
 def replace_small_values(the_list, threshold=0.01, replacement_value=0.0):
@@ -114,8 +116,9 @@ def pivot_calibration_with_ransac(tracking_matrices,
     minimum_matrices_required = 3
 
     highest_number_of_inliers = -1
-    best_model = None
-    best_rms = -1
+    best_pointer_offset = None
+    best_pivot_location = None
+    best_residual_error = -1
 
     for iter_counter in range(number_iterations):
         indexes = random.sample(population_of_indices,
@@ -123,20 +126,19 @@ def pivot_calibration_with_ransac(tracking_matrices,
         sample = tracking_matrices[indexes]
 
         try:
-            model, _ = pivot_calibration(sample)
+            pointer_offset, pivot_location, _ = pivot_calibration(sample)
         except ValueError:
             print("RANSAC, iteration " + str(iter_counter) + ", failed.")
             continue
 
         # Need to evaluate the number of inliers.
         # Slow, but it's written as a teaching exercise.
-        world_point = model[3:6]
         number_of_inliers = 0
         inlier_indices = []
         for matrix_counter in range(number_of_matrices):
-            offset = np.vstack((model[0:3], 1))
+            offset = np.vstack((pointer_offset, 1))
             transformed_point = tracking_matrices[matrix_counter] @ offset
-            diff = world_point - transformed_point[0:3]
+            diff = pivot_location - transformed_point[0:3]
             norm = np.linalg.norm(diff)
             if norm < error_threshold:
                 number_of_inliers = number_of_inliers + 1
@@ -149,13 +151,14 @@ def pivot_calibration_with_ransac(tracking_matrices,
                 and number_of_inliers > highest_number_of_inliers:
             highest_number_of_inliers = number_of_inliers
             inlier_matrices = tracking_matrices[inlier_indices]
-            best_model, best_rms = pivot_calibration(inlier_matrices)
+            best_pointer_offset, best_pivot_location, best_residual_error = \
+                pivot_calibration(inlier_matrices)
 
         # Early exit condition, as soon as we find model with enough fit.
         if percentage_inliers > concensus_threshold and early_exit:
-            return best_model, best_rms
+            return best_pointer_offset, best_pivot_location, best_residual_error
 
-    if best_model is None:
+    if best_pointer_offset is None:
         raise ValueError("Failed to find a model using RANSAC.")
 
     print("RANSAC Pivot, from " + str(number_of_matrices)
@@ -164,4 +167,4 @@ def pivot_calibration_with_ransac(tracking_matrices,
           + " and consensus threshold = " + str(concensus_threshold)
           )
 
-    return best_model, best_rms
+    return best_pointer_offset, best_pivot_location, best_residual_error

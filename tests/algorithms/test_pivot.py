@@ -47,14 +47,14 @@ def test_return_value():
     matrices = np.concatenate(arrays)
     number_of_matrices = int(matrices.size/16)
     matrices = matrices.reshape((number_of_matrices, 4, 4))
-    x_values, residual_error = p.pivot_calibration(matrices)
+    pointer_offset, pivot_point, residual_error = p.pivot_calibration(matrices)
     assert round(residual_error, 3) == 1.761
-    assert round(x_values[0, 0], 3) == -14.473
-    assert round(x_values[1, 0], 3) == 394.634
-    assert round(x_values[2, 0], 3) == -7.407
-    assert round(x_values[3, 0], 3) == -804.742
-    assert round(x_values[4, 0], 3) == -85.474
-    assert round(x_values[5, 0], 3) == -2112.131
+    assert round(pointer_offset[0, 0], 3) == -14.473
+    assert round(pointer_offset[1, 0], 3) == 394.634
+    assert round(pointer_offset[2, 0], 3) == -7.407
+    assert round(pivot_point[0, 0], 3) == -804.742
+    assert round(pivot_point[1, 0], 3) == -85.474
+    assert round(pivot_point[2, 0], 3) == -2112.131
 
 
 def test_rank_if_condition():
@@ -102,28 +102,28 @@ def test_pivot_with_ransac():
     matrices = np.concatenate(arrays)
     number_of_matrices = int(matrices.size/16)
     matrices = matrices.reshape((number_of_matrices, 4, 4))
-    _, residual_1 = p.pivot_calibration(matrices)
-    _, residual_2 = p.pivot_calibration_with_ransac(matrices, 10, 4, 0.25)
+    _, _, residual_1 = p.pivot_calibration(matrices)
+    _, _, residual_2 = p.pivot_calibration_with_ransac(matrices, 10, 4, 0.25)
     assert residual_2 < residual_1
-    _, _ = p.pivot_calibration_with_ransac(matrices,
-                                           10, 4, 0.25,
-                                           early_exit=True)
+    _, _, _ = p.pivot_calibration_with_ransac(matrices,
+                                              10, 4, 0.25,
+                                              early_exit=True)
     #tests for the value checkers at the start of RANSAC
     with pytest.raises(ValueError):
-        _, _ = p.pivot_calibration_with_ransac(None, 0, None, None)
+        _, _, _ = p.pivot_calibration_with_ransac(None, 0, None, None)
 
     with pytest.raises(ValueError):
-        _, _ = p.pivot_calibration_with_ransac(None, 2, -1.0, None)
+        _, _, _ = p.pivot_calibration_with_ransac(None, 2, -1.0, None)
 
     with pytest.raises(ValueError):
-        _, _ = p.pivot_calibration_with_ransac(None, 2, 1.0, 1.1)
+        _, _, _ = p.pivot_calibration_with_ransac(None, 2, 1.0, 1.1)
 
     with pytest.raises(TypeError):
-        _, _ = p.pivot_calibration_with_ransac(None, 2, 1.0, 0.8)
+        _, _, _ = p.pivot_calibration_with_ransac(None, 2, 1.0, 0.8)
 
     #with consensus threshold set to 1.0, we get a value error
     #as no best model is found.
     with pytest.raises(ValueError):
-        _, _ = p.pivot_calibration_with_ransac(matrices,
-                                               10, 4, 1.0,
-                                               early_exit=True)
+        _, _, _ = p.pivot_calibration_with_ransac(matrices,
+                                                  10, 4, 1.0,
+                                                  early_exit=True)

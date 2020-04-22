@@ -4,5 +4,4 @@ omit =
         ./sksurgerycalibration/__init__.py
         ./sksurgerycalibration/algorithms/__init__.py
         ./sksurgerycalibration/__main__.py
-        ./sksurgerycalibration/ui/sksurgerycalibration_command_line.py
         ./sksurgerycalibration/ui/__init__.py

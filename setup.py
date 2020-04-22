@@ -53,7 +53,8 @@ setup(
     install_requires=[
         'numpy',
         'ipykernel',
-        'nbsphinx'
+        'nbsphinx',
+        'scikit-surgerycore'
     ],
 
     entry_points={
