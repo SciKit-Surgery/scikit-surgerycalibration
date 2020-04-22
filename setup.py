@@ -53,12 +53,13 @@ setup(
     install_requires=[
         'numpy',
         'ipykernel',
-        'nbsphinx'
+        'nbsphinx',
+        'scikit-surgerycore'
     ],
 
     entry_points={
         'console_scripts': [
-            'sksurgerycalibration=sksurgerycalibration.__main__:main',
-        ],
+                'sksPivotCalibration=sksurgerycalibration.ui.pivot_calibration_command_line:main', 
+                ],
     },
 )
