@@ -5,9 +5,6 @@
 import random
 import numpy as np
 
-# pylint: disable=literal-comparison
-
-
 def pivot_calibration(tracking_matrices):
 
     """
@@ -37,15 +34,11 @@ def pivot_calibration(tracking_matrices):
     size_a = 3 * number_of_matrices, 6
     a_values = np.zeros(size_a, dtype=np.float64)
 
+    # Column vector containing -1 * translation from each tracking matrix.
     size_b = 3 * number_of_matrices, 1
-    b_values = np.zeros(size_b, dtype=np.float64)
+    b_values = (tracking_matrices[:, 0:3, 3]*-1.0).reshape((size_b))
 
     for i in range(number_of_matrices):
-
-        # Column vector containing -1 * translation from each tracking matrix.
-        b_values[i * 3 + 0, 0] = -1 * tracking_matrices[i, 0, 3]
-        b_values[i * 3 + 1, 0] = -1 * tracking_matrices[i, 1, 3]
-        b_values[i * 3 + 2, 0] = -1 * tracking_matrices[i, 2, 3]
 
         # A contains rotation matrix from each tracking matrix.
         a_values[i * 3 + 0, 0] = tracking_matrices[i, 0, 0]
