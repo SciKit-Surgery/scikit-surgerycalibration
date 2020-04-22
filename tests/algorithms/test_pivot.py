@@ -71,6 +71,24 @@ def test_rank_if_condition():
         p.pivot_calibration(matrices)
 
 
+def test_replace_small_values():
+    """Tests for small values replacement"""
+    list_in = [0.2, 0.6, 0.0099, 0.56]
+
+    rank = p.replace_small_values(list_in)
+
+    assert rank == 3
+    assert list_in[2] == 0
+
+    rank = p.replace_small_values(list_in,
+                                  threshold=0.3,
+                                  replacement_value=-1.0)
+
+    assert rank == 2
+    assert list_in[0] == -1.0
+    assert list_in[2] == -1.0
+
+
 def test_pivot_with_ransac():
     """Tests that pivot with ransac runs"""
     file_names = glob('tests/data/PivotCalibration/*')

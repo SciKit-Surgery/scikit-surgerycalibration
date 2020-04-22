@@ -51,12 +51,7 @@ def pivot_calibration(tracking_matrices):
     x_values = np.dot(v_values.T, w_values)
 
     # Calculating the rank, and removing close to zero singular values.
-    rank = 0
-    for item in s_values:
-        if item < 0.01:
-            item = 0
-        if item != 0:
-            rank += 1
+    rank = replace_small_values(s_values, 0.01, 0.0)
 
     if rank < 6:
         raise ValueError("PivotCalibration: Failed. Rank < 6")
@@ -68,6 +63,24 @@ def pivot_calibration(tracking_matrices):
     residual_error = np.sqrt(residual_error)
 
     return x_values, residual_error
+
+
+def replace_small_values(the_list, threshold=0.01, replacement_value=0.0):
+    """
+    replace small values in a list, this changes the list in place.
+    :param the_list to process
+    :param replace value lower than threshold
+    :param with replacement_value
+    :returns: rank the number of items not replaced.
+    """
+    rank = 0
+    for index, item in enumerate(the_list):
+        if item < threshold:
+            the_list[index] = replacement_value
+        else:
+            rank += 1
+
+    return rank
 
 
 def pivot_calibration_with_ransac(tracking_matrices,
