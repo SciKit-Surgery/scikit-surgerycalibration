@@ -27,12 +27,9 @@ after_success:
  - coveralls
 
 deploy:
- on:
-  provider: script
-  tags: true
-  branch: master
- script:
-  - pip install wheel twine setuptools
-  - rm -rf dist
-  - python setup.py bdist_wheel
-  - twine upload --repository pypi dist/* --username $PYPI_USER --password $PYPI_PASS
+  provider: pypi
+  user: $PYPI_USER
+  password: $PYPI_PASS
+  on:
+   tags: true
+   branch: master
