@@ -23,7 +23,7 @@ script:
  - coverage run -a --source ./sksurgerycalibration -m pytest -v -s ./tests/
  - coverage report -m
  - pylint --rcfile=tests/pylintrc sksurgerycalibration tests
- - echo $TEST
+ - env
 
 after_success:
  - coveralls
