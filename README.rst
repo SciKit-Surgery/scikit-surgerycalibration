@@ -11,7 +11,7 @@ scikit-surgerycalibration
    :target: https://travis-ci.com/github/UCL/scikit-surgerycalibration
    :alt: Travis CI build status
 
-.. image:: https://coveralls.io/repos/github/UCL/scikit-surgerycalibration/badge.svg?branch=master
+.. image:: https://coveralls.io/repos/github/UCL/scikit-surgerycalibration/badge.svg?branch=master&service=github
     :target: https://coveralls.io/github/UCL/scikit-surgerycalibration?branch=master
     :alt: Test coverage
 
