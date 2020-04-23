@@ -1,10 +1,5 @@
 language: python
 
-variables:
-  PYPI_USER: SECURE
-  PYPI_PASS: SECURE
-  TEST: SECURE
-
 matrix:
  include:
   - os: linux
@@ -24,6 +19,7 @@ script:
  - coverage report -m
  - pylint --rcfile=tests/pylintrc sksurgerycalibration tests
  - env
+ - echo $TEST
 
 after_success:
  - coveralls
