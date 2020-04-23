@@ -8,14 +8,18 @@ import numpy as np
 def pivot_calibration(tracking_matrices, configuration=None):
     """
     Performs pivot calibration on an array of tracking matrices
+
     :param tracking_matrices: an Nx4x4 array of tracking matrices
     :param configuration: an optional configuration dictionary, if not
-    the algorithm defaults to Algebraic One Step. Other options
-    include ransac
-    :returns pointer_offset: The coordinate of the pointer tip relative to
-    the tracking centre
-    :returns pivot_point: The location of the pivot point in world coordinates
-    :returns residual_error: A measure of the residual calibration error
+        the algorithm defaults to Algebraic One Step. Other options
+        include ransac
+
+    :returns: tuple containing;
+            'pointer_offset' The coordinate of the pointer tip relative to
+            the tracking centre
+            'pivot_point' The location of the pivot point in world coordinates
+            'residual_error' A measure of the residual calibration error
+
     :raises: TypeError, ValueError
     """
 
