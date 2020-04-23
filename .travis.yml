@@ -28,8 +28,8 @@ after_success:
 
 deploy:
  provider: pypi
- username: ...
- password: ...
+ username: $PYPI_USER
+ password: $PYPI_PASS
  on:
   tags: true
   branch: master
