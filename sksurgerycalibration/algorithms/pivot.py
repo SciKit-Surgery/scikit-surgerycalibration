@@ -5,18 +5,20 @@
 import random
 import numpy as np
 
-def pivot_calibration(tracking_matrices):
-
+def pivot_calibration(tracking_matrices, configuration=None):
     """
-    Performs Pivot Calibration, using Algebraic One Step method,
-    and returns Residual Error.
-
-    See `Yaniv 2015 <https://dx.doi.org/10.1117/12.2081348>`_.
-
-    :param tracking_matrices: N x 4 x 4 ndarray, of tracking matrices.
-    :returns: pointer offset, pivot point and RMS Error about centroid of pivot.
+    Performs pivot calibration on an array of tracking matrices
+    :param tracking_matrices: an Nx4x4 array of tracking matrices
+    :param configuration: an optional configuration dictionary, if not
+    the algorithm defaults to Algebraic One Step. Other options
+    include ransac
+    :returns pointer_offset: The coordinate of the pointer tip relative to
+    the tracking centre
+    :returns pivot_point: The location of the pivot point in world coordinates
+    :returns residual_error: A measure of the residual calibration error
     :raises: TypeError, ValueError
     """
+
     if not isinstance(tracking_matrices, np.ndarray):
         raise TypeError("tracking_matrices is not a numpy array'")
 
@@ -26,6 +28,47 @@ def pivot_calibration(tracking_matrices):
     if not tracking_matrices.shape[2] == 4:
         raise ValueError("tracking_matrices should have 4 columns per matrix")
 
+    use_algebraic_one_step = False
+    use_ransac = False
+
+    if configuration is not None:
+        use_algebraic_one_step = False
+        method = configuration.get('method', 'aos')
+        if method == 'aos':
+            use_algebraic_one_step = True
+        elif method == 'ransac':
+            use_ransac = True
+    else:
+        use_algebraic_one_step = True
+
+    if use_algebraic_one_step:
+        return pivot_calibration_aos(tracking_matrices)
+
+    if use_ransac:
+        number_iterations = configuration.get('number_iterations', 10)
+        error_threshold = configuration.get('error_threshold', 4)
+        consensus_threshold = configuration.get('consensus_threshold',
+                                                0.25)
+        early_exit = configuration.get('early_exit', False)
+        return pivot_calibration_with_ransac(
+            tracking_matrices, number_iterations, error_threshold,
+            consensus_threshold, early_exit)
+
+    raise ValueError("method key set to unknown method; ",
+                     configuration.get('method', 'aos'))
+
+def pivot_calibration_aos(tracking_matrices):
+
+    """
+    Performs Pivot Calibration, using Algebraic One Step method,
+    and returns Residual Error.
+
+    See `Yaniv 2015 <https://dx.doi.org/10.1117/12.2081348>`_.
+
+    :param tracking_matrices: N x 4 x 4 ndarray, of tracking matrices.
+    :returns: pointer offset, pivot point and RMS Error about centroid of pivot.
+    :raises: ValueError if rank less than 6
+    """
     number_of_matrices = tracking_matrices.shape[0]
 
     # See equation in section 2.1.2 of Yaniv 2015.

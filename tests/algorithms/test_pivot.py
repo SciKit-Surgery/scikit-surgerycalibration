@@ -22,8 +22,15 @@ def test_rank_lt_six():
         matrices = np.concatenate(arrays)
         number_of_matrices = int(matrices.size/16)
         matrices = matrices.reshape((number_of_matrices, 4, 4))
-        p.pivot_calibration(matrices)
+        p.pivot_calibration_aos(matrices)
 
+
+def test_unkown_method():
+    """Throw value error if config set for unknown method"""
+    config = { "method" : "not implemented" }
+    matrix = (np.arange(2, 18, dtype=float).reshape((1, 4, 4)))
+    with pytest.raises(ValueError):
+        p.pivot_calibration(matrix, config)
 
 def test_four_columns_matrices4x4():
     """Throw a value error if matrix is not 4 column"""
@@ -47,7 +54,9 @@ def test_return_value():
     matrices = np.concatenate(arrays)
     number_of_matrices = int(matrices.size/16)
     matrices = matrices.reshape((number_of_matrices, 4, 4))
-    pointer_offset, pivot_point, residual_error = p.pivot_calibration(matrices)
+    config = { "method" : "aos" }
+    pointer_offset, pivot_point, residual_error = \
+        p.pivot_calibration(matrices, config)
     assert round(residual_error, 3) == 1.761
     assert round(pointer_offset[0, 0], 3) == -14.473
     assert round(pointer_offset[1, 0], 3) == 394.634
@@ -55,21 +64,6 @@ def test_return_value():
     assert round(pivot_point[0, 0], 3) == -804.742
     assert round(pivot_point[1, 0], 3) == -85.474
     assert round(pivot_point[2, 0], 3) == -2112.131
-
-
-def test_rank_if_condition():
-    """
-    This test will be checking a specific if condition.
-    But at the moment I dont know what data I need
-    To get proper s_values to cover that if condition.
-    """
-    with pytest.raises(ValueError):
-        file_names = glob('tests/data/test_case_data.txt')
-        arrays = [np.loadtxt(f) for f in file_names]
-        matrices = np.concatenate(arrays)
-        number_of_matrices = int(matrices.size/16)
-        matrices = matrices.reshape((number_of_matrices, 4, 4))
-        p.pivot_calibration(matrices)
 
 
 def test_replace_small_values():
@@ -93,7 +87,7 @@ def test_replace_small_values():
 def test_pivot_with_ransac():
     """Tests that pivot with ransac runs"""
     #seed the random number generator. Seeding
-    #with 0 leads to one failed pivot calibration, so we
+    #with 0 leads to one failed pivot calibration (rank < 6), so we
     #hit lines 127-129
     seed(0)
 
