@@ -27,7 +27,7 @@ def test_rank_lt_six():
 
 def test_unkown_method():
     """Throw value error if config set for unknown method"""
-    config = { "method" : "not implemented" }
+    config = {"method" : "not implemented"}
     matrix = (np.arange(2, 18, dtype=float).reshape((1, 4, 4)))
     with pytest.raises(ValueError):
         p.pivot_calibration(matrix, config)
@@ -54,7 +54,7 @@ def test_return_value():
     matrices = np.concatenate(arrays)
     number_of_matrices = int(matrices.size/16)
     matrices = matrices.reshape((number_of_matrices, 4, 4))
-    config = { "method" : "aos" }
+    config = {"method" : "aos"}
     pointer_offset, pivot_point, residual_error = \
         p.pivot_calibration(matrices, config)
     assert round(residual_error, 3) == 1.761
