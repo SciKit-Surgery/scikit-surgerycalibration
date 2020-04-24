@@ -4,6 +4,8 @@
 
 import random
 import numpy as np
+from sksurgerycalibration.algorithms.sphere_fitting import \
+                fit_sphere_least_squares
 
 def pivot_calibration(tracking_matrices, configuration=None):
     """
@@ -34,6 +36,7 @@ def pivot_calibration(tracking_matrices, configuration=None):
 
     use_algebraic_one_step = False
     use_ransac = False
+    use_sphere_fitting = False
 
     if configuration is not None:
         use_algebraic_one_step = False
@@ -42,6 +45,8 @@ def pivot_calibration(tracking_matrices, configuration=None):
             use_algebraic_one_step = True
         elif method == 'ransac':
             use_ransac = True
+        elif method == 'sphere_fitting':
+            use_sphere_fitting = True
     else:
         use_algebraic_one_step = True
 
@@ -57,6 +62,9 @@ def pivot_calibration(tracking_matrices, configuration=None):
         return pivot_calibration_with_ransac(
             tracking_matrices, number_iterations, error_threshold,
             consensus_threshold, early_exit)
+
+    if use_sphere_fitting:
+        return pivot_cal_sphere_fit(tracking_matrices)
 
     raise ValueError("method key set to unknown method; ",
                      configuration.get('method', 'aos'))
@@ -216,3 +224,46 @@ def pivot_calibration_with_ransac(tracking_matrices,
           )
 
     return best_pointer_offset, best_pivot_location, best_residual_error
+
+def pivot_cal_sphere_fit(tracking_matrices, init_parameters=None):
+
+    """
+    Performs Pivot Calibration, using sphere fitting, based on
+
+    See `Yaniv 2015 <https://dx.doi.org/10.1117/12.2081348>`_.
+
+    :param tracking_matrices: N x 4 x 4 ndarray, of tracking matrices.
+    :param init_parameters: 1X4 array of initial parameter for finding the
+        pivot point in world coords and pivot radius. Default is to set to
+        the mean x,y,z values and radius = 0.
+    :returns: pointer offset, pivot point and RMS Error about centroid of pivot.
+    """
+    residual_error = -1.0
+    translations = tracking_matrices[:, 0:3, 3]
+
+    #first find the pivot point in world coordinates using sphere fitting
+    if init_parameters is None:
+        means = np.mean(translations, 0)
+        init_parameters = np.concatenate([means, np.zeros((1))])
+
+    result = fit_sphere_least_squares(translations, init_parameters)
+    pivot_point = result.x[0:3]
+
+    #now calculate the mean offset
+    rotations = tracking_matrices[:, 0:3, 0:3]
+    offsets = np.zeros((tracking_matrices.shape[0], 3))
+
+    for index, rot in enumerate(rotations):
+        offsets[index] = rot.transpose() @ (pivot_point - translations[index])
+
+    pointer_offset = np.mean(offsets, 0)
+
+    #and the residual error (RMS point spread)
+    distances = np.zeros((tracking_matrices.shape[0], 1))
+    for index, rot in enumerate(rotations):
+        distances[index] = np.linalg.norm(
+            rot @ pointer_offset + translations[index] - pivot_point)
+
+    residual_error = np.mean(distances)
+
+    return pointer_offset, pivot_point, residual_error

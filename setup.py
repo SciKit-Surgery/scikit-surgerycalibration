@@ -54,7 +54,8 @@ setup(
         'numpy',
         'ipykernel',
         'nbsphinx',
-        'scikit-surgerycore'
+        'scikit-surgerycore',
+        'scipy',
     ],
 
     entry_points={
