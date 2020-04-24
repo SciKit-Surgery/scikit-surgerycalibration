@@ -14,7 +14,7 @@ def pivot_calibration(tracking_matrices, configuration=None):
     :param tracking_matrices: an Nx4x4 array of tracking matrices
     :param configuration: an optional configuration dictionary, if not
         the algorithm defaults to Algebraic One Step. Other options
-        include ransac
+        include ransac, and sphere_fitting
 
     :returns: tuple containing;
             'pointer_offset' The coordinate of the pointer tip relative to
@@ -64,7 +64,8 @@ def pivot_calibration(tracking_matrices, configuration=None):
             consensus_threshold, early_exit)
 
     if use_sphere_fitting:
-        return pivot_cal_sphere_fit(tracking_matrices)
+        init_parameters = configuration.get('init_parameters', None)
+        return pivot_calibration_sphere_fit(tracking_matrices, init_parameters)
 
     raise ValueError("method key set to unknown method; ",
                      configuration.get('method', 'aos'))
@@ -225,7 +226,7 @@ def pivot_calibration_with_ransac(tracking_matrices,
 
     return best_pointer_offset, best_pivot_location, best_residual_error
 
-def pivot_cal_sphere_fit(tracking_matrices, init_parameters=None):
+def pivot_calibration_sphere_fit(tracking_matrices, init_parameters=None):
 
     """
     Performs Pivot Calibration, using sphere fitting, based on

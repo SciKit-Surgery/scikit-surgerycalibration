@@ -1,4 +1,5 @@
 {
-	"method" : "sphere_fitting"
+	"method" : "sphere_fitting",
+	"init_parameters" : [-800, -90, -2000, 300]
 }
 
