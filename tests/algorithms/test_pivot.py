@@ -121,3 +121,17 @@ def test_pivot_with_ransac():
         _, _, _ = p.pivot_calibration_with_ransac(matrices,
                                                   10, 4, 1.0,
                                                   early_exit=True)
+
+
+def test_pivot_with_sphere_fit():
+    """Tests pivot calibration with sphere fitting"""
+    config = {"method" : "sphere_fitting"}
+    file_names = glob('tests/data/PivotCalibration/*')
+    arrays = [np.loadtxt(f) for f in file_names]
+    matrices = np.concatenate(arrays)
+    number_of_matrices = int(matrices.size/16)
+    matrices = matrices.reshape((number_of_matrices, 4, 4))
+    _, _, residual_error = p.pivot_calibration(matrices, config)
+
+    #do a regression test on the residual error
+    assert round(residual_error, 3) == 3.421
