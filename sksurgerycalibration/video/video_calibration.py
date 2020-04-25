@@ -61,7 +61,9 @@ def stereo_video_calibration(left_ids,
                              right_ids,
                              right_object_points,
                              right_image_points,
-                             image_size):
+                             image_size,
+                             flags=cv2.CALIB_USE_INTRINSIC_GUESS
+                             ):
     """
     Default stereo calibration, using OpenCV methods.
 
@@ -77,6 +79,7 @@ def stereo_video_calibration(left_ids,
     :param right_object_points: Vector of Vectors of 1x3 object points, float32
     :param right_image_points: Vector of Vectors of 1x2 object points, float32
     :param image_size: (x, y) tuple, size in pixels, e.g. (1920, 1080)
+    :param flags: OpenCV flags to pass to calibrateCamera().
     :return:
     """
     # Calibrate left, using all available points
@@ -113,7 +116,7 @@ def stereo_video_calibration(left_ids,
             r_c,
             r_d,
             image_size,
-            flags=cv2.CALIB_USE_INTRINSIC_GUESS)
+            flags=flags)
 
     # And recompute rvecs and tvecs, consistently, given new l2r params.
     number_of_frames = len(left_object_points)
