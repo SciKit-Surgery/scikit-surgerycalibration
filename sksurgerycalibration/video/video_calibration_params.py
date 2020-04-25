@@ -5,6 +5,8 @@
 import copy
 import numpy as np
 import sksurgerycore.transforms.matrix as sksm
+import sksurgerycalibration.video.video_calibration_utils as sksu
+import sksurgerycalibration.video.video_calibration_io as sksio
 
 
 class MonoCalibrationParams:
@@ -35,6 +37,58 @@ class MonoCalibrationParams:
         self.dist_coeffs = copy.deepcopy(dist_coeffs)
         self.rvecs = copy.deepcopy(rvecs)
         self.tvecs = copy.deepcopy(tvecs)
+
+    def save_data(self,
+                  dir_name: str,
+                  file_prefix: str
+                  ):
+        """
+        Saves calibration parameters to a directory.
+
+        :param dir_name: directory to save to
+        :param file_prefix: prefix for all files
+        """
+        intrinsics_file = sksio._get_intrinsics_file_name(dir_name,
+                                                          file_prefix)
+        np.savetxt(intrinsics_file, self.camera_matrix, fmt='%f')
+
+        dist_coeff_file = sksio._get_distortion_file_name(dir_name,
+                                                          file_prefix)
+        np.savetxt(dist_coeff_file, self.dist_coeffs, fmt='%f')
+        for i in enumerate(self.rvecs):
+            extrinsics_file = sksio._get_extrinsics_file_name(dir_name,
+                                                              file_prefix, i)
+            extrinsics = sksu.extrinsic_vecs_to_matrix(self.rvecs[i],
+                                                       self.tvecs[i])
+            np.savetxt(extrinsics_file, extrinsics, fmt='%f')
+
+    def load_data(self,
+                  dir_name: str,
+                  file_prefix: str
+                  ):
+        """
+        Loads calibration parameters from a directory.
+
+        :param dir_name: directory to load from
+        :param file_prefix: prefix for all files
+        """
+        self.reinit()
+
+        intrinsics_file = sksio._get_intrinsics_file_name(dir_name,
+                                                          file_prefix)
+        self.camera_matrix = np.loadtxt(intrinsics_file)
+
+        dist_coeff_file = sksio._get_distortion_file_name(dir_name,
+                                                          file_prefix)
+        self.dist_coeffs = np.loadtxt(dist_coeff_file)
+
+        extrinsic_files = sksio._get_extrinsic_file_names((dir_name,
+                                                           file_prefix))
+        for file in extrinsic_files:
+            extrinsics = np.loadtxt(file)
+            rvec, tvec = sksu.extrinsic_matrix_to_vecs(extrinsics)
+            self.rvecs.append(rvec)
+            self.tvecs.append(tvec)
 
 
 class StereoCalibrationParams:
@@ -81,3 +135,40 @@ class StereoCalibrationParams:
         """
         return sksm.construct_rigid_transformation(self.l2r_rmat, self.l2r_tvec)
 
+    def save_data(self,
+                  dir_name: str,
+                  file_prefix: str
+                  ):
+        """
+        Saves calibration parameters to a directory.
+
+        :param dir_name: directory to save to
+        :param file_prefix: prefix for all files
+        """
+        left_prefix = sksio._get_left_prefix(file_prefix)
+        self.left_params.save_data(dir_name, left_prefix)
+        right_prefix = sksio._get_right_prefix(file_prefix)
+        self.left_params.save_data(dir_name, right_prefix)
+
+        l2r_file = sksio._get_l2r_file_name(dir_name, file_prefix)
+        np.savetxt(l2r_file, self.get_l2r_as_4x4())
+
+    def load_data(self,
+                  dir_name: str,
+                  file_prefix: str
+                  ):
+        """
+        Loads calibration parameters from a directory.
+
+        :param dir_name: directory to load from
+        :param file_prefix: prefix for all files
+        """
+        left_prefix = sksio._get_left_prefix(file_prefix)
+        self.left_params.load_data(dir_name, left_prefix)
+        right_prefix = sksio._get_right_prefix(file_prefix)
+        self.right_params.load_data(dir_name, right_prefix)
+
+        l2r_file = sksio._get_l2r_file_name(dir_name, file_prefix)
+        stereo_ext = np.loadtxt(l2r_file)
+        self.l2r_rmat = stereo_ext[0:3, 0:3]
+        self.l2r_tvec = stereo_ext[0:3, 3]
