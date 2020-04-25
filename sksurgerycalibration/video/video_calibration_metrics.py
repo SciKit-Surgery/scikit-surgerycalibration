@@ -27,7 +27,7 @@ def compute_stereo_2d_err(l2r_rmat,
                           left_rvecs,
                           left_tvecs):
     """
-    Function to compute the combined stereo RMS re-projection error.
+    Function to compute stereo SSE re-projection error, over multiple views.
 
     :param l2r_rmat: [3x3] ndarray, rotation for l2r transform
     :param l2r_tvec: [3x1] ndarray, translation for l2r transform
@@ -41,7 +41,7 @@ def compute_stereo_2d_err(l2r_rmat,
     :param right_distortion: [1x5] ndarray
     :param left_rvecs: Vector of [3x1] ndarray, Rodrigues rotations, left camera
     :param left_tvecs: Vector of [3x1] ndarray, translations, left camera
-    :return: RMS re-reprojection error
+    :return: SSE re-reprojection error, number_samples
     """
     left_to_right = mu.construct_rigid_transformation(l2r_rmat, l2r_tvec)
 
@@ -79,11 +79,9 @@ def compute_stereo_2d_err(l2r_rmat,
             + len(left_image_points[i]) \
             + len(right_image_points[i])
 
-    rmse = np.sqrt((lse + rse) / number_of_samples)
-
-    LOGGER.debug("Stereo RMS reprojection: left sse=%s, right sse=%s, rms=%s",
-                 str(lse), str(rse), str(rmse))
-    return rmse
+    LOGGER.debug("Stereo RMS reprojection: left sse=%s, right sse=%s, num=%s",
+                 str(lse), str(rse), str(number_of_samples))
+    return lse + rse, number_of_samples
 
 
 def compute_stereo_3d_error(l2r_rmat,
@@ -98,7 +96,7 @@ def compute_stereo_3d_error(l2r_rmat,
                             left_rvecs,
                             left_tvecs):
     """
-    Function to compute the combined stereo RMS reconstruction error.
+    Function to compute stereo SSE reconstruction error over multiple views.
 
     :param l2r_rmat: [3x3] ndarray, rotation for l2r transform
     :param l2r_tvec: [3x1] ndarray, translation for l2r transform
@@ -111,7 +109,7 @@ def compute_stereo_3d_error(l2r_rmat,
     :param right_distortion: [1x5] ndarray
     :param left_rvecs: Vector of [3x1] ndarray, Rodrigues rotations, left camera
     :param left_tvecs: Vector of [3x1] ndarray, translations, left camera
-    :return: RMS reconstruction error
+    :return: SSE re-reprojection error, number_samples
     """
     sse = 0
     number_of_samples = 0
@@ -160,6 +158,123 @@ def compute_stereo_3d_error(l2r_rmat,
         sse = sse + sum_square
         number_of_samples = number_of_samples + len(common_left_image_points[i])
 
-    mse = sse / number_of_samples
-    rmse = np.sqrt(mse)
-    return rmse
+    LOGGER.debug("Stereo RMS reconstruction: sse=%s, num=%s",
+                 str(sse), str(number_of_samples))
+    return sse, number_of_samples
+
+
+def compute_mono_2d_err(object_points,
+                        image_points,
+                        rvecs,
+                        tvecs,
+                        camera_matrix,
+                        distortion):
+    """
+    Function to compute stereo RMS reconstruction error over multiple views.
+
+    :param object_points: Vector of Vector of 1x3 of type float32
+    :param image_points: Vector of Vector of 1x2 of type float32
+    :param rvecs: Vector of [3x1] ndarray, Rodrigues rotations for each camera
+    :param tvecs: Vector of [3x1] ndarray, translations for each camera
+    :param camera_matrix: [3x3] ndarray
+    :param distortion: [1x5] ndarray
+    :return: SSE re-reprojection error, number_samples
+    """
+    sse = 0
+    number_of_samples = 0
+    number_of_frames = len(object_points)
+
+    for i in range(0, number_of_frames):
+
+        projected, _ = cv2.projectPoints(object_points[i],
+                                         rvecs[i],
+                                         tvecs[i],
+                                         camera_matrix,
+                                         distortion)
+
+        diff = image_points[i] - projected
+        squared = np.square(diff)
+        sum_square = np.sum(squared)
+        sse = sse + sum_square
+        number_of_samples = number_of_samples + len(image_points[i])
+
+    LOGGER.debug("Mono RMS reprojection: sse=%s, num=%s",
+                 str(sse), str(number_of_samples))
+    return sse, number_of_samples
+
+
+def compute_mono_reconstruction_err(ids,
+                                    object_points,
+                                    image_points,
+                                    rvecs,
+                                    tvecs,
+                                    camera_matrix,
+                                    distortion):
+    """
+    Function to compute stereo RMS reconstruction error over multiple views.
+
+    Here, to triangulate, we take the i^th camera as left camera, and
+    the i+1^th camera as the right camera, compute l2r, and triangulate.
+
+    :param ids: Vector of ndarray of integer point ids
+    :param object_points: Vector of Vector of 1x3 of type float32
+    :param image_points: Vector of Vector of 1x2 of type float32
+    :param rvecs: Vector of [3x1] ndarray, Rodrigues rotations for each camera
+    :param tvecs: Vector of [3x1] ndarray, translations for each camera
+    :param camera_matrix: [3x3] ndarray
+    :param distortion: [1x5] ndarray
+    :return: SSE re-reprojection error, number_samples
+    """
+
+    sse = 0
+    number_of_samples = 0
+    number_of_frames = len(object_points)
+
+    # We are going to triangulate between a frame and the next frame.
+    for i in range(0, number_of_frames):
+
+        j = i + 1
+        if j == number_of_frames:
+            j = 0
+
+        _, common_object_points, common_left_image_points, \
+            common_right_image_points = \
+            vu.filter_common_points_per_image(ids[i],
+                                              object_points[i],
+                                              image_points[i],
+                                              ids[j],
+                                              image_points[j],
+                                              10)
+
+        left_camera_to_world = vu.extrinsic_vecs_to_matrix(rvecs[i],
+                                                           tvecs[i])
+
+        right_camera_to_world = vu.extrinsic_vecs_to_matrix(rvecs[j],
+                                                            tvecs[j])
+        left_to_right = np.matmul(right_camera_to_world,
+                                  np.linalg.inv(left_camera_to_world))
+        l2r_rmat = left_to_right[0:3, 0:3]
+        l2r_tvec = left_to_right[0:3, 3]
+
+        c_obj = [common_object_points]
+        c_li = [common_left_image_points]
+        c_ri = [common_right_image_points]
+        rv = [rvecs[i]]
+        tv = [tvecs[i]]
+        err, samp = compute_stereo_3d_error(l2r_rmat,
+                                            l2r_tvec,
+                                            c_obj,
+                                            c_li,
+                                            camera_matrix,
+                                            distortion,
+                                            c_ri,
+                                            camera_matrix,
+                                            distortion,
+                                            rv,
+                                            tv)
+        sse = sse + err
+        number_of_samples = number_of_samples + samp
+
+    LOGGER.debug("Mono RMS reconstruction: sse=%s, num=%s",
+                 str(sse), str(number_of_samples))
+    return sse, number_of_samples

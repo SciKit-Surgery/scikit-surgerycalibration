@@ -8,15 +8,17 @@ import sksurgerycalibration.video.video_calibration_utils as vu
 import sksurgerycalibration.video.video_calibration_metrics as vm
 
 
-def stereo_reprojection_error(x_0,
-                              left_object_points,
-                              left_image_points,
-                              left_distortion,
-                              right_object_points,
-                              right_image_points,
-                              right_distortion):
+def _stereo_2d_and_3d_error(x_0,
+                            left_object_points,
+                            left_image_points,
+                            left_distortion,
+                            right_object_points,
+                            right_image_points,
+                            right_distortion):
     """
-    Private method to compute RMSE cost function.
+    Private method to compute RMSE cost function, where x_0 contains
+    the l2r rvec, l2r tvec, left intrinsics, right intrinsics, and
+    left camera extrinsics.
     """
     l2r_rvec = np.zeros((3, 1))
     l2r_rvec[0][0] = x_0[0]
@@ -38,6 +40,8 @@ def stereo_reprojection_error(x_0,
     right_camera[0][2] = x_0[12]
     right_camera[1][2] = x_0[13]
 
+    sse = 0
+    number_of_samples = 0
     number_of_frames = len(left_object_points)
 
     rvecs = []
@@ -66,21 +70,23 @@ def stereo_reprojection_error(x_0,
         rvecs[i] = rvec
         tvecs[i] = tvec
 
-    proj = vm.compute_stereo_2d_err(l2r_rmat,
-                                    l2r_tvec,
-                                    left_object_points,
-                                    left_image_points,
-                                    left_camera,
-                                    left_distortion,
-                                    right_object_points,
-                                    right_image_points,
-                                    right_camera,
-                                    right_distortion,
-                                    rvecs,
-                                    tvecs
-                                    )
+    tmp_sse, tmp_num = vm.compute_stereo_2d_err(l2r_rmat,
+                                                l2r_tvec,
+                                                left_object_points,
+                                                left_image_points,
+                                                left_camera,
+                                                left_distortion,
+                                                right_object_points,
+                                                right_image_points,
+                                                right_camera,
+                                                right_distortion,
+                                                rvecs,
+                                                tvecs
+                                                )
+    sse = sse + tmp_sse
+    number_of_samples = number_of_samples + tmp_num
 
-    recon = \
+    tmp_sse, tmp_num = \
         vm.compute_stereo_3d_error(l2r_rmat,
                                    l2r_tvec,
                                    left_object_points,
@@ -94,4 +100,77 @@ def stereo_reprojection_error(x_0,
                                    tvecs
                                    )
 
-    return proj + recon
+    sse = sse + tmp_sse
+    number_of_samples = number_of_samples + tmp_num
+    mse = sse / number_of_samples
+    rmse = np.sqrt(mse)
+    return rmse
+
+
+def _mono_reprojection_error_for_intrinsics(x_0,
+                                            object_points,
+                                            image_points,
+                                            rvecs,
+                                            tvecs
+                                            ):
+    """
+    Private method to compute SSE projection error over multiple views,
+    where x_0 should contain just camera matrix, and then distorion params.
+    """
+    camera_matrix = np.zeros((3, 3))
+    camera_matrix[0][0] = x_0[0]
+    camera_matrix[1][1] = x_0[1]
+    camera_matrix[0][2] = x_0[2]
+    camera_matrix[1][2] = x_0[3]
+    number_of_distortion_params = x_0.shape[0] - 4
+    distortion_parameters = np.zeros((1, number_of_distortion_params))
+    for i in range(0, number_of_distortion_params):
+        distortion_parameters[0][i] = x_0[4 + i]
+
+    sse, num_samples = vm.compute_mono_2d_err(object_points,
+                                              image_points,
+                                              rvecs,
+                                              tvecs,
+                                              camera_matrix,
+                                              distortion_parameters)
+    mse = sse / num_samples
+    rmse = np.sqrt(mse)
+    return rmse
+
+
+def _mono_reconstruction_error_for_extrinsics(x_0,
+                                              ids,
+                                              object_points,
+                                              image_points,
+                                              camera_matrix,
+                                              distortion_parameters
+                                              ):
+    """
+    Private method to compute SSE reconstruction error over multiple views,
+    where x_0 should contain just extrinsic parameters.
+    """
+    number_of_frames = len(object_points)
+    rvecs = []
+    tvecs = []
+    for i in range(0, number_of_frames):
+        rvec = np.zeros((3, 1))
+        rvec[0] = x_0[i * 6 + 0]
+        rvec[1] = x_0[i * 6 + 1]
+        rvec[2] = x_0[i * 6 + 2]
+        tvec = np.zeros((3, 1))
+        tvec[0] = x_0[i * 6 + 3]
+        tvec[1] = x_0[i * 6 + 4]
+        tvec[2] = x_0[i * 6 + 5]
+        rvecs.append(rvec)
+        tvecs.append(tvec)
+
+    sse, num_samples = vm.compute_mono_reconstruction_err(ids,
+                                                          object_points,
+                                                          image_points,
+                                                          rvecs,
+                                                          tvecs,
+                                                          camera_matrix,
+                                                          distortion_parameters)
+    mse = sse / num_samples
+    rmse = np.sqrt(mse)
+    return rmse

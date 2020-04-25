@@ -2,6 +2,8 @@
 
 """ Some more experimental video calibration routines. Use at your own risk. """
 
+# pylint: disable=too-many-locals
+
 import logging
 import copy
 import numpy as np
@@ -16,7 +18,100 @@ import sksurgerycalibration.video.video_calibration as vc
 LOGGER = logging.getLogger(__name__)
 
 
-# pylint: disable=too-many-locals
+def mono_video_calibration_expt(ids,
+                                object_points,
+                                image_points,
+                                image_size):
+    """
+    Experimental.
+
+    :param ids: Vector of ndarrays containing integer point ids.
+    :param object_points: Vector of Vectors of 1x3 object points, float32
+    :param image_points:  Vector of Vectors of 1x2 object points, float32
+    :param image_size: (x, y) tuple, size in pixels, e.g. (1920, 1080)
+    :return: rms, camera_matrix, dist_coeffs, rvecs, tvecs
+    """
+    # First do a standard OpenCV calibration, using the wrapper in this project.
+    rms, camera_matrix, dist_coeffs, rvecs, tvecs = \
+        vc.mono_video_calibration(object_points,
+                                  image_points,
+                                  image_size)
+
+    number_of_views = len(rvecs)
+    number_of_intrinsic_parameters = 4 + dist_coeffs.shape[1]
+    number_of_extrinsic_parameters = 6 * len(rvecs)
+
+    # Now alternately optimise intrinsics and extrinsics
+    for loop_counter in range(0, 5):
+
+        # First optimise intrinsics, via projection error.
+        x_0 = np.zeros(number_of_intrinsic_parameters)
+        x_0[0] = camera_matrix[0][0]
+        x_0[1] = camera_matrix[1][1]
+        x_0[2] = camera_matrix[0][2]
+        x_0[3] = camera_matrix[1][2]
+        for i in range(4, number_of_intrinsic_parameters):
+            x_0[i] = dist_coeffs[0][i - 4]
+
+        res = minimize(vcf._mono_reprojection_error_for_intrinsics, x_0,
+                       args=(object_points,
+                             image_points,
+                             rvecs,
+                             tvecs),
+                       method='Nelder-Mead',
+                       tol=1e-3,
+                       options={'disp': False, 'maxiter': 1000})
+        x_1 = res.x
+        camera_matrix[0][0] = x_1[0]
+        camera_matrix[1][1] = x_1[1]
+        camera_matrix[0][2] = x_1[2]
+        camera_matrix[1][2] = x_1[3]
+        for i in range(4, number_of_intrinsic_parameters):
+            dist_coeffs[0][i - 4] = x_1[i]
+
+        # Now optimise extrinsics, via triangulation.
+        x_0 = np.zeros(number_of_extrinsic_parameters)
+        for i in range(0, number_of_views):
+            x_0[6 * i + 0] = rvecs[i][0]
+            x_0[6 * i + 1] = rvecs[i][1]
+            x_0[6 * i + 2] = rvecs[i][2]
+            x_0[6 * i + 3] = tvecs[i][0]
+            x_0[6 * i + 4] = tvecs[i][1]
+            x_0[6 * i + 5] = tvecs[i][2]
+
+        res = minimize(vcf._mono_reconstruction_error_for_extrinsics, x_0,
+                       args=(
+                           ids,
+                           object_points,
+                           image_points,
+                           camera_matrix,
+                           dist_coeffs
+                       ),
+                       method='Nelder-Mead',
+                       tol=1e-3,
+                       options={'disp': False, 'maxiter': 1000})
+        x_1 = res.x
+        for i in range(0, number_of_views):
+            rvecs[i][0] = x_1[6 * i + 0]
+            rvecs[i][1] = x_1[6 * i + 1]
+            rvecs[i][2] = x_1[6 * i + 2]
+            tvecs[i][0] = x_1[6 * i + 3]
+            tvecs[i][1] = x_1[6 * i + 4]
+            tvecs[i][2] = x_1[6 * i + 5]
+
+    sse, num = vm.compute_mono_2d_err(object_points,
+                                      image_points,
+                                      rvecs,
+                                      tvecs,
+                                      camera_matrix,
+                                      dist_coeffs)
+
+    mse = sse / num
+    final_rms = np.sqrt(mse)
+
+    return final_rms, camera_matrix, dist_coeffs, rvecs, tvecs
+
+
 def stereo_video_calibration_expt(left_ids,
                                   left_object_points,
                                   left_image_points,
@@ -103,7 +198,7 @@ def stereo_video_calibration_expt(left_ids,
         x_0[14 + i * 6 + 4] = camera_tvecs[i][1]
         x_0[14 + i * 6 + 5] = camera_tvecs[i][2]
 
-    res = minimize(vcf.stereo_reprojection_error, x_0,
+    res = minimize(vcf._stereo_2d_and_3d_error, x_0,
                    args=(common_object_points,
                          common_left_image_points,
                          l_d,
@@ -112,7 +207,7 @@ def stereo_video_calibration_expt(left_ids,
                          r_d),
                    method='Powell',
                    tol=1e-4,
-                   options={'disp': True, 'maxiter': 100000})
+                   options={'disp': False, 'maxiter': 100000})
 
     LOGGER.info("Stereo Re-Calibration: success=%s", str(res.success))
     LOGGER.info("Stereo Re-Calibration: msg=%s", str(res.message))

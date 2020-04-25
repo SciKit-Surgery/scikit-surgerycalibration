@@ -8,7 +8,7 @@ import sksurgerycalibration.video.video_calibration as vc
 import sksurgerycalibration.video.video_calibration_experimental as ve
 
 
-def test_mono_video_calibration():
+def test_mono_left_video_calibration():
 
     image_points = []
     object_points = []
@@ -24,7 +24,7 @@ def test_mono_video_calibration():
     retval, camera_matrix, dist_coeffs, rvecs, tvecs = \
         vc.mono_video_calibration(object_points, image_points, (1920, 1080))
 
-    print(camera_matrix)
+    assert(np.abs(retval - 0.57759896) < 0.000001)
 
 
 def load_first_stereo_data():
@@ -81,7 +81,36 @@ def test_stereo_video_calibration():
     print(s_recon)
     print(l2r_r)
     print(l2r_t)
+    assert (np.abs(s_reproj - 0.63022577) < 0.000001)
+    assert (np.abs(s_recon - 1.16159681) < 0.000001)
 
+# def test_experimental_mono_stereo_calib():
+#
+#   This isn't worth the bother. Takes 5 minutes to run.
+#
+#    image_points = []
+#    object_points = []
+#
+#    model = np.loadtxt('tests/data/laparoscope_calibration/chessboard_14_10_3.txt')
+#
+#    files = glob.glob('tests/data/laparoscope_calibration/left/*.txt')
+#    for file in files:
+#        points = np.loadtxt(file)
+#        image_points.append(vu.convert_numpy2d_to_opencv(points))
+#        object_points.append(vu.convert_numpy3d_to_opencv(model))
+#
+#    # Generates, array of arrays
+#    ids = []
+#    for i in range(9):
+#        ids.append(np.asarray(range(140)))
+#
+#    retval, camera_matrix, dist_coeffs, rvecs, tvecs = \
+#        ve.mono_video_calibration_expt(ids, object_points, image_points, (1920, 1080))
+#
+#    print(camera_matrix)
+#    print(dist_coeffs)
+#    print(rvecs)
+#    print(tvecs)
 
 #def test_experimental_video_stereo_calib():
 #

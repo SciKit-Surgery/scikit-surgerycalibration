@@ -18,7 +18,8 @@ def mono_video_calibration(object_points, image_points, image_size, flags=0):
     OpenCV. We wrap it here, so we have a place to add extra validation code,
     and a space for documentation. The aim is to check everything before
     we pass it to OpenCV, and raise Exceptions consistently for any error
-    we can detect before we pass it to OpenCV.
+    we can detect before we pass it to OpenCV, as OpenCV just dies
+    without throwing exceptions.
 
       - N = number of images
       - M = number of points for that image
@@ -31,7 +32,7 @@ def mono_video_calibration(object_points, image_points, image_size, flags=0):
     :param image_points: Vector (N) of Vector (M) of 1x2 points of type float
     :param image_size: (x, y) tuple, size in pixels, e.g. (1920, 1080)
     :param flags: OpenCV flags to pass to calibrateCamera().
-    :return: retval, camera_matrix, dist_coeffs, rvecs, tvecs
+    :return: rms, camera_matrix, dist_coeffs, rvecs, tvecs
     """
     rms, camera_matrix, dist_coeffs, rvecs, tvecs \
         = cv2.calibrateCamera(object_points,
@@ -40,7 +41,17 @@ def mono_video_calibration(object_points, image_points, image_size, flags=0):
                               None, None,
                               flags=flags)
 
-    return rms, camera_matrix, dist_coeffs, rvecs, tvecs
+    # Recompute this, for consistency.
+    sse, num = vm.compute_mono_2d_err(object_points,
+                                      image_points,
+                                      rvecs,
+                                      tvecs,
+                                      camera_matrix,
+                                      dist_coeffs)
+    mse = sse / num
+    final_rms = np.sqrt(mse)
+
+    return final_rms, camera_matrix, dist_coeffs, rvecs, tvecs
 
 
 # pylint: disable=too-many-locals
@@ -123,7 +134,7 @@ def stereo_video_calibration(left_ids,
     # And recompute stereo projection error, given left camera and l2r.
     # We also use all points, not just common points, for comparison
     # with other methods outside of this function.
-    s_reproj = \
+    sse, num_samples = \
         vm.compute_stereo_2d_err(l2r_r,
                                  l2r_t,
                                  common_object_points,
@@ -137,8 +148,10 @@ def stereo_video_calibration(left_ids,
                                  l_rvecs,
                                  l_tvecs
                                  )
+    mse = sse / num_samples
+    s_reproj = np.sqrt(mse)
 
-    s_recon = \
+    sse, number_samples = \
         vm.compute_stereo_3d_error(l2r_r,
                                    l2r_t,
                                    common_object_points,
@@ -151,6 +164,9 @@ def stereo_video_calibration(left_ids,
                                    l_rvecs,
                                    l_tvecs
                                    )
+
+    mse = sse / num_samples
+    s_recon = np.sqrt(mse)
 
     LOGGER.info("Stereo Calib: l=%s, r=%s, opencv=%s, proj=%s, recon=%s",
                 str(l_rms), str(r_rms), str(s_rms), str(s_reproj), str(s_recon))
