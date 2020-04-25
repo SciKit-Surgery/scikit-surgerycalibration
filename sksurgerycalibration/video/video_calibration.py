@@ -34,6 +34,24 @@ def mono_video_calibration(object_points, image_points, image_size, flags=0):
     :param flags: OpenCV flags to pass to calibrateCamera().
     :return: rms, camera_matrix, dist_coeffs, rvecs, tvecs
     """
+    if image_size[0] < 1:
+        raise ValueError("Image width must be > 0.")
+    if image_size[1] < 1:
+        raise ValueError("Image height must be > 0.")
+    if len(object_points) < 2:
+        raise ValueError("Must have at least 2 sets of object points.")
+    if len(image_points) < 2:
+        raise ValueError("Must have at least 2 sets of image points.")
+    if len(object_points) != len(image_points):
+        raise ValueError("Image points and object points differ in length.")
+    for i in range(0, len(object_points)):
+        if len(object_points[i]) < 3:
+            raise ValueError(str(i) + ": Must have at least 3 object points.")
+        if len(image_points[i]) < 3:
+            raise ValueError(str(i) + ": Must have at least 3 image points.")
+        if len(object_points[i]) != len(image_points[i]):
+            raise ValueError(str(i) + ": Must have the same number of points.")
+
     rms, camera_matrix, dist_coeffs, rvecs, tvecs \
         = cv2.calibrateCamera(object_points,
                               image_points,
@@ -41,7 +59,8 @@ def mono_video_calibration(object_points, image_points, image_size, flags=0):
                               None, None,
                               flags=flags)
 
-    # Recompute this, for consistency.
+    # Recompute this, for consistency with stereo methods.
+    # i.e. so we know what the calculation is exactly.
     sse, num = vm.compute_mono_2d_err(object_points,
                                       image_points,
                                       rvecs,
