@@ -8,4 +8,5 @@ nbsphinx
 scipy
 opencv-contrib-python
 scikit-surgerycore
+scikit-surgeryimage
 scikit-surgeryopencvcpp
