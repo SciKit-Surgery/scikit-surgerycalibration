@@ -163,3 +163,17 @@ def filter_common_points_all_images(left_ids,
 
     return common_ids, common_object_points, common_left_image_points, \
         common_right_image_points
+
+
+def convert_point_detector_to_opencv(ids, object_points, image_points):
+    """
+    The PointDetectors from scikit-surgeryimage aren't quite compatible
+    with OpenCV.
+    """
+    dims = np.shape(image_points)
+    ids = np.reshape(ids, dims[0])
+    image_points = np.reshape(image_points, (dims[0], 1, 2))
+    image_points = image_points.astype(np.float32)
+    object_points = np.reshape(object_points, (-1, 1, 3))
+    object_points = object_points.astype(np.float32)
+    return ids, image_points, object_points

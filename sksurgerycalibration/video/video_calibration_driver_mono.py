@@ -1,20 +1,16 @@
 # -*- coding: utf-8 -*-
 
+import copy
+import logging
 import numpy as np
 import sksurgeryimage.processing.point_detector as pd
 import sksurgerycalibration.video.video_calibration_data as cd
 import sksurgerycalibration.video.video_calibration_params as cp
 import sksurgerycalibration.video.video_calibration_metrics as cm
+import sksurgerycalibration.video.video_calibration_utils as cu
 import sksurgerycalibration.video.video_calibration as vc
 
-
-def _convert_point_detector_to_opencv(object_points, image_points):
-    dims = np.shape(image_points)
-    image_points = np.reshape(image_points, (dims[0], 1, 2))
-    image_points = image_points.astype(np.float32)
-    object_points = np.reshape(object_points, (-1, 1, 3))
-    object_points = object_points.astype(np.float32)
-    return image_points, object_points
+LOGGER = logging.getLogger(__name__)
 
 
 class MonoVideoCalibration:
@@ -43,6 +39,8 @@ class MonoVideoCalibration:
         self.calibration_data = cd.MonoVideoData()
         self.calibration_params = cp.MonoCalibrationParams()
         self.minimum_points_per_frame = minimum_points_per_frame
+        LOGGER.info("Constructed: Points per view=%s",
+                    str(self.minimum_points_per_frame))
 
     def reinit(self):
         """
@@ -51,6 +49,7 @@ class MonoVideoCalibration:
         """
         self.calibration_data.reinit()
         self.calibration_params.reinit()
+        LOGGER.info("Reset: Now zero frames.")
 
     def grab_data(self, image):
         """
@@ -68,14 +67,22 @@ class MonoVideoCalibration:
         ids, object_points, image_points = \
             self.point_detector.get_points(image)
 
-        if image_points.shape[0] > self.minimum_points_per_frame:
+        if image_points.shape[0] >= self.minimum_points_per_frame:
 
-            image_points, object_points = \
-                _convert_point_detector_to_opencv(image_points, object_points)
+            ids, image_points, object_points = \
+                cu.convert_point_detector_to_opencv(ids, object_points, image_points)
             self.calibration_data.push(image, ids, object_points, image_points)
             number_of_points = image_points.shape[0]
 
+        LOGGER.info("Grabbed: Returning %s points.", str(number_of_points))
         return number_of_points
+
+    def pop(self):
+        """
+        Removes the last grabbed view of data.
+        """
+        self.calibration_data.pop()
+        LOGGER.info("Popped: Now %s views.", str(self.get_number_of_views()))
 
     def get_number_of_views(self):
         """
@@ -106,7 +113,7 @@ class MonoVideoCalibration:
                 flags
             )
 
-        recon_err = \
+        sse, num_samples = \
             cm.compute_mono_reconstruction_err(self.calibration_data.ids_arrays,
                                                self.calibration_data.object_points_arrays,
                                                self.calibration_data.image_points_arrays,
@@ -115,7 +122,16 @@ class MonoVideoCalibration:
                                                camera_matrix,
                                                dist_coeffs
                                                )
-        return proj_err, recon_err
+        recon_err = np.sqrt(sse / num_samples)
+
+        self.calibration_params.set_data(camera_matrix,
+                                         dist_coeffs,
+                                         rvecs,
+                                         tvecs)
+
+        LOGGER.info("Calibrated: proj_err=%s, recon_err=%s.",
+                    str(proj_err), str(recon_err))
+        return proj_err, recon_err, copy.deepcopy(self.calibration_params)
 
     def save_data(self,
                   dir_name: str,
@@ -148,7 +164,7 @@ class MonoVideoCalibration:
         Loads the calibration params from dir_name, using file_prefix.
         """
         self.calibration_params.load_data(dir_name, file_prefix)
-        
+
 
 
 
