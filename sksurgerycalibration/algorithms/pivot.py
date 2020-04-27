@@ -20,8 +20,8 @@ def pivot_calibration(tracking_matrices, configuration=None):
             'pointer_offset' The coordinate of the pointer tip relative to
             the tracking centre
             'pivot_point' The location of the pivot point in world coordinates
-            'residual_error' The RMS pointer tip error, errors in 
-            each direction are treated as independent variables, so for a 
+            'residual_error' The RMS pointer tip error, errors in
+            each direction are treated as independent variables, so for a
             calibration with n matrices, RMS error is calculated using
             nx3 measurements.
 
