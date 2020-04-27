@@ -76,10 +76,6 @@ def test_stereo_video_calibration():
                                     right_image_points,
                                     (1920, 1080))
 
-    print(s_reproj)
-    print(s_recon)
-    print(l2r_r)
-    print(l2r_t)
     assert (np.abs(s_reproj - 0.63022577) < 0.000001)
     assert (np.abs(s_recon - 1.16159681) < 0.000001)
 
