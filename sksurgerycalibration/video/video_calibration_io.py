@@ -81,6 +81,7 @@ def _get_enumerated_file_glob(dir_name: str,
                      + type_prefix
                      + "."
                      + "*" + extension_wth_dot)
+
     return file_glob
 
 
@@ -100,8 +101,10 @@ def _get_extrinsics_file_name(dir_name: str,
 def _get_extrinsic_file_names(dir_name: str,
                               file_prefix: str):
 
-    files = file_filter(os.listdir(dir_name),
-                        _get_calib_prefix(file_prefix) + ".extrinsics.*.txt")
+    files = _get_filenames_by_glob_expr(dir_name,
+                                        file_prefix,
+                                        "extrinsics",
+                                        ".txt")
     return files
 
 
@@ -110,6 +113,20 @@ def _get_l2r_file_name(dir_name: str,
     l2r_file = os.path.join(dir_name,
                             _get_calib_prefix(file_prefix) + ".l2r.txt")
     return l2r_file
+
+
+def _get_essential_matrix_file_name(dir_name: str,
+                                    file_prefix: str):
+    ess_file = os.path.join(dir_name,
+                            _get_calib_prefix(file_prefix) + ".essential.txt")
+    return ess_file
+
+
+def _get_fundamental_matrix_file_name(dir_name: str,
+                                      file_prefix: str):
+    fun_file = os.path.join(dir_name,
+                            _get_calib_prefix(file_prefix) + ".fundamental.txt")
+    return fun_file
 
 
 def _get_images_file_name(dir_name: str,

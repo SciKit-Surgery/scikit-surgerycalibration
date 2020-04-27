@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import copy
 import logging
 import sksurgeryimage.processing.point_detector as pd
 import sksurgerycalibration.video.video_calibration_data as vcd
@@ -116,7 +117,22 @@ class BaseVideoCalibrationDriver:
         """
         self.calibration_params.load_data(dir_name, file_prefix)
 
+    def get_params(self):
+        """
+        Copies and returns the parameters.
+        """
+        return copy.deepcopy(self.calibration_params)
 
+    def get_video_data(self):
+        """
+        Copies and returns the video data.
+        """
+        return copy.deepcopy(self.video_data)
 
+    def get_tracking_data(self):
+        """
+        Copies and returns the tracking data.
+        """
+        return copy.deepcopy(self.tracking_data)
 
 

@@ -24,9 +24,25 @@ def test_chessboard_mono_io():
         successful = calibrator.grab_data(image, np.eye(4), np.eye(3))
         assert successful > 0
 
-    reproj_err, recon_err, params_1 = calibrator.calibrate()
+    reproj_err_1, recon_err_1, params_1 = calibrator.calibrate()
     calibrator.save_data('tests/output/test_chessboard_mono_io', '')
     calibrator.save_params('tests/output/test_chessboard_mono_io', '')
+
+    # Now, load data back in, recalibrate, should get same results.
+    # Technically, you aren't running the 'grab' bit again.
+    # The calibration works off the already extracted points.
+    calibrator.load_data('tests/output/test_chessboard_mono_io', '')
+    reproj_err_2, recon_err_2, params_2 = calibrator.calibrate()
+    assert (np.isclose(reproj_err_1, reproj_err_2))
+    assert (np.isclose(recon_err_1, recon_err_2))
+
+    calibrator.load_params('tests/output/test_chessboard_mono_io', '')
+    params_3 = calibrator.get_params()
+    assert np.allclose(params_2.camera_matrix, params_3.camera_matrix)
+    assert np.allclose(params_2.dist_coeffs, params_3.dist_coeffs)
+    for i in range(0, len(params_3.rvecs)):
+        assert np.allclose(params_2.rvecs[0], params_3.rvecs[0])
+        assert np.allclose(params_2.tvecs[0], params_3.tvecs[0])
 
 
 def test_chessboard_stereo_io():
@@ -61,6 +77,25 @@ def test_chessboard_stereo_io():
         assert successful > 0
 
     # Then do calibration
-    reproj_err, recon_err, params = calibrator.calibrate()
+    reproj_err_1, recon_err_1, params_1 = calibrator.calibrate()
     calibrator.save_data('tests/output/test_chessboard_stereo_io', '')
     calibrator.save_params('tests/output/test_chessboard_stereo_io', '')
+
+    # Load data, re-do calibration, check for same result.
+    calibrator.load_data('tests/output/test_chessboard_stereo_io', '')
+    reproj_err_2, recon_err_2, params_2 = calibrator.calibrate()
+    assert (np.isclose(reproj_err_1, reproj_err_2))
+    assert (np.isclose(recon_err_1, recon_err_2))
+
+    # Now load parameters back in.
+    calibrator.load_params('tests/output/test_chessboard_stereo_io', '')
+    params_2 = calibrator.get_params()
+
+    assert np.allclose(params_1.l2r_rmat,
+                       params_2.l2r_rmat)
+    assert np.allclose(params_1.l2r_tvec,
+                       params_2.l2r_tvec)
+    assert np.allclose(params_1.essential,
+                       params_2.essential)
+    assert np.allclose(params_1.fundamental,
+                       params_2.fundamental)
