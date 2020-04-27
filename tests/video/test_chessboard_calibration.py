@@ -32,8 +32,10 @@ def test_chessboard_mono():
 
     # Repeatedly grab data, until you have enough.
     for image in images:
-        successful = calibrator.grab_data(image)
+        successful = calibrator.grab_data(image, np.eye(4))
         assert successful > 0
+    assert calibrator.is_device_tracked()
+    assert not calibrator.is_calibration_target_tracked()
 
     # Extra checking, as its a unit test
     assert calibrator.get_number_of_views() == 9
@@ -82,6 +84,8 @@ def test_chessboard_stereo():
     for i in range(0, len(left_images)):
         successful = calibrator.grab_data(left_images[i], right_images[i])
         assert successful > 0
+    assert not calibrator.is_device_tracked()
+    assert not calibrator.is_calibration_target_tracked()
 
     # Then do calibration
     reproj_err, recon_err, params = calibrator.calibrate()

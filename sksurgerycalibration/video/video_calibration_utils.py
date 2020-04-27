@@ -177,3 +177,21 @@ def convert_point_detector_to_opencv(ids, object_points, image_points):
     object_points = np.reshape(object_points, (-1, 1, 3))
     object_points = object_points.astype(np.float32)
     return ids, image_points, object_points
+
+
+def array_contains_tracking_data(array_to_check):
+    """
+    Returns True if the array contains some tracking data.
+    """
+    result = False
+    if array_to_check is not None:
+        number_of_items = len(array_to_check)
+        if number_of_items > 0:
+            found_none = False
+            for i in range(0, number_of_items):
+                if array_to_check[i] is None:
+                    found_none = True
+            if not found_none:
+                result = True
+    return result
+

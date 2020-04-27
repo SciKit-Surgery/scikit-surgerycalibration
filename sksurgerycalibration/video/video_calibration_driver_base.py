@@ -5,6 +5,7 @@ import logging
 import sksurgeryimage.processing.point_detector as pd
 import sksurgerycalibration.video.video_calibration_data as vcd
 import sksurgerycalibration.video.video_calibration_params as vcp
+import sksurgerycalibration.video.video_calibration_utils as vcu
 
 LOGGER = logging.getLogger(__name__)
 
@@ -135,4 +136,22 @@ class BaseVideoCalibrationDriver:
         """
         return copy.deepcopy(self.tracking_data)
 
+    def is_device_tracked(self):
+        """
+        Returns True if we have tracking data for the device.
+        """
+        result = \
+            vcu.array_contains_tracking_data(
+                self.tracking_data.device_tracking_array
+            )
+        return result
 
+    def is_calibration_target_tracked(self):
+        """
+        Returns True if we have tracking data for the calibration target.
+        """
+        result = \
+            vcu.array_contains_tracking_data(
+                self.tracking_data.calibration_tracking_array
+            )
+        return result

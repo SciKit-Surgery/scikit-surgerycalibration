@@ -29,7 +29,7 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
             __init__(point_detector,
                      minimum_points_per_frame)
 
-        # Create data holders, and parameter holders, specific to Mono.
+        # Create data holders, and parameter holders, specific to Stereo.
         calibration_data = cd.StereoVideoData()
         calibration_params = cp.StereoCalibrationParams()
 
