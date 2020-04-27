@@ -137,19 +137,107 @@ def test_replace_small_values():
     assert list_in[0] == -1.0
     assert list_in[2] == -1.0
 
-    
-def test_residual_error():
+
+def _rms(*values):
+    """
+    Works out RMS error, so we can test against it.
+    """
+    count = len(values)
+    square_sum = 0.0
+    for value in values:
+        square_sum += value * value
+
+    mean_square_sum = square_sum / count
+    return np.sqrt(mean_square_sum)
+
+def test_residual_error0():
     """
     Test that residual error returns a correct value
     """
-    
+
     pivot_point = [0.0, 0.0, 0.0]
     pointer_offset = [-100.0, 0.0, 0.0]
 
-    tracker_mat = np.array([ [[1.0, 0.0, 0.0, 110.0],
-                              [0.0, 1.0, 0.0, 0.0],
-                              [0.0, 0.0, 1.0, 0.0],
-                              [0.0, 0.0, 0.0, 1.0]]
+    tracker_mat = np.array([[[1.0, 0.0, 0.0, 110.0],
+                             [0.0, 1.0, 0.0, 0.0],
+                             [0.0, 0.0, 1.0, 0.0],
+                             [0.0, 0.0, 0.0, 1.0]]
+                           ])
+    #error is 10.0 in one direction and zero in the others
+    expected_value = _rms(10.0, 0.0, 0.0)
+    residual_error = p._residual_error( #pylint: disable=protected-access
+        tracker_mat,
+        pointer_offset, pivot_point)
+    assert residual_error == expected_value
+
+
+def test_residual_error1():
+    """
+    Test that residual error returns a correct value
+    """
+
+    pivot_point = [0.0, 0.0, 0.0]
+    pointer_offset = [-100.0, 0.0, 0.0]
+
+    tracker_mat = np.array([[[1.0, 0.0, 0.0, 100.0],
+                             [0.0, 1.0, 0.0, 0.0],
+                             [0.0, 0.0, 1.0, 0.0],
+                             [0.0, 0.0, 0.0, 1.0]]
                            ])
 
-    assert p._residual_error(tracker_mat, pointer_offset, pivot_point, debug = True) == 10.5
+    #error in all three directions is zero
+    expected_value = _rms(0.0, 0.0, 0.0)
+    residual_error = p._residual_error( #pylint: disable=protected-access
+        tracker_mat,
+        pointer_offset, pivot_point)
+    assert residual_error == expected_value
+
+
+def test_residual_error2():
+    """
+    Test that residual error returns a correct value
+    """
+
+    pivot_point = [0.0, 0.0, 0.0]
+    pointer_offset = [-100.0, 0.0, 0.0]
+
+
+    tracker_mat = np.array([[[1.0, 0.0, 0.0, 110.0],
+                             [0.0, 1.0, 0.0, 0.0],
+                             [0.0, 0.0, 1.0, 0.0],
+                             [0.0, 0.0, 0.0, 1.0]],
+
+                            [[1.0, 0.0, 0.0, 90.0],
+                             [0.0, 1.0, 0.0, 0.0],
+                             [0.0, 0.0, 1.0, 0.0],
+                             [0.0, 0.0, 0.0, 1.0]],
+                           ])
+
+    #error in all 2 of 6 directions is 10.0
+    expected_value = _rms(10.0, 0.0, 0.0, -10.0, 0.0, 0.0)
+    residual_error = p._residual_error( #pylint: disable=protected-access
+        tracker_mat,
+        pointer_offset, pivot_point)
+    assert residual_error == expected_value
+
+
+def test_residual_error3():
+    """
+    Test that residual error returns a correct value
+    """
+
+    pivot_point = [0.0, 0.0, 0.0]
+    pointer_offset = [-100.0, 0.0, 0.0]
+
+    tracker_mat = np.array([[[1.0, 0.0, 0.0, 110.0],
+                             [0.0, 1.0, 0.0, 10.0],
+                             [0.0, 0.0, 1.0, -10.0],
+                             [0.0, 0.0, 0.0, 1.0]]
+                           ])
+
+    #error in all three directions is 10.0
+    expected_value = _rms(10.0, 10.0, -10.0)
+    residual_error = p._residual_error( #pylint: disable=protected-access
+        tracker_mat,
+        pointer_offset, pivot_point)
+    assert residual_error == expected_value

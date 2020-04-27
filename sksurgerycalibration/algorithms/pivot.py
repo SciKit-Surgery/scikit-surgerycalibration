@@ -20,7 +20,10 @@ def pivot_calibration(tracking_matrices, configuration=None):
             'pointer_offset' The coordinate of the pointer tip relative to
             the tracking centre
             'pivot_point' The location of the pivot point in world coordinates
-            'residual_error' A measure of the residual calibration error
+            'residual_error' The RMS pointer tip error, errors in 
+            each direction are treated as independent variables, so for a 
+            calibration with n matrices, RMS error is calculated using
+            nx3 measurements.
 
     :raises: TypeError, ValueError
     """
@@ -255,38 +258,33 @@ def _matrices_to_a_and_b(tracking_matrices):
 
     return a_values, b_values
 
-def _residual_error(tracking_matrices, pointer_offset, pivot_location, debug = False):
+def _residual_error(tracking_matrices, pointer_offset, pivot_location):
     """
     Helper function to calculate resdiual (RMS) errors.
 
     :params tracking_matrices: nx4x4 array
     :params pointer_offset: 1x3 array
     :params pivot_location: 1x3 array
-    :returns: TRhe RMS tracking error
+    :returns: The RMS residual error
     """
     x_values = np.concatenate([pointer_offset, pivot_location],
                               axis=0).reshape((6, 1))
     a_values, b_values = _matrices_to_a_and_b(tracking_matrices)
-    return _residual_error_direct(a_values, b_values, x_values, debug)
+    return _residual_error_direct(a_values, b_values, x_values)
 
 
-def _residual_error_direct(a_values, b_values, x_values, debug = False):
+def _residual_error_direct(a_values, b_values, x_values):
     """
     Helper function to calculate resdidual (RMS) errors.
 
     :params a_values: (nx3)x6 array of rotation and -Identity,
     :params b_values: an nx3 column vector of translations
     :params x_values: nx6 array, pointer_offset and pivot_point
-    :returns: TRhe RMS tracking error
+    :returns: TRhe RMS residual error
     """
     residual_matrix = (np.dot(a_values, x_values) - b_values)
     residual_error = np.mean(residual_matrix * residual_matrix)
     residual_error = np.sqrt(residual_error)
-    if debug:
-        print (residual_matrix)
-        print (residual_matrix * residual_matrix)
-        print (np.mean(residual_matrix * residual_matrix))
-        print (residual_error)
     return residual_error
 
 def _replace_small_values(the_list, threshold=0.01, replacement_value=0.0):
