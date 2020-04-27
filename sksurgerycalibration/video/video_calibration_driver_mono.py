@@ -4,6 +4,7 @@ import copy
 import logging
 import numpy as np
 import sksurgeryimage.processing.point_detector as pd
+import sksurgerycalibration.video.video_calibration_driver_base as vdb
 import sksurgerycalibration.video.video_calibration_data as cd
 import sksurgerycalibration.video.video_calibration_params as cp
 import sksurgerycalibration.video.video_calibration_metrics as cm
@@ -13,7 +14,7 @@ import sksurgerycalibration.video.video_calibration as vc
 LOGGER = logging.getLogger(__name__)
 
 
-class MonoVideoCalibration:
+class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
 
     def __init__(self,
                  point_detector: pd.PointDetector,
@@ -22,34 +23,19 @@ class MonoVideoCalibration:
         """
         Stateful class for mono video calibration.
 
-        This class expects calling code to decide how many images are
-        required to calibrate, and also, when to call reinit.
-
-        The PointDetector is passed in using Dependency Injection.
-        So, the PointDetector can be anything, like chessboards, ArUco,
-        CharUco etc.
-
-        This does mean that the underlying code can handle variable numbers
-        of points in each view. OpenCV calibration code does this anyway.
-
         :param point_detector: Class derived from PointDetector
         :param minimum_points_per_frame: Minimum number to accept frame
         """
-        self.point_detector = point_detector
+        super(MonoVideoCalibrationDriver, self).\
+            __init__(point_detector,
+                     minimum_points_per_frame)
+
+        # Create data holders, and parameter holders, specific to Mono.
         self.calibration_data = cd.MonoVideoData()
         self.calibration_params = cp.MonoCalibrationParams()
-        self.minimum_points_per_frame = minimum_points_per_frame
-        LOGGER.info("Constructed: Points per view=%s",
-                    str(self.minimum_points_per_frame))
 
-    def reinit(self):
-        """
-        Resets the object, which means, removes stored calibration data
-        and reset the calibration parameters to identity/zero.
-        """
-        self.calibration_data.reinit()
-        self.calibration_params.reinit()
-        LOGGER.info("Reset: Now zero frames.")
+        # Pass them to base class, so base class can access them.
+        self._init_internal(self.calibration_data, self.calibration_params)
 
     def grab_data(self, image):
         """
@@ -76,21 +62,6 @@ class MonoVideoCalibration:
 
         LOGGER.info("Grabbed: Returning %s points.", str(number_of_points))
         return number_of_points
-
-    def pop(self):
-        """
-        Removes the last grabbed view of data.
-        """
-        self.calibration_data.pop()
-        LOGGER.info("Popped: Now %s views.", str(self.get_number_of_views()))
-
-    def get_number_of_views(self):
-        """
-        Returns the current number of stored views.
-
-        :return: number of views
-        """
-        return self.calibration_data.get_number_of_views()
 
     def calibrate(self, flags=0):
         """
@@ -132,40 +103,3 @@ class MonoVideoCalibration:
         LOGGER.info("Calibrated: proj_err=%s, recon_err=%s.",
                     str(proj_err), str(recon_err))
         return proj_err, recon_err, copy.deepcopy(self.calibration_params)
-
-    def save_data(self,
-                  dir_name: str,
-                  file_prefix: str):
-        """
-        Saves the data to the given dir_name, with file_prefix.
-        """
-        self.calibration_data.save_data(dir_name, file_prefix)
-
-    def load_data(self,
-                  dir_name: str,
-                  file_prefix: str):
-        """
-        Loads the data from dir_name, and populates this object.
-        """
-        self.calibration_data.load_data(dir_name, file_prefix)
-
-    def save_params(self,
-                    dir_name: str,
-                    file_prefix: str):
-        """
-        Saves the calibration parameters to dir_name, with file_prefix.
-        """
-        self.calibration_params.save_data(dir_name, file_prefix)
-
-    def load_params(self,
-                    dir_name: str,
-                    file_prefix: str):
-        """
-        Loads the calibration params from dir_name, using file_prefix.
-        """
-        self.calibration_params.load_data(dir_name, file_prefix)
-
-
-
-
-

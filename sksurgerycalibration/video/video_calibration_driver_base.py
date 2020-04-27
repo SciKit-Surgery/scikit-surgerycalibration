@@ -1,0 +1,117 @@
+# -*- coding: utf-8 -*-
+
+import logging
+import sksurgeryimage.processing.point_detector as pd
+import sksurgerycalibration.video.video_calibration_data as vcd
+import sksurgerycalibration.video.video_calibration_params as vcp
+
+LOGGER = logging.getLogger(__name__)
+
+
+class BaseVideoCalibrationDriver:
+
+    def __init__(self,
+                 point_detector: pd.PointDetector,
+                 minimum_points_per_frame: int
+                 ):
+        """
+        Base class for video calibration drivers.
+
+        This class expects calling code to decide how many images are
+        required to calibrate, and also, when to call reinit.
+
+        The PointDetector is passed in using Dependency Injection.
+        So, the PointDetector can be anything, like chessboards, ArUco,
+        CharUco etc.
+
+        This does mean that the underlying code can handle variable numbers
+        of points in each view. OpenCV calibration math does this anyway.
+
+        :param point_detector: Class derived from PointDetector
+        :param minimum_points_per_frame: Minimum number to accept frame
+        """
+        self.point_detector = point_detector
+        self.minimum_points_per_frame = minimum_points_per_frame
+        self.calibration_data = None
+        self.calibration_params = None
+        LOGGER.info("Constructed: Points per view=%s",
+                    str(self.minimum_points_per_frame))
+
+    def _init_internal(self,
+                       calibration_data: vcd.BaseVideoData,
+                       calibration_params: vcp.BaseCalibrationParams):
+        """
+        Derived classes must call this, to assign to
+
+        - self.calibration_data
+        - self.calibration_params
+        """
+        self.calibration_data = calibration_data
+        self.calibration_params = calibration_params
+
+    def reinit(self):
+        """
+        Resets this object, which means, removes stored calibration data
+        and reset the calibration parameters to identity/zero.
+        """
+        self.calibration_data.reinit()
+        self.calibration_params.reinit()
+        LOGGER.info("Reset: Now zero frames.")
+
+    def pop(self):
+        """
+        Removes the last grabbed view of data.
+        """
+        self.calibration_data.pop()
+        LOGGER.info("Popped: Now %s views.", str(self.get_number_of_views()))
+
+    def get_number_of_views(self):
+        """
+        Returns the current number of stored views.
+
+        :return: number of views
+        """
+        return self.calibration_data.get_number_of_views()
+
+    def calibrate(self, flags=0):
+        """
+        Do the video calibration. Derived classes must implement this.
+        """
+        raise NotImplementedError("Derived classes must implement this.")
+
+    def save_data(self,
+                  dir_name: str,
+                  file_prefix: str):
+        """
+        Saves the data to the given dir_name, with file_prefix.
+        """
+        self.calibration_data.save_data(dir_name, file_prefix)
+
+    def load_data(self,
+                  dir_name: str,
+                  file_prefix: str):
+        """
+        Loads the data from dir_name, and populates this object.
+        """
+        self.calibration_data.load_data(dir_name, file_prefix)
+
+    def save_params(self,
+                    dir_name: str,
+                    file_prefix: str):
+        """
+        Saves the calibration parameters to dir_name, with file_prefix.
+        """
+        self.calibration_params.save_data(dir_name, file_prefix)
+
+    def load_params(self,
+                    dir_name: str,
+                    file_prefix: str):
+        """
+        Loads the calibration params from dir_name, using file_prefix.
+        """
+        self.calibration_params.load_data(dir_name, file_prefix)
+
+
+
+
+

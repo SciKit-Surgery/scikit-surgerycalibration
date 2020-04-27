@@ -9,7 +9,27 @@ import sksurgerycalibration.video.video_calibration_utils as sksu
 import sksurgerycalibration.video.video_calibration_io as sksio
 
 
-class MonoCalibrationParams:
+class BaseCalibrationParams:
+
+    def __init__(self):
+        """
+        Constructor, no member variables, so just a pure virtual interface.
+        """
+
+    def save_data(self,
+                  dir_name: str,
+                  file_prefix: str
+                  ):
+        raise NotImplementedError("Derived classes should implement this.")
+
+    def load_data(self,
+                  dir_name: str,
+                  file_prefix: str
+                  ):
+        raise NotImplementedError("Derived classes should implement this.")
+
+
+class MonoCalibrationParams(BaseCalibrationParams):
     """
     Holds a set of intrinsic and extrinsic camera parameters for 1 camera.
     """
@@ -91,7 +111,7 @@ class MonoCalibrationParams:
             self.tvecs.append(tvec)
 
 
-class StereoCalibrationParams:
+class StereoCalibrationParams(BaseCalibrationParams):
     """
     Holds a pair of MonoCalibrationParams, and the left-to-right transform.
     """
@@ -100,6 +120,9 @@ class StereoCalibrationParams:
         self.right_params = None
         self.l2r_rmat = None
         self.l2r_tvec = None
+        self.essential = None
+        self.fundamental = None
+        self.reinit()
 
     def reinit(self):
         """
@@ -109,11 +132,13 @@ class StereoCalibrationParams:
         self.right_params = MonoCalibrationParams()
         self.l2r_rmat = np.eye(3)
         self.l2r_tvec = np.zeros((3, 1))
+        self.essential = np.eye(3)
+        self.fundamental = np.eye(3)
 
     def set_data(self,
                  left_cam_matrix, left_dist_coeffs, left_rvecs, left_tvecs,
                  right_cam_matrix, right_dist_coeffs, right_rvecs, right_tvecs,
-                 l2r_rmat, l2r_tvec
+                 l2r_rmat, l2r_tvec, essential, fundamental
                  ):
         """
         Stores the provided parameters, by taking a copy.
@@ -128,6 +153,8 @@ class StereoCalibrationParams:
                                    right_tvecs)
         self.l2r_rmat = copy.deepcopy(l2r_rmat)
         self.l2r_tvec = copy.deepcopy(l2r_tvec)
+        self.essential = copy.deepcopy(essential)
+        self.fundamental = copy.deepcopy(fundamental)
 
     def get_l2r_as_4x4(self):
         """

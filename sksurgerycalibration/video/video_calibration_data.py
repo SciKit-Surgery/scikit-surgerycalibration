@@ -8,30 +8,76 @@ import numpy as np
 import sksurgerycalibration.video.video_calibration_io as sksio
 
 
-class MonoVideoData:
+class BaseVideoData:
     """
-    Stores data extracted from each video view of a calibration.
+    Base class for storing tracking data, and serving as a base class/interface.
     """
     def __init__(self):
-        self.images_array = []
-        self.ids_arrays = []
-        self.object_points_arrays = []
-        self.image_points_arrays = []
+        self.device_tracking_array = None
+        self.calibration_tracking_array = None
 
     def reinit(self):
         """
         Deletes all data.
         """
+        self.device_tracking_array = []
+        self.calibration_tracking_array = []
+
+    def pop(self):
+        """
+        Removes the last (most recent) view of data.
+        """
+        if self.device_tracking_array:
+            self.device_tracking_array.pop(-1)
+            self.calibration_tracking_array.pop(-1)
+
+    def get_number_of_views(self):
+        raise NotImplementedError("Derived classes should implement this.")
+
+    def save_data(self,
+                  dir_name: str,
+                  file_prefix: str
+                  ):
+        raise NotImplementedError("Derived classes should implement this.")
+
+    def load_data(self,
+                  dir_name: str,
+                  file_prefix: str
+                  ):
+        raise NotImplementedError("Derived classes should implement this.")
+
+
+class MonoVideoData(BaseVideoData):
+    """
+    Stores data extracted from each video view of a mono calibration.
+    """
+    def __init__(self):
+        self.images_array = None
+        self.ids_arrays = None
+        self.object_points_arrays = None
+        self.image_points_arrays = None
+        self.reinit()
+
+    def reinit(self):
+        """
+        Deletes all data.
+        """
+        super(MonoVideoData, self).reinit()
         self.images_array = []
         self.ids_arrays = []
         self.object_points_arrays = []
         self.image_points_arrays = []
 
-    def get_number_of_views(self):
+    def pop(self):
         """
-        Returns the number of views.
+        Removes the last (most recent) view of data.
         """
-        return len(self.images_array)
+        super(MonoVideoData, self).pop()
+        if len(self.images_array) > 1:
+            self.images_array.pop(-1)
+            self.ids_arrays.pop(-1)
+            self.object_points_arrays.pop(-1)
+            self.image_points_arrays.pop(-1)
 
     def push(self, image, ids, object_points, image_points):
         """
@@ -42,15 +88,11 @@ class MonoVideoData:
         self.object_points_arrays.append(copy.deepcopy(object_points))
         self.image_points_arrays.append(copy.deepcopy(image_points))
 
-    def pop(self):
+    def get_number_of_views(self):
         """
-        Removes the last (most recent) view of data.
+        Returns the number of views.
         """
-        if len(self.images_array) > 1:
-            self.images_array.pop(-1)
-            self.ids_arrays.pop(-1)
-            self.object_points_arrays.pop(-1)
-            self.image_points_arrays.pop(-1)
+        return len(self.images_array)
 
     def save_data(self,
                   dir_name: str,
@@ -100,35 +142,27 @@ class MonoVideoData:
         raise RuntimeError("Not implemented yet. Please volunteer.")
 
 
-class StereoVideoData:
+class StereoVideoData(BaseVideoData):
     """
     Stores data extracted from each view of a stereo calibration.
     """
     def __init__(self):
         self.left_data = MonoVideoData()
-        self.right_data = StereoVideoData()
+        self.right_data = MonoVideoData()
 
     def reinit(self):
         """
         Deletes all data.
         """
+        super(StereoVideoData, self).reinit()
         self.left_data.reinit()
         self.right_data.reinit()
-
-    def get_number_of_views(self):
-        """
-        Returns the number of views.
-        """
-        num_left = self.left_data.get_number_of_views()
-        num_right = self.right_data.get_number_of_views()
-        if num_left != num_right:
-            raise ValueError("Different number of views in left and right??")
-        return num_left
 
     def pop(self):
         """
         Removes the last (most recent) view of data.
         """
+        super(StereoVideoData, self).pop()
         self.left_data.pop()
         self.right_data.pop()
 
@@ -143,6 +177,16 @@ class StereoVideoData:
             left_image, left_ids, left_object_points, left_image_points)
         self.right_data.push(
             right_image, right_ids, right_object_points, right_image_points)
+
+    def get_number_of_views(self):
+        """
+        Returns the number of views.
+        """
+        num_left = self.left_data.get_number_of_views()
+        num_right = self.right_data.get_number_of_views()
+        if num_left != num_right:
+            raise ValueError("Different number of views in left and right??")
+        return num_left
 
     def save_data(self,
                   dir_name: str,

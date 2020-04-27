@@ -124,7 +124,20 @@ def stereo_video_calibration(left_ids,
                                              right_ids,
                                              right_image_points, 10)
 
-    # So, now we can calibrate using only points that occur in left and right.
+    # First do stereo calibration, using fixed intrinsics.
+    s_rms, l_c, l_d, r_c, r_d, \
+        l2r_r, l2r_t, essential, fundamental = cv2.stereoCalibrate(
+            common_object_points,
+            common_left_image_points,
+            common_right_image_points,
+            l_c,
+            l_d,
+            r_c,
+            r_d,
+            image_size,
+            flags=cv2.CALIB_USE_INTRINSIC_GUESS | cv2.CALIB_FIX_INTRINSIC)
+
+    # Then do it again, using the passed in flags.
     s_rms, l_c, l_d, r_c, r_d, \
         l2r_r, l2r_t, essential, fundamental = cv2.stereoCalibrate(
             common_object_points,
