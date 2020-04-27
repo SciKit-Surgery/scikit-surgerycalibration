@@ -21,7 +21,7 @@ script:
  - coverage erase
  - coverage run -a --source ./sksurgerycalibration -m pytest -v -s ./tests/
  - coverage report -m
- - pylint --rcfile=tests/pylintrc sksurgerycalibration tests
+ - pylint --rcfile=tests/pylintrc sksurgerycalibration
 
 after_success:
  - coveralls
