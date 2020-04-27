@@ -19,7 +19,7 @@ def _get_left_prefix(file_prefix: str):
 
     left_prefix = "calib.left"
     if file_prefix:
-        left_prefix = file_prefix
+        left_prefix = file_prefix + ".left"
     return left_prefix
 
 
@@ -27,7 +27,7 @@ def _get_right_prefix(file_prefix: str):
 
     right_prefix = "calib.right"
     if file_prefix:
-        right_prefix = file_prefix
+        right_prefix = file_prefix + ".right"
     return right_prefix
 
 
@@ -90,7 +90,7 @@ def _get_extrinsics_file_name(dir_name: str,
                               ):
 
     extrinsics_file = _get_enumerated_file_name(dir_name,
-                                                _get_calib_prefix(file_prefix),
+                                                file_prefix,
                                                 "extrinsics",
                                                 view_number,
                                                 ".txt")
@@ -108,7 +108,7 @@ def _get_extrinsic_file_names(dir_name: str,
 def _get_l2r_file_name(dir_name: str,
                        file_prefix: str):
     l2r_file = os.path.join(dir_name,
-                            file_prefix + ".l2r.txt")
+                            _get_calib_prefix(file_prefix) + ".l2r.txt")
     return l2r_file
 
 
