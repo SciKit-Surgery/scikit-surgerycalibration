@@ -14,18 +14,20 @@ class BaseCalibrationParams:
     def __init__(self):
         """
         Constructor, no member variables, so just a pure virtual interface.
-        """
 
-    def save_data(self,
-                  dir_name: str,
-                  file_prefix: str
-                  ):
+        Not really necessary if you rely on duck-typing, but at least
+        it shows the intention of what derived classes should implement,
+        and means we can use this base class to type check against.
+        """
+        pass
+
+    def reinit(self):
         raise NotImplementedError("Derived classes should implement this.")
 
-    def load_data(self,
-                  dir_name: str,
-                  file_prefix: str
-                  ):
+    def save_data(self, dir_name: str, file_prefix: str):
+        raise NotImplementedError("Derived classes should implement this.")
+
+    def load_data(self, dir_name: str, file_prefix: str):
         raise NotImplementedError("Derived classes should implement this.")
 
 
@@ -190,6 +192,8 @@ class StereoCalibrationParams(BaseCalibrationParams):
         :param dir_name: directory to load from
         :param file_prefix: prefix for all files
         """
+        self.reinit()
+
         left_prefix = sksio._get_left_prefix(file_prefix)
         self.left_params.load_data(dir_name, left_prefix)
         right_prefix = sksio._get_right_prefix(file_prefix)
@@ -197,5 +201,6 @@ class StereoCalibrationParams(BaseCalibrationParams):
 
         l2r_file = sksio._get_l2r_file_name(dir_name, file_prefix)
         stereo_ext = np.loadtxt(l2r_file)
+
         self.l2r_rmat = stereo_ext[0:3, 0:3]
         self.l2r_tvec = stereo_ext[0:3, 3]

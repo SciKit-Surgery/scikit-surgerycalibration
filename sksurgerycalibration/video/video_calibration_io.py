@@ -3,6 +3,7 @@
 """ Various functions to help with IO. """
 
 import os
+import glob
 from fnmatch import filter as file_filter
 
 
@@ -25,6 +26,7 @@ def _get_enumerated_file_name(dir_name: str,
                               type_prefix: str,
                               view_number: str
                               ):
+    # Keep in synch with _get_enumerated_file_glob
     file_name = \
         os.path.join(dir_name,
                      file_prefix
@@ -33,6 +35,21 @@ def _get_enumerated_file_name(dir_name: str,
                      + "."
                      + str(view_number) + ".txt")
     return file_name
+
+
+def _get_enumerated_file_glob(dir_name: str,
+                              file_prefix: str,
+                              type_prefix: str
+                              ):
+    # Keep in synch with _get_enumerated_file_name
+    file_glob = \
+        os.path.join(dir_name,
+                     file_prefix
+                     + "."
+                     + type_prefix
+                     + "."
+                     + "*" + ".txt")
+    return file_glob
 
 
 def _get_extrinsics_file_name(dir_name: str,
@@ -116,4 +133,39 @@ def _get_imagepoints_file_name(dir_name: str,
                                                   "imagepoints",
                                                   view_number)
     return image_points_file
+
+
+def _get_device_tracking_file_name(dir_name: str,
+                                   file_prefix: str,
+                                   view_number: int
+                                   ):
+    device_tracking = _get_enumerated_file_name(dir_name,
+                                                file_prefix,
+                                                "device",
+                                                view_number)
+    return device_tracking
+
+
+def _get_calibration_tracking_file_name(dir_name: str,
+                                        file_prefix: str,
+                                        view_number: int
+                                        ):
+    calibration_tracking = _get_enumerated_file_name(dir_name,
+                                                     file_prefix,
+                                                     "calibration",
+                                                     view_number)
+    return calibration_tracking
+
+
+def _get_filenames_by_glob_expr(dir_name: str,
+                                file_prefix: str,
+                                type_prefix: str
+                                ):
+
+    file_glob = _get_enumerated_file_glob(dir_name,
+                                          file_prefix,
+                                          type_prefix)
+    files = glob.glob(file_glob)
+    files.sort()
+    return files
 

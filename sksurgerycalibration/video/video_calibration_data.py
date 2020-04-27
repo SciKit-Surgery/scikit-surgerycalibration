@@ -9,12 +9,41 @@ import sksurgerycalibration.video.video_calibration_io as sksio
 
 
 class BaseVideoData:
+
+    def __init__(self):
+        """
+        Constructor, no member variables, so just a pure virtual interface.
+
+        Not really necessary if you rely on duck-typing, but at least
+        it shows the intention of what derived classes should implement,
+        and means we can use this base class to type check against.
+        """
+        pass
+
+    def reinit(self):
+        raise NotImplementedError("Derived classes should implement this.")
+
+    def pop(self):
+        raise NotImplementedError("Derived classes should implement this.")
+
+    def get_number_of_views(self):
+        raise NotImplementedError("Derived classes should implement this.")
+
+    def save_data(self, dir_name: str, file_prefix: str):
+        raise NotImplementedError("Derived classes should implement this.")
+
+    def load_data(self, dir_name: str, file_prefix: str):
+        raise NotImplementedError("Derived classes should implement this.")
+
+
+class TrackingData(BaseVideoData):
     """
-    Base class for storing tracking data, and serving as a base class/interface.
+    Class for storing tracking data.
     """
     def __init__(self):
         self.device_tracking_array = None
         self.calibration_tracking_array = None
+        self.reinit()
 
     def reinit(self):
         """
@@ -22,6 +51,16 @@ class BaseVideoData:
         """
         self.device_tracking_array = []
         self.calibration_tracking_array = []
+
+    def push(self, device_tracking, calibration_tracking):
+        """
+        Stores a pair of tracking data.
+
+        :param device_tracking: transformation for the thing you're tracking
+        :param calibration_tracking: transformation for tracked calibration obj
+        """
+        self.device_tracking_array.append(copy.deepcopy(device_tracking))
+        self.calibration_tracking_array.append(copy.deepcopy(calibration_tracking))
 
     def pop(self):
         """
@@ -32,19 +71,61 @@ class BaseVideoData:
             self.calibration_tracking_array.pop(-1)
 
     def get_number_of_views(self):
-        raise NotImplementedError("Derived classes should implement this.")
+        """
+        Returns the number of views of data.
+        :return: int
+        """
+        return len(self.device_tracking_array)
 
     def save_data(self,
                   dir_name: str,
                   file_prefix: str
                   ):
-        raise NotImplementedError("Derived classes should implement this.")
+        """
+        Saves the tracking data to lots of different files.
+
+        :param dir_name: directory to save to
+        :param file_prefix: prefix for all files
+        """
+        for i in enumerate(self.device_tracking_array):
+            device_tracking_file = \
+                sksio._get_device_tracking_file_name(dir_name,
+                                                     file_prefix,
+                                                     i[0])
+            np.savetxt(device_tracking_file, self.device_tracking_array[i])
+
+        for i in enumerate(self.calibration_tracking_array):
+            calibration_tracking_file = \
+                sksio._get_calibration_tracking_file_name(dir_name,
+                                                          file_prefix,
+                                                          i[0])
+            np.savetxt(calibration_tracking_file,
+                       self.calibration_tracking_array[i])
 
     def load_data(self,
                   dir_name: str,
                   file_prefix: str
                   ):
-        raise NotImplementedError("Derived classes should implement this.")
+        """
+        Loads tracking data from files.
+
+        :param dir_name: directory to load from
+        :param file_prefix: prefix for all files
+        """
+        self.reinit()
+        files = sksio._get_enumerated_file_glob(dir_name,
+                                                file_prefix,
+                                                "device")
+        for file in files:
+            device_data = np.loadtxt(file)
+            self.device_tracking_array.append(device_data)
+
+        files = sksio._get_enumerated_file_glob(dir_name,
+                                                file_prefix,
+                                                "calibration")
+        for file in files:
+            calibration_data = np.loadtxt(file)
+            self.calibration_tracking_array.append(calibration_data)
 
 
 class MonoVideoData(BaseVideoData):
@@ -56,30 +137,32 @@ class MonoVideoData(BaseVideoData):
         self.ids_arrays = None
         self.object_points_arrays = None
         self.image_points_arrays = None
+        self.tracking_data = None
         self.reinit()
 
     def reinit(self):
         """
         Deletes all data.
         """
-        super(MonoVideoData, self).reinit()
         self.images_array = []
         self.ids_arrays = []
         self.object_points_arrays = []
         self.image_points_arrays = []
+        self.tracking_data = TrackingData()
 
     def pop(self):
         """
         Removes the last (most recent) view of data.
         """
-        super(MonoVideoData, self).pop()
         if len(self.images_array) > 1:
             self.images_array.pop(-1)
             self.ids_arrays.pop(-1)
             self.object_points_arrays.pop(-1)
             self.image_points_arrays.pop(-1)
+            self.tracking_data.pop()
 
-    def push(self, image, ids, object_points, image_points):
+    def push(self, image, ids, object_points, image_points,
+             device_tracking=None, calibration_tracking=None):
         """
         Stores another view of data. Copies data.
         """
@@ -87,6 +170,7 @@ class MonoVideoData(BaseVideoData):
         self.ids_arrays.append(copy.deepcopy(ids))
         self.object_points_arrays.append(copy.deepcopy(object_points))
         self.image_points_arrays.append(copy.deepcopy(image_points))
+        self.tracking_data.push(device_tracking, calibration_tracking)
 
     def get_number_of_views(self):
         """
@@ -104,6 +188,8 @@ class MonoVideoData(BaseVideoData):
         :param dir_name: directory to save to
         :param file_prefix: prefix for all files
         """
+        self.tracking_data.save_data(dir_name, file_prefix)
+
         for i in enumerate(self.images_array):
             image_file = sksio._get_images_file_name(dir_name,
                                                      file_prefix,
@@ -134,12 +220,42 @@ class MonoVideoData(BaseVideoData):
                   file_prefix: str
                   ):
         """
-        Loads calibration data from a directory.
+        Loads the calibration data.
 
         :param dir_name: directory to load from
         :param file_prefix: prefix for all files
         """
-        raise RuntimeError("Not implemented yet. Please volunteer.")
+        self.reinit()
+
+        files = sksio._get_enumerated_file_glob(dir_name,
+                                                file_prefix,
+                                                "images")
+        for file in files:
+            image = cv2.imread(file)
+            self.images_array.append(image)
+
+        files = sksio._get_enumerated_file_glob(dir_name,
+                                                file_prefix,
+                                                "ids")
+        for file in files:
+            ids = np.loadtxt(file)
+            self.ids_arrays.append(ids)
+
+        files = sksio._get_enumerated_file_glob(dir_name,
+                                                file_prefix,
+                                                "objectpoints")
+
+        for file in files:
+            object_points = np.loadtxt(file)
+            self.object_points_arrays.append(object_points)
+
+        files = sksio._get_enumerated_file_glob(dir_name,
+                                                file_prefix,
+                                                "imagepoints")
+
+        for file in files:
+            image_points = np.loadtxt(file)
+            self.image_points_arrays.append(image_points)
 
 
 class StereoVideoData(BaseVideoData):
@@ -149,26 +265,29 @@ class StereoVideoData(BaseVideoData):
     def __init__(self):
         self.left_data = MonoVideoData()
         self.right_data = MonoVideoData()
+        self.tracking_data = TrackingData()
+        self.reinit()
 
     def reinit(self):
         """
         Deletes all data.
         """
-        super(StereoVideoData, self).reinit()
         self.left_data.reinit()
         self.right_data.reinit()
+        self.tracking_data.reinit()
 
     def pop(self):
         """
         Removes the last (most recent) view of data.
         """
-        super(StereoVideoData, self).pop()
         self.left_data.pop()
         self.right_data.pop()
+        self.tracking_data.pop()
 
     def push(self,
              left_image, left_ids, left_object_points, left_image_points,
-             right_image, right_ids, right_object_points, right_image_points
+             right_image, right_ids, right_object_points, right_image_points,
+             device_tracking=None, calibration_tracking=None
              ):
         """
         Stores another view of data. Copies data.
@@ -177,6 +296,7 @@ class StereoVideoData(BaseVideoData):
             left_image, left_ids, left_object_points, left_image_points)
         self.right_data.push(
             right_image, right_ids, right_object_points, right_image_points)
+        self.tracking_data.push(device_tracking, calibration_tracking)
 
     def get_number_of_views(self):
         """
@@ -198,6 +318,7 @@ class StereoVideoData(BaseVideoData):
         :param dir_name: directory to save to
         :param file_prefix: prefix for all files
         """
+        self.tracking_data.save_data(dir_name, file_prefix)
         left_prefix = sksio._get_left_prefix(file_prefix)
         self.left_data.save_data(dir_name, left_prefix)
         right_prefix = sksio._get_right_prefix(file_prefix)
@@ -213,6 +334,8 @@ class StereoVideoData(BaseVideoData):
         :param dir_name: directory to load from
         :param file_prefix: prefix for all files
         """
+        self.reinit()
+        self.tracking_data.load_data(dir_name, file_prefix)
         left_prefix = sksio._get_left_prefix(file_prefix)
         self.left_data.load_data(dir_name, left_prefix)
         right_prefix = sksio._get_right_prefix(file_prefix)
