@@ -2,6 +2,7 @@
 
 """ Containers for video calibration data. """
 
+import os
 import copy
 import cv2
 import numpy as np
@@ -87,12 +88,15 @@ class TrackingData(BaseVideoData):
         :param dir_name: directory to save to
         :param file_prefix: prefix for all files
         """
+        if not os.path.isdir(dir_name):
+            os.mkdir(dir_name)
+
         for i in enumerate(self.device_tracking_array):
             device_tracking_file = \
                 sksio._get_device_tracking_file_name(dir_name,
                                                      file_prefix,
                                                      i[0])
-            np.savetxt(device_tracking_file, self.device_tracking_array[i])
+            np.savetxt(device_tracking_file, self.device_tracking_array[i[0]], fmt='%f')
 
         for i in enumerate(self.calibration_tracking_array):
             calibration_tracking_file = \
@@ -100,7 +104,7 @@ class TrackingData(BaseVideoData):
                                                           file_prefix,
                                                           i[0])
             np.savetxt(calibration_tracking_file,
-                       self.calibration_tracking_array[i])
+                       self.calibration_tracking_array[i[0]], fmt='%f')
 
     def load_data(self,
                   dir_name: str,
@@ -115,14 +119,16 @@ class TrackingData(BaseVideoData):
         self.reinit()
         files = sksio._get_enumerated_file_glob(dir_name,
                                                 file_prefix,
-                                                "device")
+                                                "device",
+                                                ".txt")
         for file in files:
             device_data = np.loadtxt(file)
             self.device_tracking_array.append(device_data)
 
         files = sksio._get_enumerated_file_glob(dir_name,
                                                 file_prefix,
-                                                "calibration")
+                                                "calibration",
+                                                ".txt")
         for file in files:
             calibration_data = np.loadtxt(file)
             self.calibration_tracking_array.append(calibration_data)
@@ -188,32 +194,33 @@ class MonoVideoData(BaseVideoData):
         :param dir_name: directory to save to
         :param file_prefix: prefix for all files
         """
+        if not os.path.isdir(dir_name):
+            os.makedirs(dir_name)
+
         self.tracking_data.save_data(dir_name, file_prefix)
 
         for i in enumerate(self.images_array):
             image_file = sksio._get_images_file_name(dir_name,
                                                      file_prefix,
                                                      i[0])
-            cv2.imwrite(image_file, self.images_array[i])
+            cv2.imwrite(image_file, self.images_array[i[0]])
         for i in enumerate(self.ids_arrays):
             id_file = sksio._get_ids_file_name(dir_name,
                                                file_prefix,
                                                i[0])
-            np.savetxt(id_file, self.ids_arrays[i])
+            np.savetxt(id_file, self.ids_arrays[i[0]], fmt='%f')
         for i in enumerate(self.object_points_arrays):
             object_points_file = sksio._get_objectpoints_file_name(dir_name,
                                                                    file_prefix,
                                                                    i[0])
-            with open(object_points_file, 'w') as f:
-                for j in range(0, len(self.object_points_arrays[i])):
-                    np.savetxt(f, self.object_points_arrays[i][j], fmt='%f')
+            reshaped = np.reshape(self.object_points_arrays[i[0]], (-1, 3))
+            np.savetxt(object_points_file, reshaped, fmt='%f')
         for i in enumerate(self.image_points_arrays):
             image_points_file = sksio._get_imagepoints_file_name(dir_name,
                                                                  file_prefix,
                                                                  i[0])
-            with open(image_points_file, 'w') as f:
-                for j in range(0, len(self.image_points_arrays[i])):
-                    np.savetxt(f, self.image_points_arrays[i][j], fmt='%f')
+            reshaped = np.reshape(self.image_points_arrays[i[0]], (-1, 2))
+            np.savetxt(image_points_file, reshaped, fmt='%f')
 
     def load_data(self,
                   dir_name: str,
@@ -229,21 +236,24 @@ class MonoVideoData(BaseVideoData):
 
         files = sksio._get_enumerated_file_glob(dir_name,
                                                 file_prefix,
-                                                "images")
+                                                "images",
+                                                ".png")
         for file in files:
             image = cv2.imread(file)
             self.images_array.append(image)
 
         files = sksio._get_enumerated_file_glob(dir_name,
                                                 file_prefix,
-                                                "ids")
+                                                "ids",
+                                                ".txt")
         for file in files:
             ids = np.loadtxt(file)
             self.ids_arrays.append(ids)
 
         files = sksio._get_enumerated_file_glob(dir_name,
                                                 file_prefix,
-                                                "objectpoints")
+                                                "objectpoints",
+                                                ".txt")
 
         for file in files:
             object_points = np.loadtxt(file)
@@ -251,7 +261,8 @@ class MonoVideoData(BaseVideoData):
 
         files = sksio._get_enumerated_file_glob(dir_name,
                                                 file_prefix,
-                                                "imagepoints")
+                                                "imagepoints",
+                                                ".txt")
 
         for file in files:
             image_points = np.loadtxt(file)

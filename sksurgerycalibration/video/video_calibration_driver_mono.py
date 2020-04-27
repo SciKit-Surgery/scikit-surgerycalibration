@@ -37,7 +37,10 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         # Pass them to base class, so base class can access them.
         self._init_internal(self.calibration_data, self.calibration_params)
 
-    def grab_data(self, image):
+    def grab_data(self,
+                  image,
+                  device_tracking=None,
+                  calibration_object_tracking=None):
         """
         Extracts points, by passing it to the PointDetector.
 
@@ -46,6 +49,8 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         So, no points is not an error. Its an expected condition.
 
         :param image: RGB image.
+        :param device_tracking: transformation for the tracked device
+        :param calibration_object_tracking: transformation of tracked calibration object
         :return: The number of points grabbed.
         """
         number_of_points = 0
@@ -56,8 +61,17 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         if image_points.shape[0] >= self.minimum_points_per_frame:
 
             ids, image_points, object_points = \
-                cu.convert_point_detector_to_opencv(ids, object_points, image_points)
-            self.calibration_data.push(image, ids, object_points, image_points)
+                cu.convert_point_detector_to_opencv(ids,
+                                                    object_points,
+                                                    image_points)
+
+            self.calibration_data.push(image,
+                                       ids,
+                                       object_points,
+                                       image_points,
+                                       device_tracking,
+                                       calibration_object_tracking)
+
             number_of_points = image_points.shape[0]
 
         LOGGER.info("Grabbed: Returning %s points.", str(number_of_points))

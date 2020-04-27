@@ -79,9 +79,10 @@ class MonoCalibrationParams(BaseCalibrationParams):
         np.savetxt(dist_coeff_file, self.dist_coeffs, fmt='%f')
         for i in enumerate(self.rvecs):
             extrinsics_file = sksio._get_extrinsics_file_name(dir_name,
-                                                              file_prefix, i)
-            extrinsics = sksu.extrinsic_vecs_to_matrix(self.rvecs[i],
-                                                       self.tvecs[i])
+                                                              file_prefix,
+                                                              i[0])
+            extrinsics = sksu.extrinsic_vecs_to_matrix(self.rvecs[i[0]],
+                                                       self.tvecs[i[0]])
             np.savetxt(extrinsics_file, extrinsics, fmt='%f')
 
     def load_data(self,
@@ -180,7 +181,7 @@ class StereoCalibrationParams(BaseCalibrationParams):
         self.left_params.save_data(dir_name, right_prefix)
 
         l2r_file = sksio._get_l2r_file_name(dir_name, file_prefix)
-        np.savetxt(l2r_file, self.get_l2r_as_4x4())
+        np.savetxt(l2r_file, self.get_l2r_as_4x4(), fmt='%f')
 
     def load_data(self,
                   dir_name: str,
