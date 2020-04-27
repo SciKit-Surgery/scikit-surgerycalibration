@@ -82,22 +82,11 @@ def pivot_calibration_aos(tracking_matrices):
     :returns: pointer offset, pivot point and RMS Error about centroid of pivot.
     :raises: ValueError if rank less than 6
     """
-    number_of_matrices = tracking_matrices.shape[0]
 
     # See equation in section 2.1.2 of Yaniv 2015.
     # Ax = b.
 
-    size_a = 3 * number_of_matrices, 3
-    # A contains rotation matrix from each tracking matrix.
-    # and -I for each tracking matrix.
-    a_first = (tracking_matrices [:, 0:3, 0:3]).reshape(size_a)
-    a_second = (np.eye(3) * -1.0).reshape((1, 3, 3)).repeat(
-        number_of_matrices, 0).reshape(size_a)
-    a_values = np.concatenate((a_first, a_second), axis=1)
-
-    # Column vector containing -1 * translation from each tracking matrix.
-    size_b = 3 * number_of_matrices, 1
-    b_values = (tracking_matrices[:, 0:3, 3] * -1.0).reshape((size_b))
+    a_values, b_values = _matrices_to_a_and_b(tracking_matrices)
 
     # To calculate Singular Value Decomposition
 
@@ -107,40 +96,16 @@ def pivot_calibration_aos(tracking_matrices):
     x_values = np.dot(v_values.T, w_values)
 
     # Calculating the rank, and removing close to zero singular values.
-    rank = replace_small_values(s_values, 0.01, 0.0)
+    rank = _replace_small_values(s_values, 0.01, 0.0)
 
     if rank < 6:
         raise ValueError("PivotCalibration: Failed. Rank < 6")
 
     pointer_offset = x_values[0:3]
     pivot_location = x_values[3:6]
-    # Compute RMS error.
-    residual_matrix = (np.dot(a_values, x_values) - b_values)
-    residual_error = np.sum(residual_matrix * residual_matrix)
-    residual_error = residual_error / float(number_of_matrices * 3)
-    residual_error = np.sqrt(residual_error)
+    residual_error = _residual_error_direct(a_values, b_values, x_values)
 
     return pointer_offset, pivot_location, residual_error
-
-
-def replace_small_values(the_list, threshold=0.01, replacement_value=0.0):
-    """
-    replace small values in a list, this changes the list in place.
-
-    :param the_list: the list to process.
-    :param theshold: replace values lower than threshold.
-    :param replacement_value: value to replace with.
-    :returns: the number of items not replaced.
-    """
-    rank = 0
-    for index, item in enumerate(the_list):
-        if item < threshold:
-            the_list[index] = replacement_value
-        else:
-            rank += 1
-
-    return rank
-
 
 def pivot_calibration_with_ransac(tracking_matrices,
                                   number_iterations,
@@ -259,12 +224,85 @@ def pivot_calibration_sphere_fit(tracking_matrices, init_parameters=None):
 
     pointer_offset = np.mean(offsets, 0)
 
-    #and the residual error (RMS point spread)
-    distances = np.zeros((tracking_matrices.shape[0], 1))
-    for index, rot in enumerate(rotations):
-        distances[index] = np.linalg.norm(
-            rot @ pointer_offset + translations[index] - pivot_point)
-
-    residual_error = np.mean(distances)
+    residual_error = _residual_error(tracking_matrices, pointer_offset,
+                                     pivot_point)
 
     return pointer_offset, pivot_point, residual_error
+
+
+def _matrices_to_a_and_b(tracking_matrices):
+    """
+    Helper function to convert tracking matrices into
+    a_values and b_values that can be used for aos calibration or
+    for calculating residuals.
+
+    :param tracking_matrices: nx4x4 tracking matrices
+    :returns: a_values, (nx3)x6 array of rotation and -Identity, b_values,
+    an nx3 column vector of translations
+    """
+    number_of_matrices = tracking_matrices.shape[0]
+    # A contains rotation matrix from each tracking matrix.
+    # and -I for each tracking matrix.
+    size_a = 3 * number_of_matrices, 3
+    a_first = (tracking_matrices [:, 0:3, 0:3]).reshape(size_a)
+    a_second = (np.eye(3) * -1.0).reshape((1, 3, 3)).repeat(
+        number_of_matrices, 0).reshape(size_a)
+    a_values = np.concatenate((a_first, a_second), axis=1)
+
+    # Column vector containing -1 * translation from each tracking matrix.
+    size_b = 3 * number_of_matrices, 1
+    b_values = (tracking_matrices[:, 0:3, 3] * -1.0).reshape((size_b))
+
+    return a_values, b_values
+
+def _residual_error(tracking_matrices, pointer_offset, pivot_location, debug = False):
+    """
+    Helper function to calculate resdiual (RMS) errors.
+
+    :params tracking_matrices: nx4x4 array
+    :params pointer_offset: 1x3 array
+    :params pivot_location: 1x3 array
+    :returns: TRhe RMS tracking error
+    """
+    x_values = np.concatenate([pointer_offset, pivot_location],
+                              axis=0).reshape((6, 1))
+    a_values, b_values = _matrices_to_a_and_b(tracking_matrices)
+    return _residual_error_direct(a_values, b_values, x_values, debug)
+
+
+def _residual_error_direct(a_values, b_values, x_values, debug = False):
+    """
+    Helper function to calculate resdidual (RMS) errors.
+
+    :params a_values: (nx3)x6 array of rotation and -Identity,
+    :params b_values: an nx3 column vector of translations
+    :params x_values: nx6 array, pointer_offset and pivot_point
+    :returns: TRhe RMS tracking error
+    """
+    residual_matrix = (np.dot(a_values, x_values) - b_values)
+    residual_error = np.mean(residual_matrix * residual_matrix)
+    residual_error = np.sqrt(residual_error)
+    if debug:
+        print (residual_matrix)
+        print (residual_matrix * residual_matrix)
+        print (np.mean(residual_matrix * residual_matrix))
+        print (residual_error)
+    return residual_error
+
+def _replace_small_values(the_list, threshold=0.01, replacement_value=0.0):
+    """
+    replace small values in a list, this changes the list in place.
+
+    :param the_list: the list to process.
+    :param theshold: replace values lower than threshold.
+    :param replacement_value: value to replace with.
+    :returns: the number of items not replaced.
+    """
+    rank = 0
+    for index, item in enumerate(the_list):
+        if item < threshold:
+            the_list[index] = replacement_value
+        else:
+            rank += 1
+
+    return rank

@@ -66,24 +66,6 @@ def test_return_value():
     assert round(pivot_point[2, 0], 3) == -2112.131
 
 
-def test_replace_small_values():
-    """Tests for small values replacement"""
-    list_in = [0.2, 0.6, 0.0099, 0.56]
-
-    rank = p.replace_small_values(list_in)
-
-    assert rank == 3
-    assert list_in[2] == 0
-
-    rank = p.replace_small_values(list_in,
-                                  threshold=0.3,
-                                  replacement_value=-1.0)
-
-    assert rank == 2
-    assert list_in[0] == -1.0
-    assert list_in[2] == -1.0
-
-
 def test_pivot_with_ransac():
     """Tests that pivot with ransac runs"""
     #seed the random number generator. Seeding
@@ -134,4 +116,40 @@ def test_pivot_with_sphere_fit():
     _, _, residual_error = p.pivot_calibration(matrices, config)
 
     #do a regression test on the residual error
-    assert round(residual_error, 3) == 3.421
+    assert round(residual_error, 3) == 2.346
+
+
+def test_replace_small_values():
+    """Tests for small values replacement"""
+    list_in = [0.2, 0.6, 0.0099, 0.56]
+
+    rank = p._replace_small_values(list_in) #pylint: disable=protected-access
+
+    assert rank == 3
+    assert list_in[2] == 0
+
+    rank = p._replace_small_values( #pylint: disable=protected-access
+        list_in,
+        threshold=0.3,
+        replacement_value=-1.0)
+
+    assert rank == 2
+    assert list_in[0] == -1.0
+    assert list_in[2] == -1.0
+
+    
+def test_residual_error():
+    """
+    Test that residual error returns a correct value
+    """
+    
+    pivot_point = [0.0, 0.0, 0.0]
+    pointer_offset = [-100.0, 0.0, 0.0]
+
+    tracker_mat = np.array([ [[1.0, 0.0, 0.0, 110.0],
+                              [0.0, 1.0, 0.0, 0.0],
+                              [0.0, 0.0, 1.0, 0.0],
+                              [0.0, 0.0, 0.0, 1.0]]
+                           ])
+
+    assert p._residual_error(tracker_mat, pointer_offset, pivot_point, debug = True) == 10.5
