@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-""" Video Calibration functions. """
+""" Video Calibration functions, that wrap OpenCV functions mainly. """
 
 import logging
 import numpy as np

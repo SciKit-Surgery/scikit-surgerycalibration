@@ -8,7 +8,7 @@ import sksurgerycalibration.video.video_calibration_driver_base as vdb
 import sksurgerycalibration.video.video_calibration_data as cd
 import sksurgerycalibration.video.video_calibration_params as cp
 import sksurgerycalibration.video.video_calibration_utils as cu
-import sksurgerycalibration.video.video_calibration as vc
+import sksurgerycalibration.video.video_calibration_wrapper as vc
 
 LOGGER = logging.getLogger(__name__)
 

@@ -4,7 +4,7 @@ import glob
 import pytest
 import numpy as np
 import sksurgerycalibration.video.video_calibration_utils as vu
-import sksurgerycalibration.video.video_calibration as vc
+import sksurgerycalibration.video.video_calibration_wrapper as vc
 
 
 def test_mono_left_video_calibration():
