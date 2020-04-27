@@ -89,22 +89,25 @@ class TrackingData(BaseVideoCalibrationData):
         :param file_prefix: prefix for all files
         """
         if not os.path.isdir(dir_name):
-            os.mkdir(dir_name)
+            os.makedirs(dir_name)
 
         for i in enumerate(self.device_tracking_array):
             device_tracking_file = \
                 sksio._get_device_tracking_file_name(dir_name,
                                                      file_prefix,
                                                      i[0])
-            np.savetxt(device_tracking_file, self.device_tracking_array[i[0]], fmt='%f')
+            if self.device_tracking_array[i[0]] is not None:
+                np.savetxt(device_tracking_file,
+                           self.device_tracking_array[i[0]], fmt='%f')
 
         for i in enumerate(self.calibration_tracking_array):
             calibration_tracking_file = \
                 sksio._get_calibration_tracking_file_name(dir_name,
                                                           file_prefix,
                                                           i[0])
-            np.savetxt(calibration_tracking_file,
-                       self.calibration_tracking_array[i[0]], fmt='%f')
+            if self.calibration_tracking_array[i[0]] is not None:
+                np.savetxt(calibration_tracking_file,
+                           self.calibration_tracking_array[i[0]], fmt='%f')
 
     def load_data(self,
                   dir_name: str,

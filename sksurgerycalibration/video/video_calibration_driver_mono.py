@@ -31,11 +31,11 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                      minimum_points_per_frame)
 
         # Create data holders, and parameter holders, specific to Mono.
-        self.calibration_data = cd.MonoVideoData()
-        self.calibration_params = cp.MonoCalibrationParams()
+        calibration_data = cd.MonoVideoData()
+        calibration_params = cp.MonoCalibrationParams()
 
         # Pass them to base class, so base class can access them.
-        self._init_internal(self.calibration_data, self.calibration_params)
+        self._init_internal(calibration_data, calibration_params)
 
     def grab_data(self,
                   image,
@@ -92,17 +92,17 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         """
         proj_err, camera_matrix, dist_coeffs, rvecs, tvecs = \
             vc.mono_video_calibration(
-                self.calibration_data.object_points_arrays,
-                self.calibration_data.image_points_arrays,
-                (self.calibration_data.images_array[0].shape[1],
-                 self.calibration_data.images_array[0].shape[0]),
+                self.video_data.object_points_arrays,
+                self.video_data.image_points_arrays,
+                (self.video_data.images_array[0].shape[1],
+                 self.video_data.images_array[0].shape[0]),
                 flags
             )
 
         sse, num_samples = \
-            cm.compute_mono_reconstruction_err(self.calibration_data.ids_arrays,
-                                               self.calibration_data.object_points_arrays,
-                                               self.calibration_data.image_points_arrays,
+            cm.compute_mono_reconstruction_err(self.video_data.ids_arrays,
+                                               self.video_data.object_points_arrays,
+                                               self.video_data.image_points_arrays,
                                                rvecs,
                                                tvecs,
                                                camera_matrix,

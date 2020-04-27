@@ -30,13 +30,18 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                      minimum_points_per_frame)
 
         # Create data holders, and parameter holders, specific to Mono.
-        self.calibration_data = cd.StereoVideoData()
-        self.calibration_params = cp.StereoCalibrationParams()
+        calibration_data = cd.StereoVideoData()
+        calibration_params = cp.StereoCalibrationParams()
 
         # Pass them to base class, so base class can access them.
-        self._init_internal(self.calibration_data, self.calibration_params)
+        self._init_internal(calibration_data, calibration_params)
 
-    def grab_data(self, left_image, right_image):
+    def grab_data(self,
+                  left_image,
+                  right_image,
+                  device_tracking=None,
+                  calibration_object_tracking=None
+                  ):
         """
         Extracts points, by passing it to the PointDetector.
 
@@ -46,6 +51,8 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
 
         :param left_image: RGB image.
         :param right_image: RGB image.
+        :param device_tracking: transformation for the tracked device
+        :param calibration_object_tracking: transformation of tracked calibration object
         :return: The number of points grabbed.
         """
         number_of_points = 0
@@ -70,14 +77,17 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                                                         right_object_points,
                                                         right_image_points)
 
-                self.calibration_data.push(left_image,
-                                           left_ids,
-                                           left_object_points,
-                                           left_image_points,
-                                           right_image,
-                                           right_ids,
-                                           right_object_points,
-                                           right_image_points)
+                self.video_data.push(left_image,
+                                     left_ids,
+                                     left_object_points,
+                                     left_image_points,
+                                     right_image,
+                                     right_ids,
+                                     right_object_points,
+                                     right_image_points)
+
+                self.tracking_data.push(device_tracking,
+                                        calibration_object_tracking)
 
                 number_of_points = \
                     left_image_points.shape[0] + \
@@ -106,14 +116,14 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         l2r_r, l2r_t, \
         essential, fundamental \
             = vc.stereo_video_calibration(
-                self.calibration_data.left_data.ids_arrays,
-                self.calibration_data.left_data.object_points_arrays,
-                self.calibration_data.left_data.image_points_arrays,
-                self.calibration_data.right_data.ids_arrays,
-                self.calibration_data.right_data.object_points_arrays,
-                self.calibration_data.right_data.image_points_arrays,
-                (self.calibration_data.left_data.images_array[0].shape[1],
-                 self.calibration_data.left_data.images_array[0].shape[0]),
+                self.video_data.left_data.ids_arrays,
+                self.video_data.left_data.object_points_arrays,
+                self.video_data.left_data.image_points_arrays,
+                self.video_data.right_data.ids_arrays,
+                self.video_data.right_data.object_points_arrays,
+                self.video_data.right_data.image_points_arrays,
+                (self.video_data.left_data.images_array[0].shape[1],
+                 self.video_data.left_data.images_array[0].shape[0]),
                 flags)
 
         self.calibration_params.set_data(l_c, l_d, l_rvecs, l_tvecs, r_c, r_d, r_rvecs, r_tvecs, l2r_r, l2r_t, essential, fundamental)

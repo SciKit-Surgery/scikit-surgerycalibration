@@ -180,7 +180,7 @@ class StereoCalibrationParams(BaseCalibrationParams):
         right_prefix = sksio._get_right_prefix(file_prefix)
         self.left_params.save_data(dir_name, right_prefix)
 
-        l2r_file = sksio._get_l2r_file_name(dir_name, sksio._get_calib_prefix(file_prefix))
+        l2r_file = sksio._get_l2r_file_name(dir_name, file_prefix)
         np.savetxt(l2r_file, self.get_l2r_as_4x4(), fmt='%f')
 
     def load_data(self,
@@ -200,7 +200,7 @@ class StereoCalibrationParams(BaseCalibrationParams):
         right_prefix = sksio._get_right_prefix(file_prefix)
         self.right_params.load_data(dir_name, right_prefix)
 
-        l2r_file = sksio._get_l2r_file_name(dir_name, sksio._get_calib_prefix(file_prefix))
+        l2r_file = sksio._get_l2r_file_name(dir_name, file_prefix)
         stereo_ext = np.loadtxt(l2r_file)
 
         self.l2r_rmat = stereo_ext[0:3, 0:3]
