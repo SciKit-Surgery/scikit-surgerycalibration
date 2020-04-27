@@ -32,13 +32,14 @@ class BaseVideoCalibrationDriver:
         """
         self.point_detector = point_detector
         self.minimum_points_per_frame = minimum_points_per_frame
-        self.calibration_data = None
+        self.tracking_data = vcd.TrackingData()
+        self.video_data = None
         self.calibration_params = None
         LOGGER.info("Constructed: Points per view=%s",
                     str(self.minimum_points_per_frame))
 
     def _init_internal(self,
-                       calibration_data: vcd.BaseVideoData,
+                       video_data: vcd.BaseVideoCalibrationData,
                        calibration_params: vcp.BaseCalibrationParams):
         """
         Derived classes must call this, to assign to
@@ -46,7 +47,7 @@ class BaseVideoCalibrationDriver:
         - self.calibration_data
         - self.calibration_params
         """
-        self.calibration_data = calibration_data
+        self.video_data = video_data
         self.calibration_params = calibration_params
 
     def reinit(self):
@@ -54,7 +55,8 @@ class BaseVideoCalibrationDriver:
         Resets this object, which means, removes stored calibration data
         and reset the calibration parameters to identity/zero.
         """
-        self.calibration_data.reinit()
+        self.tracking_data.reinit()
+        self.video_data.reinit()
         self.calibration_params.reinit()
         LOGGER.info("Reset: Now zero frames.")
 
@@ -62,7 +64,8 @@ class BaseVideoCalibrationDriver:
         """
         Removes the last grabbed view of data.
         """
-        self.calibration_data.pop()
+        self.tracking_data.pop()
+        self.video_data.pop()
         LOGGER.info("Popped: Now %s views.", str(self.get_number_of_views()))
 
     def get_number_of_views(self):
@@ -71,7 +74,7 @@ class BaseVideoCalibrationDriver:
 
         :return: number of views
         """
-        return self.calibration_data.get_number_of_views()
+        return self.video_data.get_number_of_views()
 
     def calibrate(self, flags=0):
         """
@@ -85,7 +88,8 @@ class BaseVideoCalibrationDriver:
         """
         Saves the data to the given dir_name, with file_prefix.
         """
-        self.calibration_data.save_data(dir_name, file_prefix)
+        self.tracking_data.save_data(dir_name, file_prefix)
+        self.video_data.save_data(dir_name, file_prefix)
 
     def load_data(self,
                   dir_name: str,
@@ -93,7 +97,8 @@ class BaseVideoCalibrationDriver:
         """
         Loads the data from dir_name, and populates this object.
         """
-        self.calibration_data.load_data(dir_name, file_prefix)
+        self.tracking_data.load_data(dir_name, file_prefix)
+        self.video_data.load_data(dir_name, file_prefix)
 
     def save_params(self,
                     dir_name: str,

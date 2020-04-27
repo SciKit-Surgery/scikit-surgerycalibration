@@ -65,12 +65,13 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                                                     object_points,
                                                     image_points)
 
-            self.calibration_data.push(image,
-                                       ids,
-                                       object_points,
-                                       image_points,
-                                       device_tracking,
-                                       calibration_object_tracking)
+            self.video_data.push(image,
+                                 ids,
+                                 object_points,
+                                 image_points)
+
+            self.tracking_data.push(device_tracking,
+                                    calibration_object_tracking)
 
             number_of_points = image_points.shape[0]
 

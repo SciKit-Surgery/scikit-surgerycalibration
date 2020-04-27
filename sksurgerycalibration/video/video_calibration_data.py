@@ -9,7 +9,7 @@ import numpy as np
 import sksurgerycalibration.video.video_calibration_io as sksio
 
 
-class BaseVideoData:
+class BaseVideoCalibrationData:
 
     def __init__(self):
         """
@@ -37,7 +37,7 @@ class BaseVideoData:
         raise NotImplementedError("Derived classes should implement this.")
 
 
-class TrackingData(BaseVideoData):
+class TrackingData(BaseVideoCalibrationData):
     """
     Class for storing tracking data.
     """
@@ -134,7 +134,7 @@ class TrackingData(BaseVideoData):
             self.calibration_tracking_array.append(calibration_data)
 
 
-class MonoVideoData(BaseVideoData):
+class MonoVideoData(BaseVideoCalibrationData):
     """
     Stores data extracted from each video view of a mono calibration.
     """
@@ -143,7 +143,6 @@ class MonoVideoData(BaseVideoData):
         self.ids_arrays = None
         self.object_points_arrays = None
         self.image_points_arrays = None
-        self.tracking_data = None
         self.reinit()
 
     def reinit(self):
@@ -154,7 +153,6 @@ class MonoVideoData(BaseVideoData):
         self.ids_arrays = []
         self.object_points_arrays = []
         self.image_points_arrays = []
-        self.tracking_data = TrackingData()
 
     def pop(self):
         """
@@ -165,10 +163,8 @@ class MonoVideoData(BaseVideoData):
             self.ids_arrays.pop(-1)
             self.object_points_arrays.pop(-1)
             self.image_points_arrays.pop(-1)
-            self.tracking_data.pop()
 
-    def push(self, image, ids, object_points, image_points,
-             device_tracking=None, calibration_tracking=None):
+    def push(self, image, ids, object_points, image_points):
         """
         Stores another view of data. Copies data.
         """
@@ -176,7 +172,6 @@ class MonoVideoData(BaseVideoData):
         self.ids_arrays.append(copy.deepcopy(ids))
         self.object_points_arrays.append(copy.deepcopy(object_points))
         self.image_points_arrays.append(copy.deepcopy(image_points))
-        self.tracking_data.push(device_tracking, calibration_tracking)
 
     def get_number_of_views(self):
         """
@@ -197,8 +192,6 @@ class MonoVideoData(BaseVideoData):
         if not os.path.isdir(dir_name):
             os.makedirs(dir_name)
 
-        self.tracking_data.save_data(dir_name, file_prefix)
-
         for i in enumerate(self.images_array):
             image_file = sksio._get_images_file_name(dir_name,
                                                      file_prefix,
@@ -208,7 +201,7 @@ class MonoVideoData(BaseVideoData):
             id_file = sksio._get_ids_file_name(dir_name,
                                                file_prefix,
                                                i[0])
-            np.savetxt(id_file, self.ids_arrays[i[0]], fmt='%f')
+            np.savetxt(id_file, self.ids_arrays[i[0]], fmt='%d')
         for i in enumerate(self.object_points_arrays):
             object_points_file = sksio._get_objectpoints_file_name(dir_name,
                                                                    file_prefix,
@@ -252,7 +245,7 @@ class MonoVideoData(BaseVideoData):
 
         files = sksio._get_enumerated_file_glob(dir_name,
                                                 file_prefix,
-                                                "objectpoints",
+                                                "object_points",
                                                 ".txt")
 
         for file in files:
@@ -261,7 +254,7 @@ class MonoVideoData(BaseVideoData):
 
         files = sksio._get_enumerated_file_glob(dir_name,
                                                 file_prefix,
-                                                "imagepoints",
+                                                "image_points",
                                                 ".txt")
 
         for file in files:
@@ -269,14 +262,13 @@ class MonoVideoData(BaseVideoData):
             self.image_points_arrays.append(image_points)
 
 
-class StereoVideoData(BaseVideoData):
+class StereoVideoData(BaseVideoCalibrationData):
     """
     Stores data extracted from each view of a stereo calibration.
     """
     def __init__(self):
         self.left_data = MonoVideoData()
         self.right_data = MonoVideoData()
-        self.tracking_data = TrackingData()
         self.reinit()
 
     def reinit(self):
@@ -285,7 +277,6 @@ class StereoVideoData(BaseVideoData):
         """
         self.left_data.reinit()
         self.right_data.reinit()
-        self.tracking_data.reinit()
 
     def pop(self):
         """
@@ -293,13 +284,10 @@ class StereoVideoData(BaseVideoData):
         """
         self.left_data.pop()
         self.right_data.pop()
-        self.tracking_data.pop()
 
     def push(self,
              left_image, left_ids, left_object_points, left_image_points,
-             right_image, right_ids, right_object_points, right_image_points,
-             device_tracking=None, calibration_tracking=None
-             ):
+             right_image, right_ids, right_object_points, right_image_points):
         """
         Stores another view of data. Copies data.
         """
@@ -307,7 +295,6 @@ class StereoVideoData(BaseVideoData):
             left_image, left_ids, left_object_points, left_image_points)
         self.right_data.push(
             right_image, right_ids, right_object_points, right_image_points)
-        self.tracking_data.push(device_tracking, calibration_tracking)
 
     def get_number_of_views(self):
         """
@@ -329,7 +316,6 @@ class StereoVideoData(BaseVideoData):
         :param dir_name: directory to save to
         :param file_prefix: prefix for all files
         """
-        self.tracking_data.save_data(dir_name, file_prefix)
         left_prefix = sksio._get_left_prefix(file_prefix)
         self.left_data.save_data(dir_name, left_prefix)
         right_prefix = sksio._get_right_prefix(file_prefix)
@@ -346,7 +332,6 @@ class StereoVideoData(BaseVideoData):
         :param file_prefix: prefix for all files
         """
         self.reinit()
-        self.tracking_data.load_data(dir_name, file_prefix)
         left_prefix = sksio._get_left_prefix(file_prefix)
         self.left_data.load_data(dir_name, left_prefix)
         right_prefix = sksio._get_right_prefix(file_prefix)
