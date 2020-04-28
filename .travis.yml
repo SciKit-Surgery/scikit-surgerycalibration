@@ -8,6 +8,7 @@ matrix:
     python: 3.7
   - os: linux
     python: 3.8
+    env: lint=true
 
 stages:
  - install
@@ -21,7 +22,9 @@ script:
  - coverage erase
  - coverage run -a --source ./sksurgerycalibration -m pytest -v -s ./tests/
  - coverage report -m
- - pylint --rcfile=tests/pylintrc sksurgerycalibration tests
+ - if env(lint); then
+    pylint --rcfile=tests/pylintrc sksurgerycalibration tests;
+   fi
 
 after_success:
  - coveralls
