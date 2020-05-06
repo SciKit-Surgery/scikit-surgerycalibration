@@ -120,4 +120,4 @@ def test_chessboard_stereo():
 
     # Just for a regression test, checking reprojection error, and recon error.
     assert (np.abs(reproj_err - 0.63983123) < 0.000001)
-    assert (np.abs(recon_err - 1.19090163) < 0.000001)
+    assert (np.abs(recon_err - 1.68418923) < 0.000001)

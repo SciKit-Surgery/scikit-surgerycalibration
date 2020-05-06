@@ -79,7 +79,7 @@ def test_stereo_video_calibration():
                                     (1920, 1080))
 
     assert (np.abs(s_reproj - 0.63022577) < 0.000001)
-    assert (np.abs(s_recon - 1.16159681) < 0.000001)
+    assert (np.abs(s_recon - 1.64274596) < 0.000001)
 
 # def test_experimental_mono_stereo_calib():
 #
