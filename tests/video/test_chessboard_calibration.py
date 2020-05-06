@@ -52,6 +52,29 @@ def test_chessboard_mono():
     assert (np.abs(reproj_err - 0.59164921) < 0.000001)
     assert (np.abs(recon_err - 0.21561650) < 0.000001)
 
+    # Try iterative calibration.
+    number_of_points = 140
+    x_size = 14
+    y_size = 10
+    pixels_per_square = 50
+    reference_ids = np.zeros((number_of_points, 1))
+    reference_points = np.zeros((number_of_points, 2))
+    counter = 0
+    for y_index in range(y_size):
+        for x_index in range(x_size):
+            reference_ids[counter][0] = counter
+            reference_points[counter][0] = (x_index + 2) * pixels_per_square
+            reference_points[counter][1] = (y_index + 2) * pixels_per_square
+            counter = counter + 1
+    reference_image_size = ((x_size + 4) * pixels_per_square, (y_size + 4) * pixels_per_square)
+
+    proj_err, recon_err, params = calibrator.iterative_calibration(10,
+                                                                   reference_ids,
+                                                                   reference_points,
+                                                                   reference_image_size)
+    assert (np.abs(reproj_err - 0.59164921) < 0.000001)
+    assert (np.abs(recon_err - 0.21561650) < 0.000001)
+
 
 def test_chessboard_stereo():
 

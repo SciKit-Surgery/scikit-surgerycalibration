@@ -195,3 +195,29 @@ def array_contains_tracking_data(array_to_check):
                 result = True
     return result
 
+
+def match_points_by_id(ids_1, points_1, ids_2, points_2):
+    """
+    Returns an ndarray of matched points, matching by their identifier.
+
+    :param ids_1: ndarray [Mx1] list of ids for points_1
+    :param points_1: ndarray [Mx2 or 3] of 2D or 3D points
+    :param ids_2: ndarray [Nx1] list of ids for points_2
+    :param points_2: ndarray [Nx2 or 3] of 2D or 3D points
+    :return: ndarray. Number of rows is the number of common points by ids.
+    """
+    common_ids = np.intersect1d(ids_1, ids_2)
+    common_ids = np.sort(common_ids)
+    indexes_1 = np.isin(ids_1, common_ids).reshape(-1)
+    indexes_2 = np.isin(ids_2, common_ids).reshape(-1)
+    points_1_selected = points_1[indexes_1, :]
+    points_2_selected = points_2[indexes_2, :]
+    result = np.zeros((common_ids.shape[0],
+                       points_1_selected.shape[1] +
+                       points_2_selected.shape[1]))
+    result[:, 0:points_1_selected.shape[1]] \
+        = points_1_selected[:, :]
+    result[:, points_1_selected.shape[1]:points_1_selected.shape[1] +
+                                         points_2_selected.shape[1]] \
+        = points_2_selected[:, :]
+    return result

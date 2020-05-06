@@ -4,7 +4,6 @@
 
 import os
 import glob
-from fnmatch import filter as file_filter
 
 
 def _get_calib_prefix(file_prefix: str):

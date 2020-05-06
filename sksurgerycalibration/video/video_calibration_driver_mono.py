@@ -3,6 +3,7 @@
 import copy
 import logging
 import numpy as np
+import cv2
 import sksurgeryimage.processing.point_detector as pd
 import sksurgerycalibration.video.video_calibration_driver_base as vdb
 import sksurgerycalibration.video.video_calibration_data as cd
@@ -118,3 +119,100 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         LOGGER.info("Calibrated: proj_err=%s, recon_err=%s.",
                     str(proj_err), str(recon_err))
         return proj_err, recon_err, copy.deepcopy(self.calibration_params)
+
+    def iterative_calibration(self,
+                              number_of_iterations: int,
+                              reference_ids,
+                              reference_image_points,
+                              reference_image_size,
+                              flags: int = 0):
+        """
+        Does iterative calibration, like Datta 2009.
+        """
+        proj_err, recon_err, param_copy = self.calibrate(flags=flags)
+        for i in range(0, number_of_iterations):
+            images = copy.deepcopy(self.video_data.images_array)
+            self.video_data.reinit()
+            for j in range(0, len(images)):
+                undistorted = cv2.undistort(images[j],
+                                            self.calibration_params.camera_matrix,
+                                            self.calibration_params.dist_coeffs,
+                                            self.calibration_params.camera_matrix
+                                            )
+                ids, obj_pts, img_pts = self.point_detector.get_points(undistorted)
+                common_points = cu.match_points_by_id(ids, img_pts,
+                                                      reference_ids,
+                                                      reference_image_points)
+                homography, _ = \
+                    cv2.findHomography(common_points[0:, 0:2],
+                                       common_points[0:, 2:4])
+                warped = cv2.warpPerspective(undistorted,
+                                             homography,
+                                             reference_image_size)
+
+                ids, obj_pts, img_pts = self.point_detector.get_points(warped)
+
+                # Map pts back to original space.
+                inverted_points = \
+                    cv2.perspectiveTransform(img_pts.astype(np.float32).reshape(-1, 1, 2),
+                                             np.linalg.inv(homography))
+                inverted_points = inverted_points.reshape(-1, 2)
+
+                distorted_pts = np.zeros(inverted_points.shape)
+                number_of_points = inverted_points.shape[0]
+
+                # Now have to map undistorted points back to distorted points
+                for counter in range(number_of_points):
+
+                    # Distort point to match original input image.
+                    relative_x = (inverted_points[counter][0]
+                                  - self.calibration_params.camera_matrix[0][2]) / self.calibration_params.camera_matrix[0][0]
+                    relative_y = (inverted_points[counter][1]
+                                  - self.calibration_params.camera_matrix[1][2]) / self.calibration_params.camera_matrix[1][1]
+                    r2 = relative_x * relative_x + relative_y * relative_y
+                    radial = (1
+                              + self.calibration_params.dist_coeffs[0][0] * r2
+                              + self.calibration_params.dist_coeffs[0][1] * r2 * r2
+                              + self.calibration_params.dist_coeffs[0][4] * r2 * r2 * r2
+                              )
+                    distorted_x = relative_x * radial
+                    distorted_y = relative_y * radial
+
+                    distorted_x = distorted_x + (2 * self.calibration_params.dist_coeffs[0][2]
+                                                 * relative_x * relative_y
+                                                 + self.calibration_params.dist_coeffs[0][3]
+                                                 * (r2 + 2
+                                                    * relative_x
+                                                    * relative_x))
+
+                    distorted_y = distorted_y + (self.calibration_params.dist_coeffs[0][2]
+                                                 * (r2 + 2 * relative_y
+                                                    * relative_y)
+                                                 + 2 *
+                                                 self.calibration_params.dist_coeffs[0][3]
+                                                 * relative_x * relative_y)
+
+                    distorted_x = distorted_x * self.calibration_params.camera_matrix[0][0] \
+                        + self.calibration_params.camera_matrix[0][2]
+                    distorted_y = distorted_y * self.calibration_params.camera_matrix[1][1] \
+                        + self.calibration_params.camera_matrix[1][2]
+
+                    distorted_pts[counter][0] = distorted_x
+                    distorted_pts[counter][1] = distorted_y
+
+                ids, image_points, object_points = \
+                    cu.convert_point_detector_to_opencv(ids,
+                                                        obj_pts,
+                                                        distorted_pts)
+
+                self.video_data.push(images[j],
+                                     ids,
+                                     object_points,
+                                     image_points)
+
+            proj_err, recon_err, param_copy = self.calibrate(flags=flags)
+            print("Matt: " + str(proj_err) + ":" + str(recon_err))
+
+        return proj_err, recon_err, param_copy
+
+
