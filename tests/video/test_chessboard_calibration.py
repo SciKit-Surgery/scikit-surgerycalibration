@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+# pylint: disable=unused-import, superfluous-parens, line-too-long, missing-module-docstring, unused-variable, missing-function-docstring, invalid-name
+
 import glob
 import pytest
 import numpy as np
@@ -107,7 +109,7 @@ def test_chessboard_stereo():
         sc.StereoVideoCalibrationDriver(chessboard_detector, 140)
 
     # Repeatedly grab data, until you have enough.
-    for i in range(0, len(left_images)):
+    for i, _ in enumerate(left_images):
         successful = calibrator.grab_data(left_images[i], right_images[i])
         assert successful > 0
     assert not calibrator.is_device_tracked()

@@ -44,7 +44,7 @@ def mono_video_calibration(object_points, image_points, image_size, flags=0):
         raise ValueError("Must have at least 2 sets of image points.")
     if len(object_points) != len(image_points):
         raise ValueError("Image points and object points differ in length.")
-    for i in range(0, len(object_points)):
+    for i, _ in enumerate(object_points):
         if len(object_points[i]) < 3:
             raise ValueError(str(i) + ": Must have at least 3 object points.")
         if len(image_points[i]) < 3:
@@ -52,7 +52,7 @@ def mono_video_calibration(object_points, image_points, image_size, flags=0):
         if len(object_points[i]) != len(image_points[i]):
             raise ValueError(str(i) + ": Must have the same number of points.")
 
-    rms, camera_matrix, dist_coeffs, rvecs, tvecs \
+    _, camera_matrix, dist_coeffs, rvecs, tvecs \
         = cv2.calibrateCamera(object_points,
                               image_points,
                               image_size,
@@ -186,7 +186,7 @@ def stereo_video_calibration(left_ids,
     mse = sse / num_samples
     s_reproj = np.sqrt(mse)
 
-    sse, number_samples = \
+    sse, num_samples = \
         vm.compute_stereo_3d_error(l2r_r,
                                    l2r_t,
                                    common_object_points,

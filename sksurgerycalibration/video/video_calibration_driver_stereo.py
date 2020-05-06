@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+""" Class to do stateful video calibration of a stereo camera. """
+
 import copy
 import logging
 import cv2
@@ -14,7 +16,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
-
+    """ Class to do stateful video calibration of a stereo camera. """
     def __init__(self,
                  point_detector: pd.PointDetector,
                  minimum_points_per_frame: int
@@ -52,7 +54,8 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         :param left_image: RGB image.
         :param right_image: RGB image.
         :param device_tracking: transformation for the tracked device
-        :param calibration_object_tracking: transformation of tracked calibration object
+        :param calibration_object_tracking: transformation of tracked
+        calibration object
         :return: The number of points grabbed.
         """
         number_of_points = 0
@@ -68,14 +71,14 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
             if left_image_points.shape[0] >= self.minimum_points_per_frame:
 
                 left_ids, left_image_points, left_object_points = \
-                    cu.convert_point_detector_to_opencv(left_ids,
-                                                        left_object_points,
-                                                        left_image_points)
+                    cu.convert_pd_to_opencv(left_ids,
+                                            left_object_points,
+                                            left_image_points)
 
                 right_ids, right_image_points, right_object_points = \
-                    cu.convert_point_detector_to_opencv(right_ids,
-                                                        right_object_points,
-                                                        right_image_points)
+                    cu.convert_pd_to_opencv(right_ids,
+                                            right_object_points,
+                                            right_image_points)
 
                 self.video_data.push(left_image,
                                      left_ids,
@@ -126,7 +129,9 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                  self.video_data.left_data.images_array[0].shape[0]),
                 flags)
 
-        self.calibration_params.set_data(l_c, l_d, l_rvecs, l_tvecs, r_c, r_d, r_rvecs, r_tvecs, l2r_r, l2r_t, essential, fundamental)
+        self.calibration_params.set_data(l_c, l_d, l_rvecs, l_tvecs, r_c, r_d,
+                                         r_rvecs, r_tvecs, l2r_r, l2r_t,
+                                         essential, fundamental)
 
         LOGGER.info("Calibrated: proj_err=%s, recon_err=%s.",
                     str(s_reproj), str(s_recon))

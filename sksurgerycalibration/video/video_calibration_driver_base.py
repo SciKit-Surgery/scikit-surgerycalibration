@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+""" Base class for our mono and stereo video camera calibration drivers. """
+
 import copy
 import logging
 import sksurgeryimage.calibration.point_detector as pd
@@ -11,7 +13,9 @@ LOGGER = logging.getLogger(__name__)
 
 
 class BaseVideoCalibrationDriver:
-
+    """
+    Base class for video calibration drivers.
+    """
     def __init__(self,
                  point_detector: pd.PointDetector,
                  minimum_points_per_frame: int

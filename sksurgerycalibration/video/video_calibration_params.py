@@ -10,24 +10,26 @@ import sksurgerycalibration.video.video_calibration_io as sksio
 
 
 class BaseCalibrationParams:
+    """
+    Constructor, no member variables, so just a pure virtual interface.
 
+    Not really necessary if you rely on duck-typing, but at least
+    it shows the intention of what derived classes should implement,
+    and means we can use this base class to type check against.
+    """
     def __init__(self):
-        """
-        Constructor, no member variables, so just a pure virtual interface.
-
-        Not really necessary if you rely on duck-typing, but at least
-        it shows the intention of what derived classes should implement,
-        and means we can use this base class to type check against.
-        """
-        pass
+        return
 
     def reinit(self):
+        """ Used to clear, re-initialise all member variables. """
         raise NotImplementedError("Derived classes should implement this.")
 
     def save_data(self, dir_name: str, file_prefix: str):
+        """ Writes all contained data to disk. """
         raise NotImplementedError("Derived classes should implement this.")
 
     def load_data(self, dir_name: str, file_prefix: str):
+        """ Loads all contained data from disk. """
         raise NotImplementedError("Derived classes should implement this.")
 
 
@@ -36,6 +38,7 @@ class MonoCalibrationParams(BaseCalibrationParams):
     Holds a set of intrinsic and extrinsic camera parameters for 1 camera.
     """
     def __init__(self):
+        super(MonoCalibrationParams, self).__init__()
         self.camera_matrix = None
         self.dist_coeffs = None
         self.rvecs = None
@@ -70,17 +73,17 @@ class MonoCalibrationParams(BaseCalibrationParams):
         :param dir_name: directory to save to
         :param file_prefix: prefix for all files
         """
-        intrinsics_file = sksio._get_intrinsics_file_name(dir_name,
-                                                          file_prefix)
+        intrinsics_file = sksio.get_intrinsics_file_name(dir_name,
+                                                         file_prefix)
         np.savetxt(intrinsics_file, self.camera_matrix, fmt='%.8f')
 
-        dist_coeff_file = sksio._get_distortion_file_name(dir_name,
-                                                          file_prefix)
+        dist_coeff_file = sksio.get_distortion_file_name(dir_name,
+                                                         file_prefix)
         np.savetxt(dist_coeff_file, self.dist_coeffs, fmt='%.8f')
         for i in enumerate(self.rvecs):
-            extrinsics_file = sksio._get_extrinsics_file_name(dir_name,
-                                                              file_prefix,
-                                                              i[0])
+            extrinsics_file = sksio.get_extrinsics_file_name(dir_name,
+                                                             file_prefix,
+                                                             i[0])
             extrinsics = sksu.extrinsic_vecs_to_matrix(self.rvecs[i[0]],
                                                        self.tvecs[i[0]])
             np.savetxt(extrinsics_file, extrinsics, fmt='%.8f')
@@ -97,16 +100,16 @@ class MonoCalibrationParams(BaseCalibrationParams):
         """
         self.reinit()
 
-        intrinsics_file = sksio._get_intrinsics_file_name(dir_name,
-                                                          file_prefix)
+        intrinsics_file = sksio.get_intrinsics_file_name(dir_name,
+                                                         file_prefix)
         self.camera_matrix = np.loadtxt(intrinsics_file)
 
-        dist_coeff_file = sksio._get_distortion_file_name(dir_name,
-                                                          file_prefix)
+        dist_coeff_file = sksio.get_distortion_file_name(dir_name,
+                                                         file_prefix)
         self.dist_coeffs = np.loadtxt(dist_coeff_file)
 
-        extrinsic_files = sksio._get_extrinsic_file_names(dir_name,
-                                                          file_prefix)
+        extrinsic_files = sksio.get_extrinsic_file_names(dir_name,
+                                                         file_prefix)
         for file in extrinsic_files:
             extrinsics = np.loadtxt(file)
             rvec, tvec = sksu.extrinsic_matrix_to_vecs(extrinsics)
@@ -119,6 +122,7 @@ class StereoCalibrationParams(BaseCalibrationParams):
     Holds a pair of MonoCalibrationParams, and the left-to-right transform.
     """
     def __init__(self):
+        super(StereoCalibrationParams, self).__init__()
         self.left_params = None
         self.right_params = None
         self.l2r_rmat = None
@@ -138,6 +142,7 @@ class StereoCalibrationParams(BaseCalibrationParams):
         self.essential = np.eye(3)
         self.fundamental = np.eye(3)
 
+    # pylint: disable=too-many-arguments
     def set_data(self,
                  left_cam_matrix, left_dist_coeffs, left_rvecs, left_tvecs,
                  right_cam_matrix, right_dist_coeffs, right_rvecs, right_tvecs,
@@ -175,20 +180,20 @@ class StereoCalibrationParams(BaseCalibrationParams):
         :param dir_name: directory to save to
         :param file_prefix: prefix for all files
         """
-        left_prefix = sksio._get_left_prefix(file_prefix)
+        left_prefix = sksio.get_left_prefix(file_prefix)
         self.left_params.save_data(dir_name, left_prefix)
-        right_prefix = sksio._get_right_prefix(file_prefix)
+        right_prefix = sksio.get_right_prefix(file_prefix)
         self.left_params.save_data(dir_name, right_prefix)
 
-        l2r_file = sksio._get_l2r_file_name(dir_name, file_prefix)
+        l2r_file = sksio.get_l2r_file_name(dir_name, file_prefix)
         np.savetxt(l2r_file, self.get_l2r_as_4x4(), fmt='%.8f')
 
-        ess_file = sksio._get_essential_matrix_file_name(dir_name,
-                                                         file_prefix)
+        ess_file = sksio.get_essential_matrix_file_name(dir_name,
+                                                        file_prefix)
         np.savetxt(ess_file, self.essential, fmt='%.8f')
 
-        fun_file = sksio._get_fundamental_matrix_file_name(dir_name,
-                                                           file_prefix)
+        fun_file = sksio.get_fundamental_matrix_file_name(dir_name,
+                                                          file_prefix)
         np.savetxt(fun_file, self.fundamental, fmt='%.8f')
 
     def load_data(self,
@@ -203,12 +208,12 @@ class StereoCalibrationParams(BaseCalibrationParams):
         """
         self.reinit()
 
-        left_prefix = sksio._get_left_prefix(file_prefix)
+        left_prefix = sksio.get_left_prefix(file_prefix)
         self.left_params.load_data(dir_name, left_prefix)
-        right_prefix = sksio._get_right_prefix(file_prefix)
+        right_prefix = sksio.get_right_prefix(file_prefix)
         self.right_params.load_data(dir_name, right_prefix)
 
-        l2r_file = sksio._get_l2r_file_name(dir_name, file_prefix)
+        l2r_file = sksio.get_l2r_file_name(dir_name, file_prefix)
         stereo_ext = np.loadtxt(l2r_file)
 
         self.l2r_rmat = stereo_ext[0:3, 0:3]
@@ -217,10 +222,10 @@ class StereoCalibrationParams(BaseCalibrationParams):
         self.l2r_tvec[1][0] = tmp[1]
         self.l2r_tvec[2][0] = tmp[2]
 
-        ess_file = sksio._get_essential_matrix_file_name(dir_name,
-                                                         file_prefix)
+        ess_file = sksio.get_essential_matrix_file_name(dir_name,
+                                                        file_prefix)
         self.essential = np.loadtxt(ess_file)
 
-        fun_file = sksio._get_fundamental_matrix_file_name(dir_name,
-                                                           file_prefix)
+        fun_file = sksio.get_fundamental_matrix_file_name(dir_name,
+                                                          file_prefix)
         self.fundamental = np.loadtxt(fun_file)

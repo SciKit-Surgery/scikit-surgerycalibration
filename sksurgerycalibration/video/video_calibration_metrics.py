@@ -259,8 +259,8 @@ def compute_mono_reconstruction_err(ids,
         c_obj = [common_object_points]
         c_li = [common_left_image_points]
         c_ri = [common_right_image_points]
-        rv = [rvecs[i]]
-        tv = [tvecs[i]]
+        r_v = [rvecs[i]]
+        t_v = [tvecs[i]]
         err, samp = compute_stereo_3d_error(l2r_rmat,
                                             l2r_tvec,
                                             c_obj,
@@ -270,8 +270,8 @@ def compute_mono_reconstruction_err(ids,
                                             c_ri,
                                             camera_matrix,
                                             distortion,
-                                            rv,
-                                            tv)
+                                            r_v,
+                                            t_v)
         sse = sse + err
         number_of_samples = number_of_samples + samp
 

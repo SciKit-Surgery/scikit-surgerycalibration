@@ -10,30 +10,34 @@ import sksurgerycalibration.video.video_calibration_io as sksio
 
 
 class BaseVideoCalibrationData:
+    """
+    Constructor, no member variables, so just a pure virtual interface.
 
+    Not really necessary if you rely on duck-typing, but at least
+    it shows the intention of what derived classes should implement,
+    and means we can use this base class to type check against.
+    """
     def __init__(self):
-        """
-        Constructor, no member variables, so just a pure virtual interface.
-
-        Not really necessary if you rely on duck-typing, but at least
-        it shows the intention of what derived classes should implement,
-        and means we can use this base class to type check against.
-        """
-        pass
+        return
 
     def reinit(self):
+        """ Used to clear, re-initialise all member variables. """
         raise NotImplementedError("Derived classes should implement this.")
 
     def pop(self):
+        """ Remove the last view of data. """
         raise NotImplementedError("Derived classes should implement this.")
 
     def get_number_of_views(self):
+        """ Returns the number of views of data. """
         raise NotImplementedError("Derived classes should implement this.")
 
     def save_data(self, dir_name: str, file_prefix: str):
+        """ Writes all contained data to disk. """
         raise NotImplementedError("Derived classes should implement this.")
 
     def load_data(self, dir_name: str, file_prefix: str):
+        """ Loads all contained data from disk. """
         raise NotImplementedError("Derived classes should implement this.")
 
 
@@ -42,6 +46,7 @@ class TrackingData(BaseVideoCalibrationData):
     Class for storing tracking data.
     """
     def __init__(self):
+        super(TrackingData, self).__init__()
         self.device_tracking_array = None
         self.calibration_tracking_array = None
         self.reinit()
@@ -60,8 +65,10 @@ class TrackingData(BaseVideoCalibrationData):
         :param device_tracking: transformation for the thing you're tracking
         :param calibration_tracking: transformation for tracked calibration obj
         """
-        self.device_tracking_array.append(copy.deepcopy(device_tracking))
-        self.calibration_tracking_array.append(copy.deepcopy(calibration_tracking))
+        self.device_tracking_array.append(
+            copy.deepcopy(device_tracking))
+        self.calibration_tracking_array.append(
+            copy.deepcopy(calibration_tracking))
 
     def pop(self):
         """
@@ -93,18 +100,18 @@ class TrackingData(BaseVideoCalibrationData):
 
         for i in enumerate(self.device_tracking_array):
             device_tracking_file = \
-                sksio._get_device_tracking_file_name(dir_name,
-                                                     file_prefix,
-                                                     i[0])
+                sksio.get_device_tracking_file_name(dir_name,
+                                                    file_prefix,
+                                                    i[0])
             if self.device_tracking_array[i[0]] is not None:
                 np.savetxt(device_tracking_file,
                            self.device_tracking_array[i[0]], fmt='%.8f')
 
         for i in enumerate(self.calibration_tracking_array):
             calibration_tracking_file = \
-                sksio._get_calibration_tracking_file_name(dir_name,
-                                                          file_prefix,
-                                                          i[0])
+                sksio.get_calibration_tracking_file_name(dir_name,
+                                                         file_prefix,
+                                                         i[0])
             if self.calibration_tracking_array[i[0]] is not None:
                 np.savetxt(calibration_tracking_file,
                            self.calibration_tracking_array[i[0]], fmt='%.8f')
@@ -120,18 +127,18 @@ class TrackingData(BaseVideoCalibrationData):
         :param file_prefix: prefix for all files
         """
         self.reinit()
-        files = sksio._get_filenames_by_glob_expr(dir_name,
-                                                  file_prefix,
-                                                  "device",
-                                                  ".txt")
+        files = sksio.get_filenames_by_glob_expr(dir_name,
+                                                 file_prefix,
+                                                 "device",
+                                                 ".txt")
         for file in files:
             device_data = np.loadtxt(file)
             self.device_tracking_array.append(device_data)
 
-        files = sksio._get_filenames_by_glob_expr(dir_name,
-                                                  file_prefix,
-                                                  "calibration",
-                                                  ".txt")
+        files = sksio.get_filenames_by_glob_expr(dir_name,
+                                                 file_prefix,
+                                                 "calibration",
+                                                 ".txt")
         for file in files:
             calibration_data = np.loadtxt(file)
             self.calibration_tracking_array.append(calibration_data)
@@ -142,6 +149,7 @@ class MonoVideoData(BaseVideoCalibrationData):
     Stores data extracted from each video view of a mono calibration.
     """
     def __init__(self):
+        super(MonoVideoData, self).__init__()
         self.images_array = None
         self.ids_arrays = None
         self.object_points_arrays = None
@@ -196,25 +204,25 @@ class MonoVideoData(BaseVideoCalibrationData):
             os.makedirs(dir_name)
 
         for i in enumerate(self.images_array):
-            image_file = sksio._get_images_file_name(dir_name,
-                                                     file_prefix,
-                                                     i[0])
+            image_file = sksio.get_images_file_name(dir_name,
+                                                    file_prefix,
+                                                    i[0])
             cv2.imwrite(image_file, self.images_array[i[0]])
         for i in enumerate(self.ids_arrays):
-            id_file = sksio._get_ids_file_name(dir_name,
-                                               file_prefix,
-                                               i[0])
+            id_file = sksio.get_ids_file_name(dir_name,
+                                              file_prefix,
+                                              i[0])
             np.savetxt(id_file, self.ids_arrays[i[0]], fmt='%d')
         for i in enumerate(self.object_points_arrays):
-            object_points_file = sksio._get_objectpoints_file_name(dir_name,
-                                                                   file_prefix,
-                                                                   i[0])
+            object_points_file = sksio.get_objectpoints_file_name(dir_name,
+                                                                  file_prefix,
+                                                                  i[0])
             reshaped = np.reshape(self.object_points_arrays[i[0]], (-1, 3))
             np.savetxt(object_points_file, reshaped, fmt='%.8f')
         for i in enumerate(self.image_points_arrays):
-            image_points_file = sksio._get_imagepoints_file_name(dir_name,
-                                                                 file_prefix,
-                                                                 i[0])
+            image_points_file = sksio.get_imagepoints_file_name(dir_name,
+                                                                file_prefix,
+                                                                i[0])
             reshaped = np.reshape(self.image_points_arrays[i[0]], (-1, 2))
             np.savetxt(image_points_file, reshaped, fmt='%.8f')
 
@@ -230,36 +238,36 @@ class MonoVideoData(BaseVideoCalibrationData):
         """
         self.reinit()
 
-        files = sksio._get_filenames_by_glob_expr(dir_name,
-                                                  file_prefix,
-                                                  "images",
-                                                  ".png")
+        files = sksio.get_filenames_by_glob_expr(dir_name,
+                                                 file_prefix,
+                                                 "images",
+                                                 ".png")
         for file in files:
             image = cv2.imread(file)
             self.images_array.append(image)
 
-        files = sksio._get_filenames_by_glob_expr(dir_name,
-                                                  file_prefix,
-                                                  "ids",
-                                                  ".txt")
+        files = sksio.get_filenames_by_glob_expr(dir_name,
+                                                 file_prefix,
+                                                 "ids",
+                                                 ".txt")
         for file in files:
             ids = np.loadtxt(file)
             self.ids_arrays.append(ids)
 
-        files = sksio._get_filenames_by_glob_expr(dir_name,
-                                                  file_prefix,
-                                                  "object_points",
-                                                  ".txt")
+        files = sksio.get_filenames_by_glob_expr(dir_name,
+                                                 file_prefix,
+                                                 "object_points",
+                                                 ".txt")
 
         for file in files:
             object_points = np.loadtxt(file)
             reshaped = np.reshape(object_points, (object_points.shape[0], 1, 3))
             self.object_points_arrays.append(reshaped.astype(np.float32))
 
-        files = sksio._get_filenames_by_glob_expr(dir_name,
-                                                  file_prefix,
-                                                  "image_points",
-                                                  ".txt")
+        files = sksio.get_filenames_by_glob_expr(dir_name,
+                                                 file_prefix,
+                                                 "image_points",
+                                                 ".txt")
 
         for file in files:
             image_points = np.loadtxt(file)
@@ -272,6 +280,7 @@ class StereoVideoData(BaseVideoCalibrationData):
     Stores data extracted from each view of a stereo calibration.
     """
     def __init__(self):
+        super(StereoVideoData, self).__init__()
         self.left_data = MonoVideoData()
         self.right_data = MonoVideoData()
         self.reinit()
@@ -321,9 +330,9 @@ class StereoVideoData(BaseVideoCalibrationData):
         :param dir_name: directory to save to
         :param file_prefix: prefix for all files
         """
-        left_prefix = sksio._get_left_prefix(file_prefix)
+        left_prefix = sksio.get_left_prefix(file_prefix)
         self.left_data.save_data(dir_name, left_prefix)
-        right_prefix = sksio._get_right_prefix(file_prefix)
+        right_prefix = sksio.get_right_prefix(file_prefix)
         self.right_data.save_data(dir_name, right_prefix)
 
     def load_data(self,
@@ -337,7 +346,7 @@ class StereoVideoData(BaseVideoCalibrationData):
         :param file_prefix: prefix for all files
         """
         self.reinit()
-        left_prefix = sksio._get_left_prefix(file_prefix)
+        left_prefix = sksio.get_left_prefix(file_prefix)
         self.left_data.load_data(dir_name, left_prefix)
-        right_prefix = sksio._get_right_prefix(file_prefix)
+        right_prefix = sksio.get_right_prefix(file_prefix)
         self.right_data.load_data(dir_name, right_prefix)

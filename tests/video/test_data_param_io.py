@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+# pylint: disable=unused-import, superfluous-parens, line-too-long, missing-module-docstring, unused-variable, missing-function-docstring, invalid-name
+
 import glob
 import pytest
 import numpy as np
@@ -40,9 +42,9 @@ def test_chessboard_mono_io():
     params_3 = calibrator.get_params()
     assert np.allclose(params_2.camera_matrix, params_3.camera_matrix)
     assert np.allclose(params_2.dist_coeffs, params_3.dist_coeffs)
-    for i in range(0, len(params_3.rvecs)):
-        assert np.allclose(params_2.rvecs[0], params_3.rvecs[0])
-        assert np.allclose(params_2.tvecs[0], params_3.tvecs[0])
+    for i, _ in enumerate(params_3.rvecs):
+        assert np.allclose(params_2.rvecs[i], params_3.rvecs[i])
+        assert np.allclose(params_2.tvecs[i], params_3.tvecs[i])
 
 
 def test_chessboard_stereo_io():
@@ -72,7 +74,7 @@ def test_chessboard_stereo_io():
     calibrator = \
         sc.StereoVideoCalibrationDriver(chessboard_detector, 140)
 
-    for i in range(0, len(left_images)):
+    for i, _ in enumerate(left_images):
         successful = calibrator.grab_data(left_images[i], right_images[i], np.eye(4), np.eye(3))
         assert successful > 0
 

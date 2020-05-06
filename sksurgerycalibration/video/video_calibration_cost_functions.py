@@ -8,13 +8,13 @@ import sksurgerycalibration.video.video_calibration_utils as vu
 import sksurgerycalibration.video.video_calibration_metrics as vm
 
 
-def _stereo_2d_and_3d_error(x_0,
-                            left_object_points,
-                            left_image_points,
-                            left_distortion,
-                            right_object_points,
-                            right_image_points,
-                            right_distortion):
+def stereo_2d_and_3d_error(x_0,
+                           left_object_points,
+                           left_image_points,
+                           left_distortion,
+                           right_object_points,
+                           right_image_points,
+                           right_distortion):
     """
     Private method to compute RMSE cost function, where x_0 contains
     the l2r rvec, l2r tvec, left intrinsics, right intrinsics, and
@@ -107,12 +107,12 @@ def _stereo_2d_and_3d_error(x_0,
     return rmse
 
 
-def _mono_reprojection_error_for_intrinsics(x_0,
-                                            object_points,
-                                            image_points,
-                                            rvecs,
-                                            tvecs
-                                            ):
+def mono_reproj_err_for_intrin(x_0,
+                               object_points,
+                               image_points,
+                               rvecs,
+                               tvecs
+                               ):
     """
     Private method to compute SSE projection error over multiple views,
     where x_0 should contain just camera matrix, and then distorion params.
@@ -138,13 +138,13 @@ def _mono_reprojection_error_for_intrinsics(x_0,
     return rmse
 
 
-def _mono_reconstruction_error_for_extrinsics(x_0,
-                                              ids,
-                                              object_points,
-                                              image_points,
-                                              camera_matrix,
-                                              distortion_parameters
-                                              ):
+def mono_recon_err_for_ext(x_0,
+                           ids,
+                           object_points,
+                           image_points,
+                           camera_matrix,
+                           distortion_parameters
+                           ):
     """
     Private method to compute SSE reconstruction error over multiple views,
     where x_0 should contain just extrinsic parameters.

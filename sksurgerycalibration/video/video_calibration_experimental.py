@@ -13,7 +13,7 @@ import sksurgerycore.transforms.matrix as skcm
 import sksurgerycalibration.video.video_calibration_utils as vu
 import sksurgerycalibration.video.video_calibration_cost_functions as vcf
 import sksurgerycalibration.video.video_calibration_metrics as vm
-import sksurgerycalibration.video.video_calibration as vc
+import sksurgerycalibration.video.video_calibration_wrapper as vc
 
 LOGGER = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ def mono_video_calibration_expt(ids,
     :return: rms, camera_matrix, dist_coeffs, rvecs, tvecs
     """
     # First do a standard OpenCV calibration, using the wrapper in this project.
-    rms, camera_matrix, dist_coeffs, rvecs, tvecs = \
+    _, camera_matrix, dist_coeffs, rvecs, tvecs = \
         vc.mono_video_calibration(object_points,
                                   image_points,
                                   image_size)
@@ -42,7 +42,7 @@ def mono_video_calibration_expt(ids,
     number_of_extrinsic_parameters = 6 * len(rvecs)
 
     # Now alternately optimise intrinsics and extrinsics
-    for loop_counter in range(0, 5):
+    for _ in range(0, 5):
 
         # First optimise intrinsics, via projection error.
         x_0 = np.zeros(number_of_intrinsic_parameters)
@@ -53,7 +53,7 @@ def mono_video_calibration_expt(ids,
         for i in range(4, number_of_intrinsic_parameters):
             x_0[i] = dist_coeffs[0][i - 4]
 
-        res = minimize(vcf._mono_reprojection_error_for_intrinsics, x_0,
+        res = minimize(vcf.mono_reproj_err_for_intrin, x_0,
                        args=(object_points,
                              image_points,
                              rvecs,
@@ -79,7 +79,7 @@ def mono_video_calibration_expt(ids,
             x_0[6 * i + 4] = tvecs[i][1]
             x_0[6 * i + 5] = tvecs[i][2]
 
-        res = minimize(vcf._mono_reconstruction_error_for_extrinsics, x_0,
+        res = minimize(vcf.mono_recon_err_for_ext, x_0,
                        args=(
                            ids,
                            object_points,
@@ -198,7 +198,7 @@ def stereo_video_calibration_expt(left_ids,
         x_0[14 + i * 6 + 4] = camera_tvecs[i][1]
         x_0[14 + i * 6 + 5] = camera_tvecs[i][2]
 
-    res = minimize(vcf._stereo_2d_and_3d_error, x_0,
+    res = minimize(vcf.stereo_2d_and_3d_error, x_0,
                    args=(common_object_points,
                          common_left_image_points,
                          l_d,

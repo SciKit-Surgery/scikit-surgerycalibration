@@ -165,7 +165,7 @@ def filter_common_points_all_images(left_ids,
         common_right_image_points
 
 
-def convert_point_detector_to_opencv(ids, object_points, image_points):
+def convert_pd_to_opencv(ids, object_points, image_points):
     """
     The PointDetectors from scikit-surgeryimage aren't quite compatible
     with OpenCV.
@@ -218,6 +218,5 @@ def match_points_by_id(ids_1, points_1, ids_2, points_2):
     result[:, 0:points_1_selected.shape[1]] \
         = points_1_selected[:, :]
     result[:, points_1_selected.shape[1]:points_1_selected.shape[1] +
-                                         points_2_selected.shape[1]] \
-        = points_2_selected[:, :]
+           points_2_selected.shape[1]] = points_2_selected[:, :]
     return result
