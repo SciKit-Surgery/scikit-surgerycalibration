@@ -4,7 +4,7 @@ import copy
 import logging
 import numpy as np
 import cv2
-import sksurgeryimage.processing.point_detector as pd
+import sksurgeryimage.calibration.point_detector as pd
 import sksurgerycalibration.video.video_calibration_driver_base as vdb
 import sksurgerycalibration.video.video_calibration_data as cd
 import sksurgerycalibration.video.video_calibration_params as cp
@@ -130,8 +130,10 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         Does iterative calibration, like Datta 2009.
         """
         proj_err, recon_err, param_copy = self.calibrate(flags=flags)
+        cached_images = copy.deepcopy(self.video_data.images_array)
+
         for i in range(0, number_of_iterations):
-            images = copy.deepcopy(self.video_data.images_array)
+            images = copy.deepcopy(cached_images)
             self.video_data.reinit()
             for j in range(0, len(images)):
                 undistorted = cv2.undistort(images[j],

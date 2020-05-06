@@ -54,8 +54,11 @@ setup(
         'numpy',
         'ipykernel',
         'nbsphinx',
-        'scikit-surgerycore',
         'scipy',
+        'opencv-contrib-python',
+        'scikit-surgerycore',
+        'scikit-surgeryimage',
+        'scikit-surgeryopencvcpp',
     ],
 
     entry_points={

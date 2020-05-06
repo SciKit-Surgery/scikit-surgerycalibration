@@ -3,7 +3,7 @@
 import copy
 import logging
 import cv2
-import sksurgeryimage.processing.point_detector as pd
+import sksurgeryimage.calibration.point_detector as pd
 import sksurgerycalibration.video.video_calibration_driver_base as vdb
 import sksurgerycalibration.video.video_calibration_data as cd
 import sksurgerycalibration.video.video_calibration_params as cp

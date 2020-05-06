@@ -4,7 +4,7 @@ import glob
 import pytest
 import numpy as np
 import cv2
-import sksurgeryimage.processing.chessboard_point_detector as pd
+import sksurgeryimage.calibration.chessboard_point_detector as pd
 import sksurgerycalibration.video.video_calibration_driver_mono as mc
 import sksurgerycalibration.video.video_calibration_driver_stereo as sc
 
