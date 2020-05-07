@@ -11,6 +11,24 @@ import sksurgerycalibration.video.video_calibration_driver_mono as mc
 import sksurgerycalibration.video.video_calibration_driver_stereo as sc
 
 
+def get_iterative_reference_data():
+    number_of_points = 140
+    x_size = 14
+    y_size = 10
+    pixels_per_square = 50
+    reference_ids = np.zeros((number_of_points, 1))
+    reference_points = np.zeros((number_of_points, 2))
+    counter = 0
+    for y_index in range(y_size):
+        for x_index in range(x_size):
+            reference_ids[counter][0] = counter
+            reference_points[counter][0] = (x_index + 2) * pixels_per_square
+            reference_points[counter][1] = (y_index + 2) * pixels_per_square
+            counter = counter + 1
+    reference_image_size = ((x_size + 4) * pixels_per_square, (y_size + 4) * pixels_per_square)
+    return reference_ids, reference_points, reference_image_size
+
+
 def test_chessboard_mono():
 
     images = []
@@ -55,21 +73,8 @@ def test_chessboard_mono():
     assert (np.abs(reproj_err - 0.58096267) < 0.000001)
     assert (np.abs(recon_err - 0.20886230) < 0.000001)
 
-    # Try iterative calibration.
-    number_of_points = 140
-    x_size = 14
-    y_size = 10
-    pixels_per_square = 50
-    reference_ids = np.zeros((number_of_points, 1))
-    reference_points = np.zeros((number_of_points, 2))
-    counter = 0
-    for y_index in range(y_size):
-        for x_index in range(x_size):
-            reference_ids[counter][0] = counter
-            reference_points[counter][0] = (x_index + 2) * pixels_per_square
-            reference_points[counter][1] = (y_index + 2) * pixels_per_square
-            counter = counter + 1
-    reference_image_size = ((x_size + 4) * pixels_per_square, (y_size + 4) * pixels_per_square)
+    # Test iterative calibration.
+    reference_ids, reference_points, reference_image_size = get_iterative_reference_data()
 
     proj_err, recon_err, params = calibrator.iterative_calibration(10,
                                                                    reference_ids,
@@ -121,3 +126,14 @@ def test_chessboard_stereo():
     # Just for a regression test, checking reprojection error, and recon error.
     assert (np.abs(reproj_err - 0.63983123) < 0.000001)
     assert (np.abs(recon_err - 1.68418923) < 0.000001)
+
+    # Test iterative calibration.
+    reference_ids, reference_points, reference_image_size = get_iterative_reference_data()
+
+    reproj_err, recon_err, params = calibrator.iterative_calibration(10,
+                                                                     reference_ids,
+                                                                     reference_points,
+                                                                     reference_image_size)
+    assert (np.abs(reproj_err - 0.778546762) < 0.000001)
+    assert (np.abs(recon_err - 4.8760120199) < 0.000001)
+

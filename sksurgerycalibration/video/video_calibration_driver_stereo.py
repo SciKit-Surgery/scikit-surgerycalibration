@@ -136,3 +136,43 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         LOGGER.info("Calibrated: proj_err=%s, recon_err=%s.",
                     str(s_reproj), str(s_recon))
         return s_reproj, s_recon, copy.deepcopy(self.calibration_params)
+
+    def iterative_calibration(self,
+                              number_of_iterations: int,
+                              reference_ids,
+                              reference_image_points,
+                              reference_image_size,
+                              flags: int = 0):
+        """
+        Does iterative calibration, like Datta 2009.
+        """
+        proj_err, recon_err, param_copy = self.calibrate(flags=flags)
+        cached_left_images = copy.deepcopy(
+            self.video_data.left_data.images_array)
+        cached_right_images = copy.deepcopy(
+            self.video_data.right_data.images_array)
+
+        for i in range(0, number_of_iterations):
+            left_images = copy.deepcopy(cached_left_images)
+            right_images = copy.deepcopy(cached_right_images)
+            cu.detect_points_in_canonical_space(self.video_data.left_data,
+                                                self.point_detector,
+                                                left_images,
+                                                self.calibration_params.left_params.camera_matrix,
+                                                self.calibration_params.left_params.dist_coeffs,
+                                                reference_ids,
+                                                reference_image_points,
+                                                reference_image_size)
+            cu.detect_points_in_canonical_space(self.video_data.right_data,
+                                                self.point_detector,
+                                                right_images,
+                                                self.calibration_params.right_params.camera_matrix,
+                                                self.calibration_params.right_params.dist_coeffs,
+                                                reference_ids,
+                                                reference_image_points,
+                                                reference_image_size)
+            proj_err, recon_err, param_copy = self.calibrate(flags=flags)
+            LOGGER.info("Iterative calibration: proj_err=%s, recon_err=%s.",
+                        str(proj_err), str(recon_err))
+            print("Matt:" + str(proj_err) + ":" + str(recon_err))
+        return proj_err, recon_err, param_copy
