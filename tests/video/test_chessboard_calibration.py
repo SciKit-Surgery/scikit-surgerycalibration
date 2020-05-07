@@ -107,12 +107,12 @@ def test_chessboard_mono():
     # Test iterative calibration.
     reference_ids, reference_points, reference_image_size = get_iterative_reference_data()
 
-    reproj_err, recon_err, params = calibrator.iterative_calibration(10,
+    reproj_err, recon_err, params = calibrator.iterative_calibration(3,
                                                                      reference_ids,
                                                                      reference_points,
                                                                      reference_image_size)
-    assert (np.abs(reproj_err - 0.628537711) < 0.000001)
-    assert (np.abs(recon_err - 0.302745334) < 0.000001)
+    assert (np.abs(reproj_err - 0.629017250) < 0.000001)
+    assert (np.abs(recon_err - 0.307836161) < 0.000001)
 
 
 def test_chessboard_stereo():
@@ -161,10 +161,10 @@ def test_chessboard_stereo():
     # Test iterative calibration.
     reference_ids, reference_points, reference_image_size = get_iterative_reference_data()
 
-    reproj_err, recon_err, params = calibrator.iterative_calibration(10,
+    reproj_err, recon_err, params = calibrator.iterative_calibration(3,
                                                                      reference_ids,
                                                                      reference_points,
                                                                      reference_image_size)
-    assert (np.abs(reproj_err - 0.6477395973) < 0.000001)
-    assert (np.abs(recon_err - 1.4553728326) < 0.000001)
+    assert (np.abs(reproj_err - 0.64793882588) < 0.000001)
+    assert (np.abs(recon_err - 1.457163154398) < 0.000001)
 
