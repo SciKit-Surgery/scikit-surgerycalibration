@@ -220,3 +220,124 @@ def match_points_by_id(ids_1, points_1, ids_2, points_2):
     result[:, points_1_selected.shape[1]:points_1_selected.shape[1] +
            points_2_selected.shape[1]] = points_2_selected[:, :]
     return result
+
+
+def distort_points(image_points, camera_matrix, distortion_coeffs):
+    """
+    Distorts image points, reversing the effects of cv2.undistortPoints.
+
+    Slow, but should do for now, for offline calibration at least.
+
+    :param image_points: undistorted image points.
+    :param camera_matrix: [3x3] camera matrix
+    :param distortion_coeffs: [1x5] distortion coefficients
+    :return: distorted points
+    """
+    distorted_pts = np.zeros(image_points.shape)
+    number_of_points = image_points.shape[0]
+
+    for counter in range(number_of_points):
+        relative_x = (image_points[counter][0] - camera_matrix[0][2]) \
+            / camera_matrix[0][0]
+        relative_y = (image_points[counter][1] - camera_matrix[1][2]) \
+            / camera_matrix[1][1]
+        r2 = relative_x * relative_x + relative_y * relative_y
+        radial = (
+                1
+                + distortion_coeffs[0][0]
+                * r2
+                + distortion_coeffs[0][1]
+                * r2 * r2
+                + distortion_coeffs[0][4]
+                * r2 * r2 * r2
+        )
+        distorted_x = relative_x * radial
+        distorted_y = relative_y * radial
+
+        distorted_x = distorted_x + (
+                2 * distortion_coeffs[0][2]
+                * relative_x * relative_y
+                + distortion_coeffs[0][3]
+                * (r2 + 2 * relative_x * relative_x))
+
+        distorted_y = distorted_y + (
+                distortion_coeffs[0][2]
+                * (r2 + 2 * relative_y * relative_y)
+                + 2 * distortion_coeffs[0][3]
+                * relative_x * relative_y)
+
+        distorted_x = distorted_x * camera_matrix[0][0] + camera_matrix[0][2]
+        distorted_y = distorted_y * camera_matrix[1][1] + camera_matrix[1][2]
+
+        distorted_pts[counter][0] = distorted_x
+        distorted_pts[counter][1] = distorted_y
+
+    return distorted_pts
+
+
+def detect_points_in_canonical_space(video_data,
+                                     point_detector,
+                                     images,
+                                     camera_matrix,
+                                     distortion_coefficients,
+                                     reference_ids,
+                                     reference_image_points,
+                                     reference_image_size
+                                     ):
+    """
+    Method that does the bulk of the heavy lifting in Datta 2009.
+
+    :param video_data:
+    :param point_detector:
+    :param images:
+    :param camera_matrix:
+    :param distortion_coefficients:
+    :param reference_ids:
+    :param reference_image_points:
+    :param reference_image_size:
+    :return:
+    """
+    video_data.reinit()
+    for j in range(0, len(images)):
+        undistorted = cv2.undistort(
+            images[j],
+            camera_matrix,
+            distortion_coefficients,
+            camera_matrix
+        )
+        ids, obj_pts, img_pts = point_detector.get_points(undistorted)
+        common_points = match_points_by_id(ids, img_pts,
+                                           reference_ids,
+                                           reference_image_points)
+        homography, _ = \
+            cv2.findHomography(common_points[0:, 0:2],
+                               common_points[0:, 2:4])
+        warped = cv2.warpPerspective(undistorted,
+                                     homography,
+                                     reference_image_size)
+
+        ids, obj_pts, img_pts = point_detector.get_points(warped)
+
+        # Map pts back to original space.
+        inverted_points = \
+            cv2.perspectiveTransform(
+                img_pts.astype(np.float32).reshape(-1, 1, 2),
+                np.linalg.inv(homography))
+        inverted_points = inverted_points.reshape(-1, 2)
+
+        distorted_pts = distort_points(
+            inverted_points,
+            camera_matrix,
+            distortion_coefficients)
+
+        # Convert back to a format suitable for OpenCV calibration.
+        ids, image_points, object_points = \
+            convert_pd_to_opencv(ids,
+                                 obj_pts,
+                                 distorted_pts)
+
+        # Store the image, with ids, object_points and image_points.
+        video_data.push(images[j],
+                        ids,
+                        object_points,
+                        image_points)

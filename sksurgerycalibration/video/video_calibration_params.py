@@ -183,7 +183,7 @@ class StereoCalibrationParams(BaseCalibrationParams):
         left_prefix = sksio.get_left_prefix(file_prefix)
         self.left_params.save_data(dir_name, left_prefix)
         right_prefix = sksio.get_right_prefix(file_prefix)
-        self.left_params.save_data(dir_name, right_prefix)
+        self.right_params.save_data(dir_name, right_prefix)
 
         l2r_file = sksio.get_l2r_file_name(dir_name, file_prefix)
         np.savetxt(l2r_file, self.get_l2r_as_4x4(), fmt='%.8f')
