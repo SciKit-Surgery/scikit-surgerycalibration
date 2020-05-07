@@ -16,7 +16,7 @@ def get_iterative_reference_data():
     number_of_points = 140
     x_size = 14
     y_size = 10
-    pixels_per_square = 50
+    pixels_per_square = 20
     reference_ids = np.zeros((number_of_points, 1))
     reference_points = np.zeros((number_of_points, 2))
     counter = 0
@@ -107,12 +107,12 @@ def test_chessboard_mono():
     # Test iterative calibration.
     reference_ids, reference_points, reference_image_size = get_iterative_reference_data()
 
-    proj_err, recon_err, params = calibrator.iterative_calibration(10,
-                                                                   reference_ids,
-                                                                   reference_points,
-                                                                   reference_image_size)
-    assert (np.abs(reproj_err - 0.58096267) < 0.000001)
-    assert (np.abs(recon_err - 0.29049092) < 0.000001)
+    reproj_err, recon_err, params = calibrator.iterative_calibration(10,
+                                                                     reference_ids,
+                                                                     reference_points,
+                                                                     reference_image_size)
+    assert (np.abs(reproj_err - 0.628537711) < 0.000001)
+    assert (np.abs(recon_err - 0.302745334) < 0.000001)
 
 
 def test_chessboard_stereo():
@@ -165,6 +165,6 @@ def test_chessboard_stereo():
                                                                      reference_ids,
                                                                      reference_points,
                                                                      reference_image_size)
-    assert (np.abs(reproj_err - 0.778546762) < 0.000001)
-    assert (np.abs(recon_err - 4.8760120199) < 0.000001)
+    assert (np.abs(reproj_err - 0.6477395973) < 0.000001)
+    assert (np.abs(recon_err - 1.4553728326) < 0.000001)
 

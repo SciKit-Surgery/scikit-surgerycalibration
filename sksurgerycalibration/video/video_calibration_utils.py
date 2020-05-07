@@ -314,7 +314,7 @@ def detect_points_in_canonical_space(video_data,
                                common_points[0:, 2:4])
         warped = cv2.warpPerspective(undistorted,
                                      homography,
-                                     reference_image_size)
+                                     reference_image_size,)
 
         ids, obj_pts, img_pts = point_detector.get_points(warped)
 
