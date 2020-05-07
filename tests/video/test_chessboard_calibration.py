@@ -9,6 +9,7 @@ import cv2
 import sksurgeryimage.calibration.chessboard_point_detector as pd
 import sksurgerycalibration.video.video_calibration_driver_mono as mc
 import sksurgerycalibration.video.video_calibration_driver_stereo as sc
+import sksurgerycalibration.video.video_calibration_utils as vu
 
 
 def get_iterative_reference_data():
@@ -72,6 +73,36 @@ def test_chessboard_mono():
     # Just for a regression test, checking reprojection error, and recon error.
     assert (np.abs(reproj_err - 0.58096267) < 0.000001)
     assert (np.abs(recon_err - 0.20886230) < 0.000001)
+
+    # Test components of iterative calibration.
+    original_image = calibrator.video_data.images_array[0]
+    _, _, original_pts = chessboard_detector.get_points(original_image)
+
+    # First ensure undistorting / redistorting points works.
+    undistorted_points = cv2.undistortPoints(original_pts,
+                                             calibrator.calibration_params.camera_matrix,
+                                             calibrator.calibration_params.dist_coeffs,
+                                             None,
+                                             calibrator.calibration_params.camera_matrix
+                                             )
+    distorted_pts = vu.distort_points(undistorted_points.reshape((-1, 2)),
+                                      calibrator.calibration_params.camera_matrix,
+                                      calibrator.calibration_params.dist_coeffs)
+    assert np.allclose(original_pts, distorted_pts, rtol=1e-4, atol=1e-4)
+
+    rectify_map_1, rectify_map_2 = cv2.initUndistortRectifyMap(calibrator.calibration_params.camera_matrix,
+                                                               calibrator.calibration_params.dist_coeffs,
+                                                               None,
+                                                               calibrator.calibration_params.camera_matrix,
+                                                               (original_image.shape[1], original_image.shape[0]),
+                                                               cv2.CV_32FC1
+                                                               )
+    #undistorted_image = cv2.undistort(original_image, calibrator.calibration_params.camera_matrix, calibrator.calibration_params.dist_coeffs, calibrator.calibration_params.camera_matrix)
+    undistorted_image = cv2.remap(original_image, rectify_map_1, rectify_map_2, cv2.INTER_LANCZOS4)
+
+    _, _, undistorted_pts = chessboard_detector.get_points(undistorted_image)
+    distorted_pts = vu.distort_points(undistorted_pts, calibrator.calibration_params.camera_matrix, calibrator.calibration_params.dist_coeffs)
+    assert np.allclose(original_pts, distorted_pts, rtol=1e-1, atol=1e-1)
 
     # Test iterative calibration.
     reference_ids, reference_points, reference_image_size = get_iterative_reference_data()
