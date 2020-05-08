@@ -2,6 +2,7 @@
 
 """ Containers for video calibration parameters. """
 
+import os
 import copy
 import numpy as np
 import sksurgerycore.transforms.matrix as sksm
@@ -73,6 +74,9 @@ class MonoCalibrationParams(BaseCalibrationParams):
         :param dir_name: directory to save to
         :param file_prefix: prefix for all files
         """
+        if not os.path.isdir(dir_name):
+            os.makedirs(dir_name)
+
         intrinsics_file = sksio.get_intrinsics_file_name(dir_name,
                                                          file_prefix)
         np.savetxt(intrinsics_file, self.camera_matrix, fmt='%.8f')
@@ -180,6 +184,9 @@ class StereoCalibrationParams(BaseCalibrationParams):
         :param dir_name: directory to save to
         :param file_prefix: prefix for all files
         """
+        if not os.path.isdir(dir_name):
+            os.makedirs(dir_name)
+
         left_prefix = sksio.get_left_prefix(file_prefix)
         self.left_params.save_data(dir_name, left_prefix)
         right_prefix = sksio.get_right_prefix(file_prefix)
