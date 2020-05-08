@@ -275,8 +275,57 @@ def distort_points(image_points, camera_matrix, distortion_coeffs):
     return distorted_pts
 
 
-def detect_points_in_canonical_space(video_data,
-                                     point_detector,
+def map_points_from_canonical_to_original(images_array,
+                                          image_index,
+                                          video_data,
+                                          ids,
+                                          object_points,
+                                          image_points,
+                                          homography,
+                                          camera_matrix,
+                                          distortion_coeffs):
+    """
+    Utility method to map image points, detected in a canonical face
+    on image, back to the original image space.
+
+    :param images_array:
+    :param image_index:
+    :param video_data:
+    :param ids:
+    :param object_points:
+    :param image_points:
+    :param homography:
+    :param camera_matrix:
+    :param distortion_coeffs:
+    :return:
+    """
+    inverted_points = \
+        cv2.perspectiveTransform(
+            image_points.astype(np.float32).reshape(-1, 1, 2),
+            np.linalg.inv(homography))
+    inverted_points = inverted_points.reshape(-1, 2)
+
+    distorted_pts = distort_points(
+        inverted_points,
+        camera_matrix,
+        distortion_coeffs)
+
+    # Convert back to a format suitable for OpenCV calibration.
+    ids, image_points, object_points = \
+        convert_pd_to_opencv(ids,
+                             object_points,
+                             distorted_pts)
+
+    # Store the image, with ids, object_points and image_points.
+    video_data.push(images_array[image_index],
+                    ids,
+                    object_points,
+                    image_points)
+
+
+def detect_points_in_canonical_space(point_detector,
+                                     minimum_points_per_frame,
+                                     video_data,
                                      images,
                                      camera_matrix,
                                      distortion_coefficients,
@@ -287,8 +336,9 @@ def detect_points_in_canonical_space(video_data,
     """
     Method that does the bulk of the heavy lifting in Datta 2009.
 
-    :param video_data:
     :param point_detector:
+    :param minimum_points_per_frame:
+    :param video_data:
     :param images:
     :param camera_matrix:
     :param distortion_coefficients:
@@ -318,26 +368,131 @@ def detect_points_in_canonical_space(video_data,
 
         ids, obj_pts, img_pts = point_detector.get_points(warped)
 
-        # Map pts back to original space.
-        inverted_points = \
-            cv2.perspectiveTransform(
-                img_pts.astype(np.float32).reshape(-1, 1, 2),
-                np.linalg.inv(homography))
-        inverted_points = inverted_points.reshape(-1, 2)
+        if ids is not None and ids.shape[0] > minimum_points_per_frame:
 
-        distorted_pts = distort_points(
-            inverted_points,
-            camera_matrix,
-            distortion_coefficients)
+            map_points_from_canonical_to_original(images,
+                                                  j,
+                                                  video_data,
+                                                  ids,
+                                                  obj_pts,
+                                                  img_pts,
+                                                  homography,
+                                                  camera_matrix,
+                                                  distortion_coefficients)
 
-        # Convert back to a format suitable for OpenCV calibration.
-        ids, image_points, object_points = \
-            convert_pd_to_opencv(ids,
-                                 obj_pts,
-                                 distorted_pts)
 
-        # Store the image, with ids, object_points and image_points.
-        video_data.push(images[j],
-                        ids,
-                        object_points,
-                        image_points)
+def detect_points_in_stereo_canonical_space(point_detector,
+                                            minimum_points_per_frame,
+                                            left_video_data,
+                                            left_images,
+                                            left_camera_matrix,
+                                            left_distortion_coeffs,
+                                            right_video_data,
+                                            right_images,
+                                            right_camera_matrix,
+                                            right_distortion_coeffs,
+                                            reference_ids,
+                                            reference_image_points,
+                                            reference_image_size
+                                            ):
+    """
+    Method that does the bulk of the heavy lifting in Datta 2009.
+
+    The reason we need a combined stereo one, instead of calling the mono
+    one twice, is because at any point, if either left or right channel
+    fails feature detection, we need to drop that image from BOTH channels.
+
+    :param point_detector:
+    :param minimum_points_per_frame:
+    :param left_video_data:
+    :param left_images:
+    :param left_camera_matrix:
+    :param left_distortion_coeffs:
+    :param right_video_data:
+    :param right_images:
+    :param right_camera_matrix:
+    :param right_distortion_coeffs:
+    :param reference_ids:
+    :param reference_image_points:
+    :param reference_image_size:
+    :return:
+    """
+    left_video_data.reinit()
+    right_video_data.reinit()
+
+    for j in range(0, len(left_images)):
+        left_undistorted = cv2.undistort(
+            left_images[j],
+            left_camera_matrix,
+            left_distortion_coeffs,
+            left_camera_matrix
+        )
+        left_ids, left_obj_pts, left_img_pts = \
+            point_detector.get_points(left_undistorted)
+
+        right_undistorted = cv2.undistort(
+            right_images[j],
+            right_camera_matrix,
+            right_distortion_coeffs,
+            right_camera_matrix
+        )
+        right_ids, right_obj_pts, right_img_pts = \
+            point_detector.get_points(right_undistorted)
+
+        if left_ids is not None \
+            and left_ids.shape[0] > minimum_points_per_frame \
+            and right_ids is not None \
+            and right_ids.shape[0] > minimum_points_per_frame:
+
+            left_common_points = match_points_by_id(left_ids,
+                                                    left_img_pts,
+                                                    reference_ids,
+                                                    reference_image_points)
+            left_homography, _ = \
+                cv2.findHomography(left_common_points[0:, 0:2],
+                                   left_common_points[0:, 2:4])
+            left_warped = cv2.warpPerspective(left_undistorted,
+                                              left_homography,
+                                              reference_image_size,)
+
+            left_ids, left_obj_pts, left_img_pts = \
+                point_detector.get_points(left_warped)
+
+            right_common_points = match_points_by_id(right_ids,
+                                                     right_img_pts,
+                                                     reference_ids,
+                                                     reference_image_points)
+            right_homography, _ = \
+                cv2.findHomography(right_common_points[0:, 0:2],
+                                   right_common_points[0:, 2:4])
+            right_warped = cv2.warpPerspective(right_undistorted,
+                                               right_homography,
+                                               reference_image_size,)
+
+            right_ids, right_obj_pts, right_img_pts = \
+                point_detector.get_points(right_warped)
+
+            if left_ids is not None \
+                    and left_ids.shape[0] > minimum_points_per_frame \
+                    and right_ids is not None \
+                    and right_ids.shape[0] > minimum_points_per_frame:
+
+                map_points_from_canonical_to_original(left_images,
+                                                      j,
+                                                      left_video_data,
+                                                      left_ids,
+                                                      left_obj_pts,
+                                                      left_img_pts,
+                                                      left_homography,
+                                                      left_camera_matrix,
+                                                      left_distortion_coeffs)
+
+                map_points_from_canonical_to_original(right_images,
+                                                      j,
+                                                      right_video_data,
+                                                      right_ids,
+                                                      right_obj_pts,
+                                                      right_img_pts,
+                                                      right_homography,
+                                                      right_camera_matrix,
+                                                      right_distortion_coeffs)

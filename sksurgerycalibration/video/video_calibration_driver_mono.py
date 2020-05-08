@@ -61,7 +61,7 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         ids, object_points, image_points = \
             self.point_detector.get_points(image)
 
-        if image_points.shape[0] >= self.minimum_points_per_frame:
+        if ids is not None and ids.shape[0] >= self.minimum_points_per_frame:
 
             ids, image_points, object_points = \
                 cu.convert_pd_to_opencv(ids,
@@ -137,14 +137,16 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
 
         for i in range(0, number_of_iterations):
             images = copy.deepcopy(cached_images)
-            cu.detect_points_in_canonical_space(self.video_data,
-                                                self.point_detector,
-                                                images,
-                                                self.calibration_params.camera_matrix,
-                                                self.calibration_params.dist_coeffs,
-                                                reference_ids,
-                                                reference_image_points,
-                                                reference_image_size)
+            cu.detect_points_in_canonical_space(
+                self.point_detector,
+                self.minimum_points_per_frame,
+                self.video_data,
+                images,
+                self.calibration_params.camera_matrix,
+                self.calibration_params.dist_coeffs,
+                reference_ids,
+                reference_image_points,
+                reference_image_size)
             proj_err, recon_err, param_copy = self.calibrate(flags=flags)
             LOGGER.info("Iterative calibration: proj_err=%s, recon_err=%s.",
                         str(proj_err), str(recon_err))

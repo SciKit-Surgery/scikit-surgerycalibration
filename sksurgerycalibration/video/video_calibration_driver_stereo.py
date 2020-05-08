@@ -60,15 +60,18 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         """
         number_of_points = 0
 
+        # This can return None's if none are found.
         left_ids, left_object_points, left_image_points = \
             self.point_detector.get_points(left_image)
 
-        if left_image_points.shape[0] >= self.minimum_points_per_frame:
+        if left_ids is not None and \
+                left_ids.shape[0] >= self.minimum_points_per_frame:
 
             right_ids, right_object_points, right_image_points = \
                 self.point_detector.get_points(right_image)
 
-            if left_image_points.shape[0] >= self.minimum_points_per_frame:
+            if right_ids is not None and \
+                    right_ids.shape[0] >= self.minimum_points_per_frame:
 
                 left_ids, left_image_points, left_object_points = \
                     cu.convert_pd_to_opencv(left_ids,
@@ -96,9 +99,7 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                     left_image_points.shape[0] + \
                     right_image_points.shape[0]
 
-        LOGGER.info("Grabbed: Returning %s + %s = %s points.",
-                    str(left_image_points),
-                    str(right_image_points),
+        LOGGER.info("Grabbed: Returning %s points.",
                     str(number_of_points))
 
         return number_of_points
@@ -155,22 +156,20 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         for i in range(0, number_of_iterations):
             left_images = copy.deepcopy(cached_left_images)
             right_images = copy.deepcopy(cached_right_images)
-            cu.detect_points_in_canonical_space(self.video_data.left_data,
-                                                self.point_detector,
-                                                left_images,
-                                                self.calibration_params.left_params.camera_matrix,
-                                                self.calibration_params.left_params.dist_coeffs,
-                                                reference_ids,
-                                                reference_image_points,
-                                                reference_image_size)
-            cu.detect_points_in_canonical_space(self.video_data.right_data,
-                                                self.point_detector,
-                                                right_images,
-                                                self.calibration_params.right_params.camera_matrix,
-                                                self.calibration_params.right_params.dist_coeffs,
-                                                reference_ids,
-                                                reference_image_points,
-                                                reference_image_size)
+            cu.detect_points_in_stereo_canonical_space(
+                self.point_detector,
+                self.minimum_points_per_frame,
+                self.video_data.left_data,
+                left_images,
+                self.calibration_params.left_params.camera_matrix,
+                self.calibration_params.left_params.dist_coeffs,
+                self.video_data.right_data,
+                right_images,
+                self.calibration_params.right_params.camera_matrix,
+                self.calibration_params.right_params.dist_coeffs,
+                reference_ids,
+                reference_image_points,
+                reference_image_size)
             proj_err, recon_err, param_copy = self.calibrate(flags=flags)
             LOGGER.info("Iterative calibration: proj_err=%s, recon_err=%s.",
                         str(proj_err), str(recon_err))
