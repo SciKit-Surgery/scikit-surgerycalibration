@@ -142,7 +142,7 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                               reference_ids,
                               reference_image_points,
                               reference_image_size,
-                              flags: int = 0):
+                              flags: int = cv2.CALIB_USE_INTRINSIC_GUESS):
         """
         Does iterative calibration, like Datta 2009.
         """
