@@ -167,4 +167,3 @@ def test_chessboard_stereo():
                                                                      reference_image_size)
     assert (np.abs(reproj_err - 0.64793882588) < 0.000001)
     assert (np.abs(recon_err - 1.457163154398) < 0.000001)
-

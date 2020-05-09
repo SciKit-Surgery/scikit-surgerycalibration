@@ -171,6 +171,6 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                 reference_image_points,
                 reference_image_size)
             proj_err, recon_err, param_copy = self.calibrate(flags=flags)
-            LOGGER.info("Iterative calibration: proj_err=%s, recon_err=%s.",
-                        str(proj_err), str(recon_err))
+            LOGGER.info("Iterative calibration: %s: proj_err=%s, recon_err=%s.",
+                        str(i), str(proj_err), str(recon_err))
         return proj_err, recon_err, param_copy

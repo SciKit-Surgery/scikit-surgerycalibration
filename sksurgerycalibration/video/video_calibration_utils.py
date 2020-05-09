@@ -2,6 +2,8 @@
 
 """ Various utilities, converters etc., to help video calibration. """
 
+# pylint:disable=invalid-name
+
 import collections
 import numpy as np
 import cv2
@@ -236,6 +238,7 @@ def distort_points(image_points, camera_matrix, distortion_coeffs):
     distorted_pts = np.zeros(image_points.shape)
     number_of_points = image_points.shape[0]
 
+    # pylint: disable=invalid-name
     for counter in range(number_of_points):
         relative_x = (image_points[counter][0] - camera_matrix[0][2]) \
             / camera_matrix[0][0]
@@ -243,28 +246,28 @@ def distort_points(image_points, camera_matrix, distortion_coeffs):
             / camera_matrix[1][1]
         r2 = relative_x * relative_x + relative_y * relative_y
         radial = (
-                1
-                + distortion_coeffs[0][0]
-                * r2
-                + distortion_coeffs[0][1]
-                * r2 * r2
-                + distortion_coeffs[0][4]
-                * r2 * r2 * r2
+            1
+            + distortion_coeffs[0][0]
+            * r2
+            + distortion_coeffs[0][1]
+            * r2 * r2
+            + distortion_coeffs[0][4]
+            * r2 * r2 * r2
         )
         distorted_x = relative_x * radial
         distorted_y = relative_y * radial
 
         distorted_x = distorted_x + (
-                2 * distortion_coeffs[0][2]
-                * relative_x * relative_y
-                + distortion_coeffs[0][3]
-                * (r2 + 2 * relative_x * relative_x))
+            2 * distortion_coeffs[0][2]
+            * relative_x * relative_y
+            + distortion_coeffs[0][3]
+            * (r2 + 2 * relative_x * relative_x))
 
         distorted_y = distorted_y + (
-                distortion_coeffs[0][2]
-                * (r2 + 2 * relative_y * relative_y)
-                + 2 * distortion_coeffs[0][3]
-                * relative_x * relative_y)
+            distortion_coeffs[0][2]
+            * (r2 + 2 * relative_y * relative_y)
+            + 2 * distortion_coeffs[0][3]
+            * relative_x * relative_y)
 
         distorted_x = distorted_x * camera_matrix[0][0] + camera_matrix[0][2]
         distorted_y = distorted_y * camera_matrix[1][1] + camera_matrix[1][2]
@@ -348,39 +351,45 @@ def detect_points_in_canonical_space(point_detector,
     :return:
     """
     video_data.reinit()
-    for j in range(0, len(images)):
+    for j, _ in enumerate(images):
+
         undistorted = cv2.undistort(
             images[j],
             camera_matrix,
             distortion_coefficients,
             camera_matrix
         )
+
         ids, obj_pts, img_pts = point_detector.get_points(undistorted)
-        common_points = match_points_by_id(ids, img_pts,
-                                           reference_ids,
-                                           reference_image_points)
-        homography, _ = \
-            cv2.findHomography(common_points[0:, 0:2],
-                               common_points[0:, 2:4])
-        warped = cv2.warpPerspective(undistorted,
-                                     homography,
-                                     reference_image_size,)
 
-        ids, obj_pts, img_pts = point_detector.get_points(warped)
+        if ids is not None and ids.shape[0] >= minimum_points_per_frame:
 
-        if ids is not None and ids.shape[0] > minimum_points_per_frame:
+            common_points = match_points_by_id(ids, img_pts,
+                                               reference_ids,
+                                               reference_image_points)
+            homography, _ = \
+                cv2.findHomography(common_points[0:, 0:2],
+                                   common_points[0:, 2:4])
+            warped = cv2.warpPerspective(undistorted,
+                                         homography,
+                                         reference_image_size,)
 
-            map_points_from_canonical_to_original(images,
-                                                  j,
-                                                  video_data,
-                                                  ids,
-                                                  obj_pts,
-                                                  img_pts,
-                                                  homography,
-                                                  camera_matrix,
-                                                  distortion_coefficients)
+            ids, obj_pts, img_pts = point_detector.get_points(warped)
+
+            if ids is not None and ids.shape[0] >= minimum_points_per_frame:
+
+                map_points_from_canonical_to_original(images,
+                                                      j,
+                                                      video_data,
+                                                      ids,
+                                                      obj_pts,
+                                                      img_pts,
+                                                      homography,
+                                                      camera_matrix,
+                                                      distortion_coefficients)
 
 
+# pylint: disable=too-many-arguments
 def detect_points_in_stereo_canonical_space(point_detector,
                                             minimum_points_per_frame,
                                             left_video_data,
@@ -420,7 +429,7 @@ def detect_points_in_stereo_canonical_space(point_detector,
     left_video_data.reinit()
     right_video_data.reinit()
 
-    for j in range(0, len(left_images)):
+    for j, _ in enumerate(left_images):
         left_undistorted = cv2.undistort(
             left_images[j],
             left_camera_matrix,
@@ -440,9 +449,9 @@ def detect_points_in_stereo_canonical_space(point_detector,
             point_detector.get_points(right_undistorted)
 
         if left_ids is not None \
-            and left_ids.shape[0] > minimum_points_per_frame \
-            and right_ids is not None \
-            and right_ids.shape[0] > minimum_points_per_frame:
+                and left_ids.shape[0] >= minimum_points_per_frame \
+                and right_ids is not None \
+                and right_ids.shape[0] >= minimum_points_per_frame:
 
             left_common_points = match_points_by_id(left_ids,
                                                     left_img_pts,
@@ -473,9 +482,9 @@ def detect_points_in_stereo_canonical_space(point_detector,
                 point_detector.get_points(right_warped)
 
             if left_ids is not None \
-                    and left_ids.shape[0] > minimum_points_per_frame \
+                    and left_ids.shape[0] >= minimum_points_per_frame \
                     and right_ids is not None \
-                    and right_ids.shape[0] > minimum_points_per_frame:
+                    and right_ids.shape[0] >= minimum_points_per_frame:
 
                 map_points_from_canonical_to_original(left_images,
                                                       j,
