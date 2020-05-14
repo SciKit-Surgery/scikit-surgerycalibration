@@ -129,7 +129,7 @@ class TrackingData(BaseVideoCalibrationData):
         self.reinit()
         files = sksio.get_filenames_by_glob_expr(dir_name,
                                                  file_prefix,
-                                                 "device",
+                                                 "device_tracking",
                                                  ".txt")
         for file in files:
             device_data = np.loadtxt(file)
@@ -137,7 +137,7 @@ class TrackingData(BaseVideoCalibrationData):
 
         files = sksio.get_filenames_by_glob_expr(dir_name,
                                                  file_prefix,
-                                                 "calibration",
+                                                 "calib_obj_tracking",
                                                  ".txt")
         for file in files:
             calibration_data = np.loadtxt(file)
