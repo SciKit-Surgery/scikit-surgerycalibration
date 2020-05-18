@@ -13,23 +13,6 @@ import sksurgeryimage.calibration.charuco_plus_chessboard_point_detector as chpd
 
 import sksurgerycalibration.video as vidcal
 
-def test_load_data_stereo_calib():
-    """ Load tracking and image data from test directory. """
-    chessboard_detector = pd.ChessboardPointDetector((14, 10), 3, (1, 1))
-
-    stereo_calib = vidcal.video_calibration_driver_stereo.StereoVideoCalibrationDriver(chessboard_detector, 140)
-
-    tracking_data_dir = 'tests/data/2020_01_20_storz/12_50_30'
-    file_prefix = 'calib'
-
-    stereo_calib.load_data(tracking_data_dir, file_prefix)
-
-    assert(len(stereo_calib.tracking_data.device_tracking_array) == 10)
-    assert(len(stereo_calib.tracking_data.calibration_tracking_array) == 10)
-
-    assert(len(stereo_calib.video_data.left_data.images_array) == 10)
-    assert(len(stereo_calib.video_data.right_data.images_array) == 10)
-
 def test_set_model2hand_arrays():
     chessboard_detector = pd.ChessboardPointDetector((14, 10), 3, (1, 1))
 
@@ -119,3 +102,20 @@ def test_handeye_calibration_stereo():
     assert(np.linalg.norm(expected_left_handeye - calculated_left_handeye) < handeye_tolerance)
     assert(np.linalg.norm(expected_right_handeye - calculated_right_handeye) < handeye_tolerance)
 
+
+def test_load_data_stereo_calib():
+    """ Load tracking and image data from test directory. """
+    chessboard_detector = pd.ChessboardPointDetector((14, 10), 3, (1, 1))
+
+    stereo_calib = vidcal.video_calibration_driver_stereo.StereoVideoCalibrationDriver(chessboard_detector, 140)
+
+    tracking_data_dir = 'tests/data/2020_01_20_storz/12_50_30'
+    file_prefix = 'calib'
+
+    stereo_calib.load_data(tracking_data_dir, file_prefix)
+
+    assert(len(stereo_calib.tracking_data.device_tracking_array) == 10)
+    assert(len(stereo_calib.tracking_data.calibration_tracking_array) == 10)
+
+    assert(len(stereo_calib.video_data.left_data.images_array) == 10)
+    assert(len(stereo_calib.video_data.right_data.images_array) == 10)
