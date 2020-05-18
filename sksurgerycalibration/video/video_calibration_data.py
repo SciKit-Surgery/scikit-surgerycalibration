@@ -50,6 +50,8 @@ class TrackingData(BaseVideoCalibrationData):
         self.device_tracking_array = None
         self.calibration_tracking_array = None
         self.use_quaternions = False
+        self.quat_model2hand_array = None
+        self.trans_model2hand_array = None
         self.reinit()
 
     def reinit(self):

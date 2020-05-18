@@ -85,6 +85,7 @@ def test_handeye_calibration_stereo():
     calibrator = \
         vidcal.video_calibration_driver_stereo.StereoVideoCalibrationDriver(detector, minimum_number_of_points_per_image)
 
+
     for l, r, device, calib_obj in zip(left_images, right_images, device_tracking, obj_tracking):
         successful = calibrator.grab_data( l, r, device, calib_obj)
         assert successful > 0
@@ -93,10 +94,16 @@ def test_handeye_calibration_stereo():
     reproj_err_1, recon_err_1, params_1 = calibrator.calibrate()
     calibrator.handeye_calibration()
 
-    print(calibrator.handeye_matrix)
-    print(calibrator.pattern2marker_matrix)
-    print(calibrator.calibration_params.l2r_rmat)
-    print(calibrator.calibration_params.l2r_tvec)
+    expected_quat_model2hand = np.loadtxt('tests/data/2020_01_20_storz/12_50_30/quat_model2hand.txt')
+    expected_trans_model2hand = np.loadtxt('tests/data/2020_01_20_storz/12_50_30/trans_model2hand.txt')
+
+    assert(np.array_equal(expected_quat_model2hand, calibrator.tracking_data.quat_model2hand_array))
+    assert(np.array_equal(expected_trans_model2hand, calibrator.tracking_data.trans_model2hand_array))
+
+    # print(calibrator.handeye_matrix)
+    # print(calibrator.pattern2marker_matrix)
+    # print(calibrator.calibration_params.l2r_rmat)
+    # print(calibrator.calibration_params.l2r_tvec)
 
     # stereo_calib.load_data(tracking_data_dir, file_prefix)
     # print(stereo_calib.video_data.get_number_of_views())
@@ -119,19 +126,4 @@ def test_handeye_calibration_stereo():
     # stereo_calib.calibrate()
     # stereo_calib.handeye_calibration()
 
-@pytest.mark.skip()
-def test_calibration_regression_test():
-    configuration_manager = config.ConfigurationManager('tests/data/config_offline_test_data.json')
-    configuration_data = configuration_manager.get_copy()
 
-    data_dir = "tests/data/2020_01_20_stortz/12_50_30"
-
-    calibration_manager = cm.CalibrationManager(configuration_data,
-                                                data_dir=data_dir)
-    calibration_manager.calibrate()
-
-    left_handeye_old = np.array([75.2,  189.8, -606.1])
-    left_handeye_new = calibration_manager.left_params.t_handeye
-    assert(np.linalg.norm(left_handeye_new - left_handeye_old) < 1)
-
-# Lots of other tests.
