@@ -11,6 +11,7 @@ import sksurgerycalibration.video.video_calibration_data as cd
 import sksurgerycalibration.video.video_calibration_params as cp
 import sksurgerycalibration.video.video_calibration_utils as cu
 import sksurgerycalibration.video.video_calibration_wrapper as vc
+import sksurgerycalibration.video.video_calibration_hand_eye as he
 
 LOGGER = logging.getLogger(__name__)
 
@@ -38,6 +39,7 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         # Pass them to base class, so base class can access them.
         self._init_internal(calibration_data, calibration_params)
 
+    #TODO: Grab data after data loaded from directrory?
     def grab_data(self,
                   left_image,
                   right_image,
@@ -174,3 +176,11 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
             LOGGER.info("Iterative calibration: %s: proj_err=%s, recon_err=%s.",
                         str(i), str(proj_err), str(recon_err))
         return proj_err, recon_err, param_copy
+
+    def handeye_calibration(self):
+        self.tracking_data.set_model2hand_arrays()
+        self.handeye_matrix, self.pattern2marker_matrix = \
+            he.handeye_calibration(self.calibration_params.left_params.rvecs,
+                                    self.calibration_params.left_params.tvecs,
+                                    self.tracking_data.quat_model2hand_array,
+                                    self.tracking_data.trans_model2hand_array)

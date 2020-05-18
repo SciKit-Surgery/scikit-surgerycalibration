@@ -7,7 +7,7 @@ import copy
 import cv2
 import numpy as np
 import sksurgerycalibration.video.video_calibration_io as sksio
-
+import sksurgerycalibration.video.video_calibration_hand_eye as heye
 
 class BaseVideoCalibrationData:
     """
@@ -49,6 +49,7 @@ class TrackingData(BaseVideoCalibrationData):
         super(TrackingData, self).__init__()
         self.device_tracking_array = None
         self.calibration_tracking_array = None
+        self.use_quaternions = False
         self.reinit()
 
     def reinit(self):
@@ -143,6 +144,17 @@ class TrackingData(BaseVideoCalibrationData):
             calibration_data = np.loadtxt(file)
             self.calibration_tracking_array.append(calibration_data)
 
+    def set_model2hand_arrays(self, use_quaternions = False):
+        """
+        TODO: Docstring update
+        Set the attributes model-to-hand quaternion and translation arrays
+        from tracking data.
+        """
+
+        self.quat_model2hand_array, self.trans_model2hand_array = \
+            heye.set_model2hand_arrays(self.calibration_tracking_array,
+                                    self.device_tracking_array,
+                                    use_quaternions)
 
 class MonoVideoData(BaseVideoCalibrationData):
     """
