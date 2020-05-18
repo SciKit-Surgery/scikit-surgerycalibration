@@ -44,6 +44,8 @@ class MonoCalibrationParams(BaseCalibrationParams):
         self.dist_coeffs = None
         self.rvecs = None
         self.tvecs = None
+        self.handeye_matrix = None
+        self.pattern2marker_matrix = None
         self.reinit()
 
     def reinit(self):
@@ -54,6 +56,8 @@ class MonoCalibrationParams(BaseCalibrationParams):
         self.dist_coeffs = np.zeros((1, 5))
         self.rvecs = []
         self.tvecs = []
+        self.handeye_matrix = np.eye(4)
+        self.pattern2marker_matrix = np.eye(4)
 
     def set_data(self, camera_matrix, dist_coeffs, rvecs, tvecs):
         """
@@ -63,6 +67,13 @@ class MonoCalibrationParams(BaseCalibrationParams):
         self.dist_coeffs = copy.deepcopy(dist_coeffs)
         self.rvecs = copy.deepcopy(rvecs)
         self.tvecs = copy.deepcopy(tvecs)
+
+    def set_handeye(self, handeye_matrix, pattern2marker_matrix):
+        """ 
+        Stores the provided parameters, by taking a copy.
+        """
+        self.handeye_matrix = copy.deepcopy(handeye_matrix)
+        self.pattern2marker_matrix = copy.deepcopy(pattern2marker_matrix)
 
     def save_data(self,
                   dir_name: str,
@@ -167,6 +178,17 @@ class StereoCalibrationParams(BaseCalibrationParams):
         self.l2r_tvec = copy.deepcopy(l2r_tvec)
         self.essential = copy.deepcopy(essential)
         self.fundamental = copy.deepcopy(fundamental)
+
+    def set_handeye(self, left_handeye_matrix, left_pattern2marker_matrix,
+                    right_handeye_matrix, right_pattern2marker_matrix):
+        """
+        Call the left/right set_handeye methods.
+        """
+        self.left_params.set_handeye(
+            left_handeye_matrix, left_pattern2marker_matrix)
+
+        self.right_params.set_handeye(
+            right_handeye_matrix, right_pattern2marker_matrix)
 
     def get_l2r_as_4x4(self):
         """

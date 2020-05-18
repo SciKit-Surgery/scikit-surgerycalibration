@@ -152,3 +152,14 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                         str(i), str(proj_err), str(recon_err))
 
         return proj_err, recon_err, param_copy
+
+    def handeye_calibration(self):
+        self.tracking_data.set_model2hand_arrays()
+        handeye_matrix, pattern2marker_matrix = \
+            he.handeye_calibration(self.calibration_params.rvecs,
+                                    self.calibration_params.tvecs,
+                                    self.tracking_data.quat_model2hand_array,
+                                    self.tracking_data.trans_model2hand_array)
+
+        self.calibration_params.set_handeye(handeye_matrix,
+                                            pattern2marker_matrix)

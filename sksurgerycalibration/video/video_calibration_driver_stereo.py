@@ -179,8 +179,21 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
 
     def handeye_calibration(self):
         self.tracking_data.set_model2hand_arrays()
-        self.handeye_matrix, self.pattern2marker_matrix = \
+
+        left_handeye_matrix, left_pattern2marker_matrix = \
             he.handeye_calibration(self.calibration_params.left_params.rvecs,
                                     self.calibration_params.left_params.tvecs,
                                     self.tracking_data.quat_model2hand_array,
                                     self.tracking_data.trans_model2hand_array)
+
+        right_handeye_matrix, right_pattern2marker_matrix = \
+            he.handeye_calibration(self.calibration_params.right_params.rvecs,
+                                    self.calibration_params.right_params.tvecs,
+                                    self.tracking_data.quat_model2hand_array,
+                                    self.tracking_data.trans_model2hand_array)
+
+        self.calibration_params.left_params.set_handeye(
+            left_handeye_matrix, left_pattern2marker_matrix)
+
+        self.calibration_params.right_params.set_handeye(
+            right_handeye_matrix, right_pattern2marker_matrix)
