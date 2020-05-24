@@ -39,7 +39,6 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         # Pass them to base class, so base class can access them.
         self._init_internal(calibration_data, calibration_params)
 
-    #TODO: Grab data after data loaded from directrory?
     def grab_data(self,
                   left_image,
                   right_image,
@@ -179,21 +178,34 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
 
     def handeye_calibration(self):
         self.tracking_data.set_model2hand_arrays()
-
-        left_handeye_matrix, left_pattern2marker_matrix = \
-            he.handeye_calibration(self.calibration_params.left_params.rvecs,
-                                    self.calibration_params.left_params.tvecs,
-                                    self.tracking_data.quat_model2hand_array,
-                                    self.tracking_data.trans_model2hand_array)
-
-        right_handeye_matrix, right_pattern2marker_matrix = \
-            he.handeye_calibration(self.calibration_params.right_params.rvecs,
-                                    self.calibration_params.right_params.tvecs,
-                                    self.tracking_data.quat_model2hand_array,
-                                    self.tracking_data.trans_model2hand_array)
+        proj_err, recon_err, l_handeye, l_pattern2marker, \
+            r_handeye, r_pattern2marker = \
+                vc.stereo_handeye_calibration(
+                    self.calibration_params.l2r_rmat,
+                    self.calibration_params.l2r_tvec,
+                    self.video_data.left_data.ids_arrays,
+                    self.video_data.left_data.object_points_arrays,
+                    self.video_data.left_data.image_points_arrays,
+                    self.video_data.right_data.ids_arrays,
+                    self.video_data.right_data.image_points_arrays,
+                    self.calibration_params.left_params.camera_matrix,
+                    self.calibration_params.left_params.dist_coeffs,
+                    self.calibration_params.right_params.camera_matrix,
+                    self.calibration_params.right_params.dist_coeffs,
+                    self.tracking_data.device_tracking_array,
+                    self.tracking_data.calibration_tracking_array,
+                    self.calibration_params.left_params.rvecs,
+                    self.calibration_params.left_params.tvecs,
+                    self.calibration_params.right_params.rvecs,
+                    self.calibration_params.right_params.tvecs,
+                    self.tracking_data.quat_model2hand_array,
+                    self.tracking_data.trans_model2hand_array
+                    )
 
         self.calibration_params.left_params.set_handeye(
-            left_handeye_matrix, left_pattern2marker_matrix)
+            l_handeye, l_pattern2marker)
 
         self.calibration_params.right_params.set_handeye(
-            right_handeye_matrix, right_pattern2marker_matrix)
+            r_handeye, r_pattern2marker)
+
+        return proj_err, recon_err

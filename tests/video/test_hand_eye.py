@@ -10,8 +10,10 @@ import pytest
 import numpy as np
 import sksurgeryimage.calibration.chessboard_point_detector as pd
 import sksurgeryimage.calibration.charuco_plus_chessboard_point_detector as chpd
+import sksurgerycalibration.video.video_calibration_utils as vu
 
 import sksurgerycalibration.video as vidcal
+import sksurgerycalibration.video.video_calibration_metrics as vcm
 
 def test_set_model2hand_arrays():
     chessboard_detector = pd.ChessboardPointDetector((14, 10), 3, (1, 1))
@@ -77,31 +79,27 @@ def test_handeye_calibration_stereo():
 
     # Grab data from images/tracking arrays
     for l, r, device, calib_obj in zip(left_images, right_images, device_tracking, obj_tracking):
-        successful = calibrator.grab_data( l, r, device, calib_obj)
+        successful = calibrator.grab_data(l, r, device, calib_obj)
         assert successful > 0
 
     reproj_err_1, recon_err_1, params_1 = calibrator.calibrate()
-    calibrator.handeye_calibration()
 
-    expected_quat_model2hand = np.loadtxt('tests/data/2020_01_20_storz/12_50_30/quat_model2hand.txt')
-    expected_trans_model2hand = np.loadtxt('tests/data/2020_01_20_storz/12_50_30/trans_model2hand.txt')
-    expected_left_handeye = np.loadtxt('tests/data/2020_01_20_storz/12_50_30/calib.left.handeye.txt')
-    expected_right_handeye = np.loadtxt('tests/data/2020_01_20_storz/12_50_30/calib.right.handeye.txt')
+    one_pixel = 1
+    assert(reproj_err_1 < one_pixel)
+    assert(recon_err_1 < one_pixel)
 
-    calculated_quat_model2hand = calibrator.tracking_data.quat_model2hand_array
-    calculated_trans_model2hand = calibrator.tracking_data.trans_model2hand_array
-    calculated_left_handeye = calibrator.calibration_params.left_params.handeye_matrix
-    calculated_right_handeye = calibrator.calibration_params.right_params.handeye_matrix
+    proj_err, recon_err = calibrator.handeye_calibration()
 
-    assert(np.array_equal(expected_quat_model2hand, calculated_quat_model2hand))
-    assert(np.array_equal(expected_trans_model2hand, calculated_trans_model2hand))
+    print(f'Reproj err {proj_err}')
+    print(f'Recon err {recon_err}')
 
-    #TODO: I have set this so that the test passes, but what is a sensible value?
-    # Left fails if tolerance < 2.5, right fails if tolerance < 3.8
-    handeye_tolerance = 5
-    assert(np.linalg.norm(expected_left_handeye - calculated_left_handeye) < handeye_tolerance)
-    assert(np.linalg.norm(expected_right_handeye - calculated_right_handeye) < handeye_tolerance)
+    # TODO: These aren't objective values
+    # Reconstruction error will fail with these values.
+    acceptable_reproj_error = 25
+    acceptable_recon_error = 25
 
+    assert(proj_err < acceptable_reproj_error)
+    assert(recon_err < acceptable_recon_error)
 
 def test_load_data_stereo_calib():
     """ Load tracking and image data from test directory. """

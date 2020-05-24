@@ -8,6 +8,7 @@ import cv2
 import sksurgerycore.transforms.matrix as skcm
 import sksurgerycalibration.video.video_calibration_utils as vu
 import sksurgerycalibration.video.video_calibration_metrics as vm
+import sksurgerycalibration.video.video_calibration_hand_eye as he
 
 LOGGER = logging.getLogger(__name__)
 
@@ -211,3 +212,73 @@ def stereo_video_calibration(left_ids,
         r_c, r_d, r_rvecs, r_tvecs, \
         l2r_r, l2r_t, \
         essential, fundamental
+
+def stereo_handeye_calibration(l2r_rmat,
+                            l2r_tvec,
+                            left_ids,
+                             left_object_points,
+                             left_image_points,
+                             right_ids,
+                             right_image_points,
+                             left_camera_matrix,
+                             left_camera_distortion,
+                             right_camera_matrix,
+                             right_camera_distortion,
+                             device_tracking_array,
+                             calibration_tracking_array,
+                             left_rvecs,
+                             left_tvecs,
+                             right_rvecs,
+                             right_tvecs,
+                             quat_model2hand_array,
+                             trans_model2hand_array):
+    
+    # Do calibration
+    left_handeye_matrix, left_pattern2marker_matrix =  \
+        he.handeye_calibration(left_rvecs, left_tvecs, quat_model2hand_array,
+                               trans_model2hand_array)
+                            
+    right_handeye_matrix, right_pattern2marker_matrix =  \
+        he.handeye_calibration(right_rvecs, right_tvecs, quat_model2hand_array,
+                               trans_model2hand_array)
+
+    # Filter common image points
+    minimum_points = 10
+    _, common_object_pts, common_l_image_pts, common_r_image_pts = \
+    vu.filter_common_points_all_images(
+        left_ids, left_object_points, left_image_points,
+        right_ids, right_image_points,
+        minimum_points)
+
+    sse, num_samples = vm.compute_stereo_2d_err_handeye(
+        common_object_pts,
+        common_l_image_pts,
+        left_camera_matrix, left_camera_distortion,
+        common_r_image_pts,
+        right_camera_matrix, right_camera_distortion,
+        device_tracking_array, calibration_tracking_array,
+        left_handeye_matrix, left_pattern2marker_matrix,
+        right_handeye_matrix, right_pattern2marker_matrix
+    )
+
+    mse = sse / num_samples
+    reproj_err = np.sqrt(mse)
+
+    sse, num_samples = vm.compute_stereo_3d_err_handeye(
+        l2r_rmat, l2r_tvec,
+        common_object_pts,
+        common_l_image_pts,
+        left_camera_matrix, left_camera_distortion,
+        common_r_image_pts,
+        right_camera_matrix, right_camera_distortion,
+        device_tracking_array, calibration_tracking_array,
+        left_handeye_matrix, left_pattern2marker_matrix,
+        right_handeye_matrix, right_pattern2marker_matrix
+
+    )
+    mse = sse / num_samples
+    recon_err = np.sqrt(mse)
+
+    return reproj_err, recon_err, \
+        left_handeye_matrix, left_pattern2marker_matrix, \
+        right_handeye_matrix, right_pattern2marker_matrix
