@@ -103,7 +103,7 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
             )
 
         sse, num_samples = \
-            cm.compute_mono_reconstruction_err(
+            cm.compute_mono_3d_err(
                 self.video_data.ids_arrays,
                 self.video_data.object_points_arrays,
                 self.video_data.image_points_arrays,

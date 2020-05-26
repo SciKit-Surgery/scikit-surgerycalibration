@@ -185,7 +185,7 @@ def compute_mono_2d_err(object_points,
                         camera_matrix,
                         distortion):
     """
-    Function to compute stereo RMS reconstruction error over multiple views.
+    Function to compute mono RMS reprojection error over multiple views.
 
     :param object_points: Vector of Vector of 1x3 of type float32
     :param image_points: Vector of Vector of 1x2 of type float32
@@ -226,7 +226,7 @@ def compute_mono_3d_err(ids,
                                     camera_matrix,
                                     distortion):
     """
-    Function to compute stereo RMS reconstruction error over multiple views.
+    Function to compute mono RMS reconstruction error over multiple views.
 
     Here, to triangulate, we take the i^th camera as left camera, and
     the i+1^th camera as the right camera, compute l2r, and triangulate.
@@ -292,6 +292,7 @@ def compute_mono_3d_err(ids,
 
     LOGGER.debug("Mono RMS reconstruction: sse=%s, num=%s",
                  str(sse), str(number_of_samples))
+
     return sse, number_of_samples
 
 def compute_mono_2d_err_handeye(model_points,
@@ -302,7 +303,32 @@ def compute_mono_2d_err_handeye(model_points,
                                 model_tracking_array,
                                 handeye_matrix,
                                 pattern2marker_matrix):
-    pass
+    sse = 0
+    number_of_samples = 0
+    number_of_frames = len(model_points)
+
+    for i in range(number_of_frames):
+        pattern_to_camera = \
+            handeye_matrix @ np.linalg.inv(hand_tracking_array[i]) @ \
+                model_tracking_array[i] @ pattern2marker_matrix
+
+        rvec, tvec = vu.extrinsic_matrix_to_vecs(pattern_to_camera)
+
+        projected, _ = cv2.projectPoints(model_points[i],
+                                        rvec,
+                                        tvec,
+                                        camera_matrix,
+                                        camera_distortion)
+
+        diff = image_points[i] - projected
+        sse += np.sum(np.square(diff))
+
+        number_of_samples += len(image_points[i])
+
+    LOGGER.debug("Mono Handeye RMS Reprojection: sse=%s, num=%s",
+     str(sse), str(number_of_samples))
+
+    return sse, number_of_samples
 
 def compute_stereo_2d_err_handeye(common_object_points,
                                  left_image_points,
@@ -318,48 +344,25 @@ def compute_stereo_2d_err_handeye(common_object_points,
                                  right_handeye_matrix,
                                  right_pattern2marker_matrix):
 
-    lse = 0
-    rse = 0
-    number_of_samples = 0
-    number_of_frames = len(common_object_points)
+    lse, l_samples = compute_mono_2d_err_handeye(common_object_points,
+                                                 left_image_points,
+                                                 left_camera_matrix,
+                                                 left_distortion,
+                                                 hand_tracking_array,
+                                                 model_tracking_array,
+                                                 left_handeye_matrix,
+                                                 left_pattern2marker_matrix)
 
-    for i in range(number_of_frames):
+    rse, r_samples = compute_mono_2d_err_handeye(common_object_points,
+                                                 right_image_points,
+                                                 right_camera_matrix,
+                                                 right_distortion,
+                                                 hand_tracking_array,
+                                                 model_tracking_array,
+                                                 right_handeye_matrix,
+                                                 right_pattern2marker_matrix)
 
-        pattern_to_left_camera = \
-            left_handeye_matrix @ np.linalg.inv(hand_tracking_array[i]) @ \
-                 model_tracking_array[i] @ left_pattern2marker_matrix
-
-        rvec, tvec = vu.extrinsic_matrix_to_vecs(pattern_to_left_camera)
-
-        projected_left, _ = cv2.projectPoints(common_object_points[i],
-                                               rvec,
-                                               tvec,
-                                               left_camera_matrix,
-                                               left_distortion)
-
-        diff_left = left_image_points[i] - projected_left
-        lse = lse + np.sum(np.square(diff_left))
-
-        number_of_samples += len(left_image_points[i])
-
-        pattern_to_right_camera = \
-            right_handeye_matrix @ np.linalg.inv(hand_tracking_array[i]) @ \
-                 model_tracking_array[i] @ right_pattern2marker_matrix
-
-        rvec, tvec = vu.extrinsic_matrix_to_vecs(pattern_to_right_camera)
-
-        projected_right, _ = cv2.projectPoints(common_object_points[i],
-                                               rvec,
-                                               tvec,
-                                               right_camera_matrix,
-                                               right_distortion)
-
-        diff_right = right_image_points[i] - projected_right
-        rse = rse + np.sum(np.square(diff_right))
-        
-        number_of_samples += len(right_image_points[i])
-        
-    return lse + rse, number_of_samples
+    return lse + rse, l_samples + r_samples
 
 def compute_stereo_3d_err_handeye(l2r_rmat,
                             l2r_tvec,
@@ -428,7 +431,7 @@ def compute_stereo_3d_err_handeye(l2r_rmat,
         sse = sse + sum_square
         number_of_samples += len(common_left_image_points[i])
 
-    LOGGER.debug("Stereo RMS reconstruction: sse=%s, num=%s",
+    LOGGER.debug("Stereo Handeye RMS reconstruction: sse=%s, num=%s",
                  str(sse), str(number_of_samples))
 
     return sse, number_of_samples
