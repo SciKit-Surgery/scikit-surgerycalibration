@@ -91,7 +91,6 @@ def test_handeye_calibration_stereo():
     print(f'Recon err {recon_err}')
 
     # TODO: These aren't objective values
-    # Reconstruction error will fail with these values.
     acceptable_reproj_error = 25
     acceptable_recon_error = 25
 
