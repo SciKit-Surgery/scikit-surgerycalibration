@@ -294,6 +294,16 @@ def compute_mono_3d_err(ids,
                  str(sse), str(number_of_samples))
     return sse, number_of_samples
 
+def compute_mono_2d_err_handeye(model_points,
+                                image_points,
+                                camera_matrix,
+                                camera_distortion,
+                                hand_tracking_array,
+                                model_tracking_array,
+                                handeye_matrix,
+                                pattern2marker_matrix):
+    pass
+
 def compute_stereo_2d_err_handeye(common_object_points,
                                  left_image_points,
                                  left_camera_matrix,
@@ -315,11 +325,11 @@ def compute_stereo_2d_err_handeye(common_object_points,
 
     for i in range(number_of_frames):
 
-        camera_to_pattern = \
+        pattern_to_left_camera = \
             left_handeye_matrix @ np.linalg.inv(hand_tracking_array[i]) @ \
                  model_tracking_array[i] @ left_pattern2marker_matrix
 
-        rvec, tvec = vu.extrinsic_matrix_to_vecs(camera_to_pattern)
+        rvec, tvec = vu.extrinsic_matrix_to_vecs(pattern_to_left_camera)
 
         projected_left, _ = cv2.projectPoints(common_object_points[i],
                                                rvec,
@@ -332,11 +342,11 @@ def compute_stereo_2d_err_handeye(common_object_points,
 
         number_of_samples += len(left_image_points[i])
 
-        world_to_right_camera = \
+        pattern_to_right_camera = \
             right_handeye_matrix @ np.linalg.inv(hand_tracking_array[i]) @ \
                  model_tracking_array[i] @ right_pattern2marker_matrix
 
-        rvec, tvec = vu.extrinsic_matrix_to_vecs(world_to_right_camera)
+        rvec, tvec = vu.extrinsic_matrix_to_vecs(pattern_to_right_camera)
 
         projected_right, _ = cv2.projectPoints(common_object_points[i],
                                                rvec,
@@ -400,25 +410,23 @@ def compute_stereo_3d_err_handeye(l2r_rmat,
 
         # Triangulated points, are with respect to left camera.
         # Need to map back to model (chessboard space) for comparison.
-        # Or, map chessboard points into left-camera space. Chose former
+        # Or, map chessboard points into left-camera space. Chose latter
 
-        left_camera_to_pattern = \
-            np.linalg.inv(left_handeye_matrix) @ \
-            hand_tracking_array[i] @ \
-            np.linalg.inv(model_tracking_array[i]) @ \
-            np.linalg.inv(left_pattern2marker_matrix)
+        pattern_to_left_camera = \
+            left_handeye_matrix @ np.linalg.inv(hand_tracking_array[i]) @ \
+                 model_tracking_array[i] @ left_pattern2marker_matrix
+        
+        # Make model_points Ax4 rather than Ax3
+        ones = np.ones((model_points.shape[0], 1))
+        model_points = np.hstack((model_points, ones))
 
-        rvec, tvec = vu.extrinsic_matrix_to_vecs(left_camera_to_pattern)
-        rotated = triangulated @ rvec
-        translated = rotated + np.transpose(tvec) # uses broadcasting
-        transformed = translated
-
-        # Now compute squared error
-        diff = triangulated - model_points
+        transformed = pattern_to_left_camera @ np.transpose(model_points)
+ 
+        diff = np.transpose(triangulated) - transformed[:3,:]
         squared = np.square(diff)
         sum_square = np.sum(squared)
         sse = sse + sum_square
-        number_of_samples = number_of_samples + len(common_left_image_points[i])
+        number_of_samples += len(common_left_image_points[i])
 
     LOGGER.debug("Stereo RMS reconstruction: sse=%s, num=%s",
                  str(sse), str(number_of_samples))

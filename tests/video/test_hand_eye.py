@@ -26,9 +26,6 @@ def test_set_model2hand_arrays():
     stereo_calib.load_data(tracking_data_dir, file_prefix)
 
     stereo_calib.tracking_data.set_model2hand_arrays()
-    print(stereo_calib.tracking_data.quat_model2hand_array)
-    print(stereo_calib.tracking_data.trans_model2hand_array)
-
 
 def load_images_from_glob(glob_pattern):
     images = []
