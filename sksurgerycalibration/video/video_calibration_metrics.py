@@ -356,6 +356,69 @@ def compute_mono_2d_err_handeye(model_points: List,
 
     return sse, number_of_samples
 
+def compute_mono_3d_err_handeye(ids: List,
+                                model_points: List,
+                                image_points: List,
+                                camera_matrix: np.ndarray,
+                                camera_distortion: np.ndarray,
+                                hand_tracking_array: List,
+                                model_tracking_array: List,
+                                handeye_matrix: np.ndarray,
+                                pattern2marker_matrix: np.ndarray):
+    """Function to compute mono SSE reconstruction error. Calculates new
+    rvec/tvec values for pattern_to_camera based on handeye calibration and
+    then calls compute_mono_3d_err().
+
+    :param ids: Vector of ndarray of integer point ids
+    :type ids: List
+    :param model_points: Vector of Vector of 1x3 float32
+    :type model_points: List
+    :param image_points: Vector of Vector of 1x2 float32
+    :type image_points: List
+    :param camera_matrix: Camera intrinsic matrix
+    :type camera_matrix: np.ndarray
+    :param camera_distortion: Camera distortion coefficients
+    :type camera_distortion: np.ndarray
+    :param hand_tracking_array:
+    Vector of 4x4 tracking matrices for camera (hand)
+    :type hand_tracking_array: List
+    :param model_tracking_array:
+    Vector of 4x4 tracking matrices for calibration model
+    :type model_tracking_array: List
+    :param handeye_matrix: Handeye matrix
+    :type handeye_matrix: np.ndarray
+    :param pattern2marker_matrix: Pattern to marker matrix
+    :type pattern2marker_matrix: np.ndarray
+    :return: SSE reprojection error, number of samples
+    :rtype: float, float
+    """
+
+    number_of_frames = len(model_points)
+
+    rvecs = []
+    tvecs = []
+
+    # Construct rvec/tvec array taking into account handeye calibration.
+    # Then the rest of the calculation can use 'normal' compute_mono_3d_err()
+    for i in range(number_of_frames):
+        pattern_to_camera = \
+            handeye_matrix @ np.linalg.inv(hand_tracking_array[i]) @ \
+                model_tracking_array[i] @ pattern2marker_matrix
+
+        rvec, tvec = vu.extrinsic_matrix_to_vecs(pattern_to_camera)
+        rvecs.append(rvec)
+        tvecs.append(tvec)
+
+    sse, number_of_samples = compute_mono_3d_err(ids,
+                                                 model_points,
+                                                 image_points,
+                                                 rvecs,
+                                                 tvecs,
+                                                 camera_matrix,
+                                                 camera_distortion)
+
+    return sse, number_of_samples
+
 def compute_stereo_2d_err_handeye(common_object_points: List,
                                  left_image_points: List,
                                  left_camera_matrix: np.ndarray,

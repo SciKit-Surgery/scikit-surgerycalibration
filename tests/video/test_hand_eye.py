@@ -47,6 +47,54 @@ def load_tracking_from_glob(glob_pattern):
 
     return tracking
 
+def test_handeye_calibration_mono():
+
+    images = load_images_from_glob(
+        'tests/data/2020_01_20_storz/12_50_30/calib.left.*.png')
+
+    device_tracking = load_tracking_from_glob(
+        'tests/data/2020_01_20_storz/12_50_30/calib.device_tracking.*.txt')
+
+    obj_tracking = load_tracking_from_glob(
+        'tests/data/2020_01_20_storz/12_50_30/calib.calib_obj_tracking.*.txt')   
+
+    assert(len(images) == 10)
+
+    assert(len(device_tracking) == 10)
+    assert(len(obj_tracking) == 10)
+
+    min_number_of_points_per_image = 50
+    detector = \
+        chpd.CharucoPlusChessboardPointDetector(error_if_no_chessboard=False)
+    
+    calibrator = \
+        vidcal.video_calibration_driver_mono.MonoVideoCalibrationDriver(
+            detector, min_number_of_points_per_image)
+
+    # Grab data from images/tracking arrays
+    for image, device, calib_obj in zip(images, device_tracking, obj_tracking):
+        successful = calibrator.grab_data(image, device, calib_obj)
+        assert successful > 0
+
+    reproj_err_1, recon_err_1, params_1 = calibrator.calibrate()
+
+    one_pixel = 1
+    assert(reproj_err_1 < one_pixel)
+    assert(recon_err_1 < one_pixel)
+
+    proj_err, recon_err = calibrator.handeye_calibration()
+
+    print(f'Reproj err {proj_err}')
+    print(f'Recon err {recon_err}')
+
+    #TODO: These values are taken from a previous successful (I think) run
+    #Should replace with something more objective?
+    expected_reproj_error = 14.93867
+    expected_recon_error = 5.530625
+
+    assert proj_err == pytest.approx(expected_reproj_error, rel=1e-4)
+    assert recon_err == pytest.approx(expected_recon_error, rel=1e-4)
+
 def test_handeye_calibration_stereo():
     
     left_images = load_images_from_glob(

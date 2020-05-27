@@ -177,6 +177,15 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         return proj_err, recon_err, param_copy
 
     def handeye_calibration(self):
+        """Do handeye calibration.
+
+        This returns RMS projection error, which is a common metric, but also,
+        the reconstruction / triangulation error.
+
+        :return: reprojection, reconstruction error
+        :rtype: float, float
+        """
+
         self.tracking_data.set_model2hand_arrays()
         proj_err, recon_err, l_handeye, l_pattern2marker, \
             r_handeye, r_pattern2marker = \

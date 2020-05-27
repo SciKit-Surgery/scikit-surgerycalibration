@@ -154,12 +154,33 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         return proj_err, recon_err, param_copy
 
     def handeye_calibration(self):
-        self.tracking_data.set_model2hand_arrays()
-        handeye_matrix, pattern2marker_matrix = \
-            he.handeye_calibration(self.calibration_params.rvecs,
-                                    self.calibration_params.tvecs,
-                                    self.tracking_data.quat_model2hand_array,
-                                    self.tracking_data.trans_model2hand_array)
+        """Do handeye calibration.
 
-        self.calibration_params.set_handeye(handeye_matrix,
-                                            pattern2marker_matrix)
+        This returns RMS projection error, which is a common metric, but also,
+        the reconstruction error. If we have N views, we can take successive
+        pairs of views, triangulate points, and see how well they match the
+        model. Ideally, both metrics should be small.
+
+        :return: reprojection, reconstruction error
+        :rtype: float, float
+        """
+        self.tracking_data.set_model2hand_arrays()
+
+        proj_err, recon_err, handeye, pattern2marker = \
+            vc.mono_handeye_calibration(
+                self.video_data.object_points_arrays,
+                self.video_data.image_points_arrays,
+                self.video_data.ids_arrays,
+                self.calibration_params.camera_matrix,
+                self.calibration_params.dist_coeffs,
+                self.tracking_data.device_tracking_array,
+                self.tracking_data.calibration_tracking_array,
+                self.calibration_params.rvecs,
+                self.calibration_params.tvecs,
+                self.tracking_data.quat_model2hand_array,
+                self.tracking_data.trans_model2hand_array
+            )
+
+        self.calibration_params.set_handeye(handeye, pattern2marker)
+
+        return proj_err, recon_err

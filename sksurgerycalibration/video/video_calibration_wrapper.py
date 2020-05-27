@@ -213,6 +213,50 @@ def stereo_video_calibration(left_ids,
         l2r_r, l2r_t, \
         essential, fundamental
 
+def mono_handeye_calibration(object_points,
+                             image_points,
+                             ids,
+                             camera_matrix,
+                             camera_distortion,
+                             device_tracking_array,
+                             model_tracking_array,
+                             rvecs,
+                             tvecs,
+                             quat_model2hand_array,
+                             trans_model2hand_array):
+
+    handeye_matrix, pattern2marker_matrix =  \
+        he.handeye_calibration(rvecs, tvecs, quat_model2hand_array,
+                               trans_model2hand_array)
+
+    sse, num_samples = vm.compute_mono_2d_err_handeye(object_points,
+                                                      image_points,
+                                                      camera_matrix,
+                                                      camera_distortion,
+                                                      device_tracking_array,
+                                                      model_tracking_array,
+                                                      handeye_matrix,
+                                                      pattern2marker_matrix
+                                                      )
+
+    mse = sse / num_samples
+    reproj_err = np.sqrt(mse)
+
+    sse, num_samples = vm.compute_mono_3d_err_handeye(ids,
+                                                      object_points,
+                                                      image_points,
+                                                      camera_matrix,
+                                                      camera_distortion,
+                                                      device_tracking_array,
+                                                      model_tracking_array,
+                                                      handeye_matrix,
+                                                      pattern2marker_matrix)
+
+    mse = sse / num_samples
+    recon_err = np.sqrt(mse)
+
+    return reproj_err, recon_err, handeye_matrix, pattern2marker_matrix
+
 def stereo_handeye_calibration(l2r_rmat,
                             l2r_tvec,
                             left_ids,
@@ -282,3 +326,4 @@ def stereo_handeye_calibration(l2r_rmat,
     return reproj_err, recon_err, \
         left_handeye_matrix, left_pattern2marker_matrix, \
         right_handeye_matrix, right_pattern2marker_matrix
+
