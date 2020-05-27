@@ -478,57 +478,34 @@ def compute_stereo_3d_err_handeye(l2r_rmat: np.ndarray,
     :return: SSE reconstruction error, number of samples
     :rtype: float, float
     """
-    sse = 0
-    number_of_samples = 0
+
     number_of_frames = len(common_object_points)
+    left_rvecs = []
+    left_tvecs = []
 
+    # Construct rvec/tvec array taking into account handeye calibration.
+    # Then the rest of the calculation can use 'normal' compute_stereo_3d_err()
     for i in range(number_of_frames):
-
-        model_points = np.reshape(common_object_points[i], (-1, 3))
-
-        left_undistorted = \
-            cv2.undistortPoints(common_left_image_points[i],
-                                left_camera_matrix,
-                                left_distortion, None, left_camera_matrix)
-        right_undistorted = \
-            cv2.undistortPoints(common_right_image_points[i],
-                                right_camera_matrix,
-                                right_distortion, None, right_camera_matrix)
-
-        # convert from Mx1x2 to Mx2
-        left_undistorted = np.reshape(left_undistorted, (-1, 2))
-        right_undistorted = np.reshape(right_undistorted, (-1, 2))
-
-        image_points = np.zeros((left_undistorted.shape[0], 4))
-        image_points[:, 0:2] = left_undistorted
-        image_points[:, 2:4] = right_undistorted
-
-        triangulated = cvpy.triangulate_points_using_hartley(
-            image_points,
-            left_camera_matrix,
-            right_camera_matrix,
-            l2r_rmat,
-            l2r_tvec)
-
-        # Triangulated points, are with respect to left camera.
-        # Need to map back to model (chessboard space) for comparison.
-        # Or, map chessboard points into left-camera space. Chose latter
 
         pattern_to_left_camera = \
             left_handeye_matrix @ np.linalg.inv(hand_tracking_array[i]) @ \
                  model_tracking_array[i] @ left_pattern2marker_matrix
-        
-        # Make model_points Ax4 rather than Ax3
-        ones = np.ones((model_points.shape[0], 1))
-        model_points = np.hstack((model_points, ones))
 
-        transformed = pattern_to_left_camera @ np.transpose(model_points)
- 
-        diff = np.transpose(triangulated) - transformed[:3,:]
-        squared = np.square(diff)
-        sum_square = np.sum(squared)
-        sse = sse + sum_square
-        number_of_samples += len(common_left_image_points[i])
+        rvec, tvec = vu.extrinsic_matrix_to_vecs(pattern_to_left_camera)
+        left_rvecs.append(rvec)
+        left_tvecs.append(tvec)
+
+    sse, number_of_samples = compute_stereo_3d_error(l2r_rmat,
+                                                     l2r_tvec,
+                                                     common_object_points,
+                                                     common_left_image_points,
+                                                     left_camera_matrix,
+                                                     left_distortion,
+                                                     common_right_image_points,
+                                                     right_camera_matrix,
+                                                     right_distortion,
+                                                     left_rvecs,
+                                                     left_tvecs)
 
     LOGGER.debug("Stereo Handeye RMS reconstruction: sse=%s, num=%s",
                  str(sse), str(number_of_samples))
