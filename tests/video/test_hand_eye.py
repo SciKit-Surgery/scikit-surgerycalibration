@@ -90,12 +90,13 @@ def test_handeye_calibration_stereo():
     print(f'Reproj err {proj_err}')
     print(f'Recon err {recon_err}')
 
-    # TODO: These aren't objective values
-    acceptable_reproj_error = 25
-    acceptable_recon_error = 25
+    # TODO: These values are taken from a previous successful (I think) run
+    # Should replace with something more objective?
+    expected_reproj_error = 13.452010
+    expected_recon_error = 1.394778
 
-    assert(proj_err < acceptable_reproj_error)
-    assert(recon_err < acceptable_recon_error)
+    assert proj_err == pytest.approx(expected_reproj_error, rel=1e-4)
+    assert recon_err == pytest.approx(expected_recon_error, rel=1e-4)
 
 def test_load_data_stereo_calib():
     """ Load tracking and image data from test directory. """

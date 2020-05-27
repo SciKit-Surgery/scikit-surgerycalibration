@@ -327,27 +327,29 @@ def compute_mono_2d_err_handeye(model_points: List,
     :return: SSE reprojection error, number of samples
     :rtype: float, float
     """
-    sse = 0
-    number_of_samples = 0
+
     number_of_frames = len(model_points)
 
+    rvecs = []
+    tvecs = []
+
+    # Construct rvec/tvec array taking into account handeye calibration.
+    # Then the rest of the calculation can use 'normal' compute_mono_2d_err()
     for i in range(number_of_frames):
         pattern_to_camera = \
             handeye_matrix @ np.linalg.inv(hand_tracking_array[i]) @ \
                 model_tracking_array[i] @ pattern2marker_matrix
 
         rvec, tvec = vu.extrinsic_matrix_to_vecs(pattern_to_camera)
+        rvecs.append(rvec)
+        tvecs.append(tvec)
 
-        projected, _ = cv2.projectPoints(model_points[i],
-                                        rvec,
-                                        tvec,
-                                        camera_matrix,
-                                        camera_distortion)
-
-        diff = image_points[i] - projected
-        sse += np.sum(np.square(diff))
-
-        number_of_samples += len(image_points[i])
+    sse, number_of_samples = compute_mono_2d_err(model_points,
+                                                 image_points,
+                                                 rvecs,
+                                                 tvecs,
+                                                 camera_matrix,
+                                                 camera_distortion)
 
     LOGGER.debug("Mono Handeye RMS Reprojection: sse=%s, num=%s",
      str(sse), str(number_of_samples))
