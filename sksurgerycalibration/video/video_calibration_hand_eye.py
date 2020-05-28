@@ -361,7 +361,6 @@ def handeye_optimisation(quat_extrinsics_array: np.ndarray,
 
     return q_handeye, t_handeye, q_pattern2marker, t_pattern2marker
 
-#TODO: Pattern to marker transform needed? Put it somewhere else?
 def handeye_calibration(rvecs: List[np.ndarray], tvecs: List[np.ndarray],
                         quat_model2hand_array: np.ndarray,
                         trans_model2hand_array: np.ndarray) \

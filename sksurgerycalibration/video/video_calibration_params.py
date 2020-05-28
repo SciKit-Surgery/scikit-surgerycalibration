@@ -69,7 +69,7 @@ class MonoCalibrationParams(BaseCalibrationParams):
         self.tvecs = copy.deepcopy(tvecs)
 
     def set_handeye(self, handeye_matrix, pattern2marker_matrix):
-        """ 
+        """
         Stores the provided parameters, by taking a copy.
         """
         self.handeye_matrix = copy.deepcopy(handeye_matrix)

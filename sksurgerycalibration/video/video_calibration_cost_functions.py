@@ -164,13 +164,14 @@ def mono_recon_err_for_ext(x_0,
         rvecs.append(rvec)
         tvecs.append(tvec)
 
-    sse, num_samples = vm.compute_mono_reconstruction_err(ids,
-                                                          object_points,
-                                                          image_points,
-                                                          rvecs,
-                                                          tvecs,
-                                                          camera_matrix,
-                                                          distortion_parameters)
+    #pylint:disable=too-many-function-args
+    sse, num_samples = vm.compute_mono_2d_err(ids,
+                                              object_points,
+                                              image_points,
+                                              rvecs,
+                                              tvecs,
+                                              camera_matrix,
+                                              distortion_parameters)
     mse = sse / num_samples
     rmse = np.sqrt(mse)
     return rmse

@@ -91,8 +91,8 @@ def test_handeye_calibration_mono():
     print(f'Reproj err {proj_err}')
     print(f'Recon err {recon_err}')
 
-    #TODO: These values are taken from a previous successful (I think) run
-    #Should replace with something more objective?
+    # These values are taken from a previous successful run
+    # Not objective measures of correctness
     expected_reproj_error = 14.93867
     expected_recon_error = 5.530625
 
@@ -145,8 +145,8 @@ def test_handeye_calibration_stereo():
     print(f'Reproj err {proj_err}')
     print(f'Recon err {recon_err}')
 
-    # TODO: These values are taken from a previous successful (I think) run
-    # Should replace with something more objective?
+    # These values are taken from a previous successful run
+    # Not objective measures of correctness
     expected_reproj_error = 13.452010
     expected_recon_error = 1.394778
 
