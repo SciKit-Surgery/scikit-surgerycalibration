@@ -3,15 +3,9 @@
 """ SmartLiver calibration interface. """
 
 import logging
-import datetime
-from fnmatch import filter as file_filter
-import os
-import cv2
 from typing import List, Tuple
 import numpy as np
 from scipy.optimize import least_squares
-import sksurgeryimage.calibration.charuco_point_detector as charuco_pd
-import sksurgeryimage.calibration.chessboard_point_detector as chessboard_pd
 
 LOGGER = logging.getLogger(__name__)
 
@@ -251,8 +245,8 @@ def solve_2translations(q_handeye,
     return translations.flatten()
 
 def set_model2hand_arrays(calibration_tracking_array: List,
-                            device_tracking_array: List,
-                            use_quaternions = False) \
+                          device_tracking_array: List,
+                          use_quaternions=False) \
                             -> Tuple[np.ndarray, np.ndarray]:
     """ Set the model-to-hand quaternion and translation arrays
     from tracking data.
@@ -293,9 +287,10 @@ def set_model2hand_arrays(calibration_tracking_array: List,
                                             quat_model)
             q_translation = np.append([0], (trans_model - trans_hand))
             quat_hand_conj = quat_conjugate(quat_hand)
+
             trans_model2hand = quat_multiply(quat_hand_conj,
-                                                quat_multiply(q_translation,
-                                                            quat_hand))
+                                             quat_multiply(q_translation,
+                                                           quat_hand))
             trans_model2hand = trans_model2hand[1:4]
         else:
             tracking_model = calibration_tracking_array[i]
@@ -310,14 +305,14 @@ def set_model2hand_arrays(calibration_tracking_array: List,
 
     quat_model2hand_array = \
         to_one_hemisphere(quat_model2hand_array)
-    
+
     return quat_model2hand_array, trans_model2hand_array
 
 def handeye_optimisation(quat_extrinsics_array: np.ndarray,
-                            trans_extrinsics_array: np.ndarray,
-                            quat_model2hand_array: np.ndarray,
-                            trans_model2hand_array: np.ndarray) ->  \
-                                Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+                         trans_extrinsics_array: np.ndarray,
+                         quat_model2hand_array: np.ndarray,
+                         trans_model2hand_array: np.ndarray) ->  \
+                          Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Solve handeye and pattern-to-marker transformations.
 
     :param quat_extrinsics_array: An array of quaternions representing the
@@ -328,7 +323,7 @@ def handeye_optimisation(quat_extrinsics_array: np.ndarray,
     :type trans_extrinsics_array: np.ndarray
     :param quat_model2hand_array: An array of model to hand quaternions.
         :type quat_model2hand_array: np.ndarray
-    :param quat_model2hand_array: An array model to hand
+    :param quat_model2hand_array: An array of model to hand
         translations arrays.
         :type quat_model2hand_array: np.ndarray
     :return: rotations in quaternion form and translations of the handeye
@@ -345,10 +340,11 @@ def handeye_optimisation(quat_extrinsics_array: np.ndarray,
     ub = [1, 1, 1, 1, 1, 1, 1, 1]
 
     op_result = least_squares(solve_2quaternions, qx_0,
-                                bounds=(lb, ub),
-                                args=(quat_model2hand_array,
+                              bounds=(lb, ub),
+                              args=(quat_model2hand_array,
                                     quat_extrinsics_array)
-                                )
+                              )
+
     q_handeye = op_result.x[0:4]
     q_pattern2marker = op_result.x[4:8]
 
@@ -356,9 +352,9 @@ def handeye_optimisation(quat_extrinsics_array: np.ndarray,
     q_pattern2marker = q_pattern2marker / np.linalg.norm(q_pattern2marker)
 
     translations = solve_2translations(q_handeye,
-                                        quat_model2hand_array,
-                                        trans_model2hand_array,
-                                        trans_extrinsics_array)
+                                       quat_model2hand_array,
+                                       trans_model2hand_array,
+                                       trans_extrinsics_array)
 
     t_handeye = translations[0:3]
     t_pattern2marker = translations[3:6]
@@ -368,9 +364,10 @@ def handeye_optimisation(quat_extrinsics_array: np.ndarray,
 #TODO: Pattern to marker transform needed? Put it somewhere else?
 def handeye_calibration(rvecs: List[np.ndarray], tvecs: List[np.ndarray],
                         quat_model2hand_array: np.ndarray,
-                        trans_model2hand_array: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    """Solve for the handeye transformation, as well as the transformation from the pattern
-    to the markers on the model.
+                        trans_model2hand_array: np.ndarray) \
+                             -> Tuple[np.ndarray, np.ndarray]:
+    """Solve for the handeye transformation, as well as the transformation
+     from the pattern to the markers on the model.
 
     :param rvecs: Array of rotation vectors
     :type rvecs: List[np.ndarray]
@@ -390,7 +387,7 @@ def handeye_calibration(rvecs: List[np.ndarray], tvecs: List[np.ndarray],
 
     q_handeye, t_handeye, q_pattern2marker, t_pattern2marker = \
         handeye_optimisation(quat_extrinsics_array, trans_extrinsics_array,
-                                quat_model2hand_array, trans_model2hand_array)
+                             quat_model2hand_array, trans_model2hand_array)
 
     handeye_matrix = np.eye(4)
     handeye_matrix[0:3, 0:3] = quat_to_rotm(q_handeye)
