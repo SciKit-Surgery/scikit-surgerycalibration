@@ -12,6 +12,7 @@ import sksurgeryimage.calibration.chessboard_point_detector as pd
 import sksurgeryimage.calibration.charuco_plus_chessboard_point_detector as chpd
 import sksurgerycalibration.video as vidcal
 
+
 def test_set_model2hand_arrays():
     """Test that model2hand arrays are set without raising an error"""
     chessboard_detector = pd.ChessboardPointDetector((14, 10), 3, (1, 1))
@@ -26,6 +27,7 @@ def test_set_model2hand_arrays():
     stereo_calib.load_data(tracking_data_dir, file_prefix)
 
     stereo_calib.tracking_data.set_model2hand_arrays()
+
 
 def load_images_from_glob(glob_pattern):
     """ Load images from files based on a glob pattern. """
@@ -48,6 +50,7 @@ def load_tracking_from_glob(glob_pattern):
         tracking.append(data)
 
     return tracking
+
 
 def test_handeye_calibration_mono():
     """ Load mono data (only using left channel) and tracking, do video and
@@ -98,6 +101,7 @@ def test_handeye_calibration_mono():
 
     assert proj_err == pytest.approx(expected_reproj_error, rel=1e-4)
     assert recon_err == pytest.approx(expected_recon_error, rel=1e-4)
+
 
 def test_handeye_calibration_stereo():
     """ Load Stereo data and tracking, do video and
@@ -152,6 +156,7 @@ def test_handeye_calibration_stereo():
 
     assert proj_err == pytest.approx(expected_reproj_error, rel=1e-4)
     assert recon_err == pytest.approx(expected_recon_error, rel=1e-4)
+
 
 def test_load_data_stereo_calib():
     """ Load tracking and image data from test directory. """
