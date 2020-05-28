@@ -297,6 +297,7 @@ def compute_mono_3d_err(ids,
 
     return sse, number_of_samples
 
+
 def compute_mono_2d_err_handeye(model_points: List,
                                 image_points: List,
                                 camera_matrix: np.ndarray,
@@ -356,6 +357,7 @@ def compute_mono_2d_err_handeye(model_points: List,
                  str(sse), str(number_of_samples))
 
     return sse, number_of_samples
+
 
 def compute_mono_3d_err_handeye(ids: List,
                                 model_points: List,
@@ -420,6 +422,7 @@ def compute_mono_3d_err_handeye(ids: List,
 
     return sse, number_of_samples
 
+
 def compute_stereo_2d_err_handeye(common_object_points: List,
                                   left_image_points: List,
                                   left_camera_matrix: np.ndarray,
@@ -468,7 +471,6 @@ def compute_stereo_2d_err_handeye(common_object_points: List,
     :rtype: float, float
     """
 
-
     lse, l_samples = compute_mono_2d_err_handeye(common_object_points,
                                                  left_image_points,
                                                  left_camera_matrix,
@@ -488,6 +490,7 @@ def compute_stereo_2d_err_handeye(common_object_points: List,
                                                  right_pattern2marker_matrix)
 
     return lse + rse, l_samples + r_samples
+
 
 def compute_stereo_3d_err_handeye(l2r_rmat: np.ndarray,
                                   l2r_tvec: np.ndarray,

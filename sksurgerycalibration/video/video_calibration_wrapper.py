@@ -214,6 +214,7 @@ def stereo_video_calibration(left_ids,
         l2r_r, l2r_t, \
         essential, fundamental
 
+
 #pylint:disable=too-many-arguments
 def mono_handeye_calibration(object_points: List,
                              image_points: List,
@@ -286,6 +287,7 @@ def mono_handeye_calibration(object_points: List,
     recon_err = np.sqrt(mse)
 
     return reproj_err, recon_err, handeye_matrix, pattern2marker_matrix
+
 
 #pylint:disable=too-many-arguments
 def stereo_handeye_calibration(l2r_rmat: np.ndarray,

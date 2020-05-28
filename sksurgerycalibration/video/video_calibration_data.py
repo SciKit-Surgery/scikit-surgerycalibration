@@ -9,6 +9,7 @@ import numpy as np
 import sksurgerycalibration.video.video_calibration_io as sksio
 import sksurgerycalibration.video.video_calibration_hand_eye as heye
 
+
 class BaseVideoCalibrationData:
     """
     Constructor, no member variables, so just a pure virtual interface.
@@ -157,6 +158,7 @@ class TrackingData(BaseVideoCalibrationData):
             heye.set_model2hand_arrays(self.calibration_tracking_array,
                                        self.device_tracking_array,
                                        use_quaternions)
+
 
 class MonoVideoData(BaseVideoCalibrationData):
     """

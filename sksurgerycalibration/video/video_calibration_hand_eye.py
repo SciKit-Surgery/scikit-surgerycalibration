@@ -244,6 +244,7 @@ def solve_2translations(q_handeye,
 
     return translations.flatten()
 
+
 def set_model2hand_arrays(calibration_tracking_array: List,
                           device_tracking_array: List,
                           use_quaternions=False) \
@@ -308,6 +309,7 @@ def set_model2hand_arrays(calibration_tracking_array: List,
 
     return quat_model2hand_array, trans_model2hand_array
 
+
 def handeye_optimisation(quat_extrinsics_array: np.ndarray,
                          trans_extrinsics_array: np.ndarray,
                          quat_model2hand_array: np.ndarray,
@@ -360,6 +362,7 @@ def handeye_optimisation(quat_extrinsics_array: np.ndarray,
     t_pattern2marker = translations[3:6]
 
     return q_handeye, t_handeye, q_pattern2marker, t_pattern2marker
+
 
 def handeye_calibration(rvecs: List[np.ndarray], tvecs: List[np.ndarray],
                         quat_model2hand_array: np.ndarray,
