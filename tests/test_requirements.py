@@ -1,14 +1,14 @@
 # coding=utf-8
 
-"""scikit-surgery-evaluation tests"""
+""" scikit-surgerycalibration tests"""
 
 # Pytest style
+
 
 def test_requirements_vs_setup():
     """
     Test that the requirements.txt matches setup.py
     """
-
    # setup=open("setup.py","r")
    # setuptxt = setup.read()
    # setup.close()
@@ -34,7 +34,6 @@ def test_requirements_vs_setup():
         req = line.replace(',', '').replace("'", "")
         req = req.replace(' ', '').replace('\n', '')
         setup_reqs.append(req)
-
 
     with open("requirements.txt", "r") as file_to_read:
         searchlines = file_to_read.readlines()

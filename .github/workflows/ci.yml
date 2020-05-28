@@ -2,12 +2,25 @@ on: push
 
 jobs:
   test:
-    strategy:
-      matrix:
-        os: [ubuntu-18.04, macos-latest, windows-latest]
-        python-ver: [3.6, 3.7, 3.8]
-
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.experimental }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-ver: [3.6, 3.7]
+        os: [ubuntu-18.04, macos-latest, windows-latest]
+        experimental: [false]
+        include:
+          - python-ver: 3.8
+            os: ubuntu-18.04
+            experimental: true
+          - python-ver: 3.8
+            os: macos-latest
+            experimental: true
+          - python-ver: 3.8
+            os: windows-latest
+            experimental: true
 
     steps:
       - uses: actions/checkout@v2
