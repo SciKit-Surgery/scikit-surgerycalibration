@@ -1,6 +1,6 @@
 # coding=utf-8
 
-""" Command line processing for videolag app. """
+""" Command line processing for pivot calibration. """
 
 import argparse
 from sksurgerycalibration import __version__
@@ -8,7 +8,7 @@ from sksurgerycalibration.ui.pivot_calibration_app import run_pivot_calibration
 
 
 def main(args=None):
-    """Entry point for pivot calibration application"""
+    """Entry point for pivot calibration application. """
 
     parser = argparse.ArgumentParser(description='pivotcalibration')
 

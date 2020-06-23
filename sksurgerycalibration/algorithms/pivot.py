@@ -7,6 +7,7 @@ import numpy as np
 from sksurgerycalibration.algorithms.sphere_fitting import \
                 fit_sphere_least_squares
 
+
 def pivot_calibration(tracking_matrices, configuration=None):
     """
     Performs pivot calibration on an array of tracking matrices
@@ -73,6 +74,7 @@ def pivot_calibration(tracking_matrices, configuration=None):
     raise ValueError("method key set to unknown method; ",
                      configuration.get('method', 'aos'))
 
+
 def pivot_calibration_aos(tracking_matrices):
 
     """
@@ -109,6 +111,7 @@ def pivot_calibration_aos(tracking_matrices):
     residual_error = _residual_error_direct(a_values, b_values, x_values)
 
     return pointer_offset, pivot_location, residual_error
+
 
 def pivot_calibration_with_ransac(tracking_matrices,
                                   number_iterations,
@@ -194,6 +197,7 @@ def pivot_calibration_with_ransac(tracking_matrices,
 
     return best_pointer_offset, best_pivot_location, best_residual_error
 
+
 def pivot_calibration_sphere_fit(tracking_matrices, init_parameters=None):
 
     """
@@ -210,7 +214,7 @@ def pivot_calibration_sphere_fit(tracking_matrices, init_parameters=None):
     residual_error = -1.0
     translations = tracking_matrices[:, 0:3, 3]
 
-    #first find the pivot point in world coordinates using sphere fitting
+    # first find the pivot point in world coordinates using sphere fitting
     if init_parameters is None:
         means = np.mean(translations, 0)
         init_parameters = np.concatenate([means, np.zeros((1))])
@@ -218,7 +222,7 @@ def pivot_calibration_sphere_fit(tracking_matrices, init_parameters=None):
     result = fit_sphere_least_squares(translations, init_parameters)
     pivot_point = result.x[0:3]
 
-    #now calculate the mean offset
+    # now calculate the mean offset
     rotations = tracking_matrices[:, 0:3, 0:3]
     offsets = np.zeros((tracking_matrices.shape[0], 3))
 
@@ -258,6 +262,7 @@ def _matrices_to_a_and_b(tracking_matrices):
 
     return a_values, b_values
 
+
 def _residual_error(tracking_matrices, pointer_offset, pivot_location):
     """
     Helper function to calculate resdiual (RMS) errors.
@@ -287,12 +292,13 @@ def _residual_error_direct(a_values, b_values, x_values):
     residual_error = np.sqrt(residual_error)
     return residual_error
 
+
 def _replace_small_values(the_list, threshold=0.01, replacement_value=0.0):
     """
     replace small values in a list, this changes the list in place.
 
     :param the_list: the list to process.
-    :param theshold: replace values lower than threshold.
+    :param threshold: replace values lower than threshold.
     :param replacement_value: value to replace with.
     :returns: the number of items not replaced.
     """

@@ -1,6 +1,6 @@
 # coding=utf-8
 
-"""Basic Augmented Reality Demo BARD Application"""
+""" Functions to run pivot calibration. """
 
 from glob import glob
 import numpy as np
