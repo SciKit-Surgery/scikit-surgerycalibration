@@ -62,9 +62,9 @@ def run_video_calibration(config_file, save_dir, prefix):
         if key == ord('c'):
             number_points = calibrator.grab_data(frame)
             if number_points > 0:
-                corners = calibrator.video_data.image_points_arrays[-1]
-                img = cv2.drawChessboardCorners(frame, (8, 6),
-                                                corners,
+                img_pts = calibrator.video_data.image_points_arrays[-1]
+                img = cv2.drawChessboardCorners(frame, corners,
+                                                img_pts,
                                                 number_points)
                 cv2.imshow("detected points", img)
 
