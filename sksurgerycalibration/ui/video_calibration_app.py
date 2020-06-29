@@ -50,6 +50,9 @@ def run_video_calibration(config_file, save_dir, prefix):
     calibrator = mc.MonoVideoCalibrationDriver(detector,
                                                corners[0] * corners[1])
 
+    print("Press 'q' to quit and 'c' to capture an image.")
+    print("Minimum number of views to calibrate:" + str(min_num_views))
+
     while True:
         _, frame = cap.read()
         cv2.imshow("imshow", frame)
