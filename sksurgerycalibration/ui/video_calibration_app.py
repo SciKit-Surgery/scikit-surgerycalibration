@@ -85,8 +85,8 @@ def run_video_calibration(config_file, save_dir, prefix):
                         if not os.path.isdir(save_dir):
                             os.makedirs(save_dir)
 
-                        calibrator.save_data(save_dir, "calib")
-                        calibrator.save_params(save_dir, "calib")
+                        calibrator.save_data(save_dir, prefix)
+                        calibrator.save_params(save_dir, prefix)
             else:
                 print("Failed to detect points")
 
