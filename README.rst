@@ -7,9 +7,9 @@ scikit-surgerycalibration
    :target: https://github.com/UCL/scikit-surgerycalibration 
    :alt: Logo
 
-.. image:: https://travis-ci.com/UCL/scikit-surgerycalibration.svg?branch=master
-   :target: https://travis-ci.com/github/UCL/scikit-surgerycalibration
-   :alt: Travis CI build status
+.. image:: https://github.com/UCL/scikit-surgerycalibration/workflows/.github/workflows/ci.yml/badge.svg
+   :target: https://github.com/UCL/scikit-surgerycalibration/actions
+   :alt: GitHub Actions CI statuss
 
 .. image:: https://coveralls.io/repos/github/UCL/scikit-surgerycalibration/badge.svg?branch=master&service=github
     :target: https://coveralls.io/github/UCL/scikit-surgerycalibration?branch=master
