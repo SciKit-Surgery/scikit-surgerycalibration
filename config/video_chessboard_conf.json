@@ -1,7 +1,7 @@
 {
     "method": "chessboard",
     "source": 0,
-    "corners": [9, 6],
-    "square size in mm": 3,
+    "corners": [14, 10],
+    "square size in mm": 6,
     "minimum number of views": 5
 }

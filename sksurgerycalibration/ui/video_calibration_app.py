@@ -9,7 +9,7 @@ from sksurgerycore.configuration.configuration_manager import \
 import sksurgeryimage.calibration.chessboard_point_detector as cpd
 import sksurgerycalibration.video.video_calibration_driver_mono as mc
 
-# pylint:disable=too-many-nested-blocks
+# pylint:disable=too-many-nested-blocks,too-many-branches
 
 
 def run_video_calibration(config_file, save_dir, prefix):
@@ -26,9 +26,6 @@ def run_video_calibration(config_file, save_dir, prefix):
     if save_dir is not None and prefix is None:
         raise ValueError("If you provide -s/--save, "
                          "you must provide -p/--prefix")
-    if prefix is not None and save_dir is None:
-        raise ValueError("If you provide -p/--prefix, "
-                         "you must provide -s/--save")
 
     configurer = ConfigurationManager(config_file)
     configuration = configurer.get_copy()
@@ -46,6 +43,18 @@ def run_video_calibration(config_file, save_dir, prefix):
     if not cap.isOpened():
         raise RuntimeError("Failed to open camera.")
 
+    window_size = configuration.get("window size")
+    if window_size is not None:
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, window_size[0])
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, window_size[1])
+        print("Video feed set to ("
+              + str(window_size[0]) + " x " + str(window_size[1]) + ")")
+    else:
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        print("Video feed defaults to ("
+              + str(width) + " x " + str(height) + ")")
+
     detector = cpd.ChessboardPointDetector(corners, size)
     calibrator = mc.MonoVideoCalibrationDriver(detector,
                                                corners[0] * corners[1])
@@ -55,7 +64,7 @@ def run_video_calibration(config_file, save_dir, prefix):
 
     while True:
         _, frame = cap.read()
-        cv2.imshow("imshow", frame)
+        cv2.imshow("live image", frame)
         key = cv2.waitKey(10)
         if key == ord('q'):
             break
@@ -80,7 +89,7 @@ def run_video_calibration(config_file, save_dir, prefix):
                     print("Distortion matrix is:")
                     print(params.dist_coeffs)
 
-                    if save_dir:
+                    if save_dir and prefix:
 
                         if not os.path.isdir(save_dir):
                             os.makedirs(save_dir)

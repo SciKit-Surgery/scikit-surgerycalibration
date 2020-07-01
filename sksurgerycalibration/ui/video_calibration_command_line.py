@@ -26,6 +26,7 @@ def main(args=None):
 
     parser.add_argument("-p", "--prefix",
                         required=False,
+                        default="calib",
                         type=str,
                         help="Filename prefix to save to.")
 
