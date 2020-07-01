@@ -46,6 +46,19 @@ def run_video_calibration(config_file, save_dir, prefix):
     if not cap.isOpened():
         raise RuntimeError("Failed to open camera.")
 
+    window_size = configuration.get("window size")
+    if window_size is not None:
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, window_size[0])
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, window_size[1])
+        print("Video feed set to ("
+              + str(window_size[0]) + " x " + str(window_size[1]) + ")")
+
+    else:
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        print("Video feed defaults to ("
+              + str(width) + " x " + str(height) + ")")
+
     detector = cpd.ChessboardPointDetector(corners, size)
     calibrator = mc.MonoVideoCalibrationDriver(detector,
                                                corners[0] * corners[1])
@@ -55,7 +68,7 @@ def run_video_calibration(config_file, save_dir, prefix):
 
     while True:
         _, frame = cap.read()
-        cv2.imshow("imshow", frame)
+        cv2.imshow("live image", frame)
         key = cv2.waitKey(10)
         if key == ord('q'):
             break
