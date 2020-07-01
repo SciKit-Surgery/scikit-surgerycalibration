@@ -9,7 +9,7 @@ from sksurgerycore.configuration.configuration_manager import \
 import sksurgeryimage.calibration.chessboard_point_detector as cpd
 import sksurgerycalibration.video.video_calibration_driver_mono as mc
 
-# pylint:disable=too-many-nested-blocks
+# pylint:disable=too-many-nested-blocks,too-many-branches
 
 
 def run_video_calibration(config_file, save_dir, prefix):
@@ -52,7 +52,6 @@ def run_video_calibration(config_file, save_dir, prefix):
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, window_size[1])
         print("Video feed set to ("
               + str(window_size[0]) + " x " + str(window_size[1]) + ")")
-
     else:
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
