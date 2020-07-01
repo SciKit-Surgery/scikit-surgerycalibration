@@ -26,9 +26,6 @@ def run_video_calibration(config_file, save_dir, prefix):
     if save_dir is not None and prefix is None:
         raise ValueError("If you provide -s/--save, "
                          "you must provide -p/--prefix")
-    if prefix is not None and save_dir is None:
-        raise ValueError("If you provide -p/--prefix, "
-                         "you must provide -s/--save")
 
     configurer = ConfigurationManager(config_file)
     configuration = configurer.get_copy()
@@ -92,7 +89,7 @@ def run_video_calibration(config_file, save_dir, prefix):
                     print("Distortion matrix is:")
                     print(params.dist_coeffs)
 
-                    if save_dir:
+                    if save_dir and prefix:
 
                         if not os.path.isdir(save_dir):
                             os.makedirs(save_dir)
