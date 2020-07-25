@@ -158,6 +158,22 @@ def test_chessboard_stereo():
     # Just for a regression test, checking reprojection error, and recon error.
     assert reproj_err < 0.7
     assert recon_err < 1.7
+    print("Stereo, default=" + str(reproj_err) + ", " + str(recon_err))
+
+    # Now test rerunning where we optimize the extrinsics with other params fixed.
+    reproj_err, recon_err, params = \
+        calibrator.calibrate(
+            override_left_intrinsics=params.left_params.camera_matrix,
+            override_left_distortion=params.left_params.dist_coeffs,
+            override_right_intrinsics=params.right_params.camera_matrix,
+            override_right_distortion=params.right_params.dist_coeffs,
+            override_l2r_rmat=params.l2r_rmat,
+            override_l2r_tvec=params.l2r_tvec
+        )
+
+    assert reproj_err < 0.7
+    assert recon_err < 1.7
+    print("Stereo, extrinsics=" + str(reproj_err) + ", " + str(recon_err))
 
     # Test iterative calibration.
     reference_ids, reference_points, reference_image_size = get_iterative_reference_data()
@@ -168,3 +184,4 @@ def test_chessboard_stereo():
                                                                      reference_image_size)
     assert reproj_err < 0.7
     assert recon_err < 1.5
+    print("Stereo, iterative=" + str(reproj_err) + ", " + str(recon_err))
