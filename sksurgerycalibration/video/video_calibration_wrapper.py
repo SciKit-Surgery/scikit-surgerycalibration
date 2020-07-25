@@ -6,10 +6,12 @@ import logging
 from typing import List
 import numpy as np
 import cv2
+from scipy.optimize import minimize
 import sksurgerycore.transforms.matrix as skcm
 import sksurgerycalibration.video.video_calibration_utils as vu
 import sksurgerycalibration.video.video_calibration_metrics as vm
 import sksurgerycalibration.video.video_calibration_hand_eye as he
+import sksurgerycalibration.video.video_calibration_cost_functions as vcf
 
 LOGGER = logging.getLogger(__name__)
 
@@ -75,7 +77,7 @@ def mono_video_calibration(object_points, image_points, image_size, flags=0):
     return final_rms, camera_matrix, dist_coeffs, rvecs, tvecs
 
 
-# pylint: disable=too-many-locals
+# pylint: disable=too-many-locals, too-many-arguments
 def stereo_video_calibration(left_ids,
                              left_object_points,
                              left_image_points,
@@ -83,7 +85,13 @@ def stereo_video_calibration(left_ids,
                              right_object_points,
                              right_image_points,
                              image_size,
-                             flags=cv2.CALIB_USE_INTRINSIC_GUESS
+                             flags=cv2.CALIB_USE_INTRINSIC_GUESS,
+                             override_left_intrinsics=None,
+                             override_left_distortion=None,
+                             override_right_intrinsics=None,
+                             override_right_distortion=None,
+                             override_l2r_rmat=None,
+                             override_l2r_tvec=None
                              ):
     """
     Default stereo calibration, using OpenCV methods.
@@ -151,6 +159,37 @@ def stereo_video_calibration(left_ids,
             r_d,
             image_size,
             flags=flags)
+
+    # pylint:disable=too-many-boolean-expressions
+    if override_left_intrinsics is not None \
+        and override_left_distortion is not None \
+        and override_right_intrinsics is not None \
+        and override_right_distortion is not None \
+        and override_l2r_rmat is not None \
+            and override_l2r_tvec is not None:
+
+        # Stereo calibration is hard for a laparoscope.
+        # In clinical practice, the data may be way too variable.
+        # For stereo scopes, they are often fixed focus,
+        # i.e. fixed intrinsics, and fixed stereo.
+        # So, we may prefer to just do the best possible calibration
+        # in the lab, and then fix it.
+        # But we then would still want to optimise the camera extrinsics
+        # as the camera poses directly affect the hand-eye calibration.
+        s_reproj, l_rvecs, l_tvecs, \
+            = stereo_calibration_extrinsics(
+                common_object_points,
+                common_left_image_points,
+                common_right_image_points,
+                l_rvecs,
+                l_tvecs,
+                override_left_intrinsics,
+                override_left_distortion,
+                override_right_intrinsics,
+                override_right_distortion,
+                override_l2r_rmat,
+                override_l2r_tvec
+            )
 
     # And recompute rvecs and tvecs, consistently, given new l2r params.
     number_of_frames = len(left_object_points)
@@ -403,3 +442,59 @@ def stereo_handeye_calibration(l2r_rmat: np.ndarray,
     return reproj_err, recon_err, \
         left_handeye_matrix, left_pattern2marker_matrix, \
         right_handeye_matrix, right_pattern2marker_matrix
+
+
+def stereo_calibration_extrinsics(common_object_points,
+                                  common_left_image_points,
+                                  common_right_image_points,
+                                  l_rvecs,
+                                  l_tvecs,
+                                  override_left_intrinsics,
+                                  override_left_distortion,
+                                  override_right_intrinsics,
+                                  override_right_distortion,
+                                  override_l2r_rmat,
+                                  override_l2r_tvec):
+    """
+    Simply re-optimises the extrinsic parameters.
+    :return: error, l_rvecs, l_tvecs
+    """
+    number_of_frames = len(common_object_points)
+    number_of_parameters = 6 * number_of_frames
+    x_0 = np.zeros(number_of_parameters)
+    for i in range(0, number_of_frames):
+        x_0[i * 6 + 0] = l_rvecs[i][0]
+        x_0[i * 6 + 1] = l_rvecs[i][1]
+        x_0[i * 6 + 2] = l_rvecs[i][2]
+        x_0[i * 6 + 3] = l_tvecs[i][0]
+        x_0[i * 6 + 4] = l_tvecs[i][1]
+        x_0[i * 6 + 5] = l_tvecs[i][2]
+
+    res = minimize(vcf.stereo_2d_error, x_0,
+                   args=(common_object_points,
+                         common_left_image_points,
+                         common_right_image_points,
+                         override_left_intrinsics,
+                         override_left_distortion,
+                         override_right_intrinsics,
+                         override_right_distortion,
+                         override_l2r_rmat,
+                         override_l2r_tvec
+                         ),
+                   method='Powell',
+                   tol=1e-2,
+                   options={'disp': False, 'maxiter': 10000})
+
+    LOGGER.info("Stereo Re-Calibration: success=%s", str(res.success))
+    LOGGER.info("Stereo Re-Calibration: msg=%s", str(res.message))
+
+    x_1 = res.x
+    for i in range(0, number_of_frames):
+        l_rvecs[i][0] = x_1[i * 6 + 0]
+        l_rvecs[i][1] = x_1[i * 6 + 1]
+        l_rvecs[i][2] = x_1[i * 6 + 2]
+        l_tvecs[i][0] = x_1[i * 6 + 3]
+        l_tvecs[i][1] = x_1[i * 6 + 4]
+        l_tvecs[i][2] = x_1[i * 6 + 5]
+
+    return res.fun, l_rvecs, l_tvecs

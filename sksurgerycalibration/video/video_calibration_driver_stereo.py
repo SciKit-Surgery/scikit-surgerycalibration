@@ -16,7 +16,9 @@ LOGGER = logging.getLogger(__name__)
 
 
 class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
-    """ Class to do stateful video calibration of a stereo camera. """
+    """
+    Class to do stateful video calibration of a stereo camera.
+    """
     def __init__(self,
                  point_detector: pd.PointDetector,
                  minimum_points_per_frame: int
@@ -104,7 +106,15 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
 
         return number_of_points
 
-    def calibrate(self, flags=cv2.CALIB_USE_INTRINSIC_GUESS):
+    def calibrate(self,
+                  flags=cv2.CALIB_USE_INTRINSIC_GUESS,
+                  override_left_intrinsics=None,
+                  override_left_distortion=None,
+                  override_right_intrinsics=None,
+                  override_right_distortion=None,
+                  override_l2r_rmat=None,
+                  override_l2r_tvec=None
+                  ):
         """
         Do the stereo video calibration.
 
@@ -115,10 +125,10 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         :return: RMS projection, reconstruction error.
         """
         s_reproj, s_recon, \
-        l_c, l_d, l_rvecs, l_tvecs, \
-        r_c, r_d, r_rvecs, r_tvecs, \
-        l2r_r, l2r_t, \
-        essential, fundamental \
+            l_c, l_d, l_rvecs, l_tvecs, \
+            r_c, r_d, r_rvecs, r_tvecs, \
+            l2r_r, l2r_t, \
+            essential, fundamental \
             = vc.stereo_video_calibration(
                 self.video_data.left_data.ids_arrays,
                 self.video_data.left_data.object_points_arrays,
@@ -128,7 +138,14 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                 self.video_data.right_data.image_points_arrays,
                 (self.video_data.left_data.images_array[0].shape[1],
                  self.video_data.left_data.images_array[0].shape[0]),
-                flags)
+                flags,
+                override_left_intrinsics,
+                override_left_distortion,
+                override_right_intrinsics,
+                override_right_distortion,
+                override_l2r_rmat,
+                override_l2r_tvec
+            )
 
         self.calibration_params.set_data(l_c, l_d, l_rvecs, l_tvecs, r_c, r_d,
                                          r_rvecs, r_tvecs, l2r_r, l2r_t,
@@ -138,12 +155,20 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                     str(s_reproj), str(s_recon))
         return s_reproj, s_recon, copy.deepcopy(self.calibration_params)
 
+    # pylint:disable=too-many-arguments
     def iterative_calibration(self,
                               number_of_iterations: int,
                               reference_ids,
                               reference_image_points,
                               reference_image_size,
-                              flags: int = cv2.CALIB_USE_INTRINSIC_GUESS):
+                              flags: int = cv2.CALIB_USE_INTRINSIC_GUESS,
+                              override_left_intrinsics=None,
+                              override_left_distortion=None,
+                              override_right_intrinsics=None,
+                              override_right_distortion=None,
+                              override_l2r_rmat=None,
+                              override_l2r_tvec=None
+                              ):
         """
         Does iterative calibration, like Datta 2009.
         """
@@ -156,6 +181,7 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         for i in range(0, number_of_iterations):
             left_images = copy.deepcopy(cached_left_images)
             right_images = copy.deepcopy(cached_right_images)
+
             cu.detect_points_in_stereo_canonical_space(
                 self.point_detector,
                 self.minimum_points_per_frame,
@@ -170,13 +196,24 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                 reference_ids,
                 reference_image_points,
                 reference_image_size)
-            proj_err, recon_err, param_copy = self.calibrate(flags=flags)
+
+            proj_err, recon_err, param_copy = \
+                self.calibrate(flags,
+                               override_left_intrinsics,
+                               override_left_distortion,
+                               override_right_intrinsics,
+                               override_right_distortion,
+                               override_l2r_rmat,
+                               override_l2r_tvec
+                               )
+
             LOGGER.info("Iterative calibration: %s: proj_err=%s, recon_err=%s.",
                         str(i), str(proj_err), str(recon_err))
         return proj_err, recon_err, param_copy
 
     def handeye_calibration(self):
-        """Do handeye calibration.
+        """
+        Do handeye calibration.
 
         This returns RMS projection error, which is a common metric, but also,
         the reconstruction / triangulation error.

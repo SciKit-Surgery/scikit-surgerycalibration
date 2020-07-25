@@ -8,6 +8,56 @@ import sksurgerycalibration.video.video_calibration_utils as vu
 import sksurgerycalibration.video.video_calibration_metrics as vm
 
 
+def stereo_2d_error(x_0,
+                    common_object_points,
+                    common_left_image_points,
+                    common_right_image_points,
+                    left_intrinsics,
+                    left_distortion,
+                    right_intrinsics,
+                    right_distortion,
+                    l2r_rmat,
+                    l2r_tvec
+                    ):
+    """
+    Private method to RMSE cost function, in stereo, where x_0 contains
+    the left camera extrinsics.
+    """
+    rvecs = []
+    tvecs = []
+    number_of_frames = len(common_object_points)
+    for i in range(0, number_of_frames):
+        rvec = np.zeros((3, 1))
+        rvec[0][0] = x_0[6 * i + 0]
+        rvec[1][0] = x_0[6 * i + 1]
+        rvec[2][0] = x_0[6 * i + 2]
+        tvec = np.zeros((3, 1))
+        tvec[0][0] = x_0[6 * i + 3]
+        tvec[1][0] = x_0[6 * i + 4]
+        tvec[2][0] = x_0[6 * i + 5]
+        rvecs.append(rvec)
+        tvecs.append(tvec)
+
+    tmp_sse, tmp_num = vm.compute_stereo_2d_err(l2r_rmat,
+                                                l2r_tvec,
+                                                common_object_points,
+                                                common_left_image_points,
+                                                left_intrinsics,
+                                                left_distortion,
+                                                common_object_points,
+                                                common_right_image_points,
+                                                right_intrinsics,
+                                                right_distortion,
+                                                rvecs,
+                                                tvecs
+                                                )
+
+    mse = tmp_sse / tmp_num
+    rmse = np.sqrt(mse)
+
+    return rmse
+
+
 def stereo_2d_and_3d_error(x_0,
                            left_object_points,
                            left_image_points,
