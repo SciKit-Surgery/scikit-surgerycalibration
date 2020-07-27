@@ -18,7 +18,6 @@ def test_stereo_davinci():
     files.sort()
     for file in files:
         image = cv2.imread(file)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         print("Loaded:" + str(file))
         left_images.append(image)
     assert(len(left_images) == 59)
@@ -28,7 +27,6 @@ def test_stereo_davinci():
     files.sort()
     for file in files:
         image = cv2.imread(file)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         print("Loaded:" + str(file))
         right_images.append(image)
     assert (len(right_images) == 59)
@@ -38,9 +36,11 @@ def test_stereo_davinci():
     calibrator = sc.StereoVideoCalibrationDriver(detector, minimum_number_of_points_per_image)
     for i, _ in enumerate(left_images):
         try:
-            number_of_points = calibrator.grab_data(left_images[i], right_images[i])
-            if number_of_points < 2 * minimum_number_of_points_per_image:
-                print("Image pair:" + str(i) + ", SKIPPED, due to not enough points")
+            number_left, number_right = calibrator.grab_data(left_images[i], right_images[i])
+            if number_left < minimum_number_of_points_per_image:
+                print("Image pair:" + str(i) + ", left image, SKIPPED, due to not enough points")
+            if number_right < minimum_number_of_points_per_image:
+                print("Image pair:" + str(i) + ", right image, SKIPPED, due to not enough points")
         except ValueError as ve:
             print("Image pair:" + str(i) + ", FAILED, due to:" + str(ve))
         except TypeError as te:

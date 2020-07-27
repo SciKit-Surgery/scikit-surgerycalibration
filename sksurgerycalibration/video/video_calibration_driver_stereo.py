@@ -53,27 +53,32 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         but will return empty arrays if no points were detected.
         So, no points is not an error. Its an expected condition.
 
-        :param left_image: RGB image.
-        :param right_image: RGB image.
+        :param left_image: BGR image.
+        :param right_image: BGR image.
         :param device_tracking: transformation for the tracked device
         :param calibration_object_tracking: transformation of tracked
         calibration object
         :return: The number of points grabbed.
         """
-        number_of_points = 0
+        number_left = 0
+        number_right = 0
 
         # This can return None's if none are found.
         left_ids, left_object_points, left_image_points = \
             self.point_detector.get_points(left_image)
 
-        if left_ids is not None and \
-                left_ids.shape[0] >= self.minimum_points_per_frame:
+        if left_ids is not None:
+            number_left = left_ids.shape[0]
+
+        if number_left >= self.minimum_points_per_frame:
 
             right_ids, right_object_points, right_image_points = \
                 self.point_detector.get_points(right_image)
 
-            if right_ids is not None and \
-                    right_ids.shape[0] >= self.minimum_points_per_frame:
+            if right_ids is not None:
+                number_right = right_ids.shape[0]
+
+            if number_right >= self.minimum_points_per_frame:
 
                 left_ids, left_image_points, left_object_points = \
                     cu.convert_pd_to_opencv(left_ids,
@@ -97,14 +102,14 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                 self.tracking_data.push(device_tracking,
                                         calibration_object_tracking)
 
-                number_of_points = \
-                    left_image_points.shape[0] + \
-                    right_image_points.shape[0]
+        number_of_points = number_left + number_right
 
-        LOGGER.info("Grabbed: Returning %s points.",
+        LOGGER.info("Grabbed: Returning (%s+%s)=%s points.",
+                    str(number_left),
+                    str(number_right),
                     str(number_of_points))
 
-        return number_of_points
+        return number_left, number_right
 
     def calibrate(self,
                   flags=cv2.CALIB_USE_INTRINSIC_GUESS,

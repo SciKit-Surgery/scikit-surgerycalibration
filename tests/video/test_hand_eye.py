@@ -40,6 +40,7 @@ def load_images_from_glob(glob_pattern):
 
     return images
 
+
 def load_tracking_from_glob(glob_pattern):
     """ Load tracking data from files based on a glob pattern. """
     tracking = []
@@ -53,7 +54,8 @@ def load_tracking_from_glob(glob_pattern):
 
 
 def test_handeye_calibration_mono():
-    """ Load mono data (only using left channel) and tracking, do video and
+    """
+    Load mono data (only using left channel) and tracking, do video and
     handeye calibration, compare results against expected values.
     """
     images = load_images_from_glob(
@@ -96,15 +98,16 @@ def test_handeye_calibration_mono():
 
     # These values are taken from a previous successful run
     # Not objective measures of correctness
-    expected_reproj_error = 14.93867
-    expected_recon_error = 5.530625
+    expected_reproj_error = 14.97731
+    expected_recon_error = 5.434362
 
     assert proj_err == pytest.approx(expected_reproj_error, rel=1e-4)
     assert recon_err == pytest.approx(expected_recon_error, rel=1e-4)
 
 
 def test_handeye_calibration_stereo():
-    """ Load Stereo data and tracking, do video and
+    """
+    Load Stereo data and tracking, do video and
     handeye calibration, compare results against expected values.
     """
     left_images = load_images_from_glob(
@@ -126,7 +129,8 @@ def test_handeye_calibration_stereo():
 
     min_number_of_points_per_image = 50
     detector = \
-        chpd.CharucoPlusChessboardPointDetector(error_if_no_chessboard=False)
+        chpd.CharucoPlusChessboardPointDetector(charuco_filtering=True,
+                                                error_if_no_chessboard=False)
 
     calibrator = \
         vidcal.video_calibration_driver_stereo.StereoVideoCalibrationDriver(
@@ -135,8 +139,12 @@ def test_handeye_calibration_stereo():
     # Grab data from images/tracking arrays
     for left, right, device, calib_obj in \
         zip(left_images, right_images, device_tracking, obj_tracking):
-        successful = calibrator.grab_data(left, right, device, calib_obj)
-        assert successful > 0
+        num_left, num_right = calibrator.grab_data(left,
+                                                   right,
+                                                   device,
+                                                   calib_obj)
+        assert num_left > 0
+        assert num_right > 0
 
     reproj_err_1, recon_err_1, _ = calibrator.calibrate()
 
@@ -151,8 +159,8 @@ def test_handeye_calibration_stereo():
 
     # These values are taken from a previous successful run
     # Not objective measures of correctness
-    expected_reproj_error = 13.452010
-    expected_recon_error = 1.394778
+    expected_reproj_error = 13.543016
+    expected_recon_error = 1.383223
 
     assert proj_err == pytest.approx(expected_reproj_error, rel=1e-4)
     assert recon_err == pytest.approx(expected_recon_error, rel=1e-4)
@@ -175,4 +183,3 @@ def test_load_data_stereo_calib():
     assert len(stereo_calib.tracking_data.calibration_tracking_array) == 10
     assert len(stereo_calib.video_data.left_data.images_array) == 10
     assert len(stereo_calib.video_data.right_data.images_array) == 10
-    

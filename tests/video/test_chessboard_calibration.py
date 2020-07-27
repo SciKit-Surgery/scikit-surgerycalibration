@@ -10,6 +10,7 @@ import sksurgeryimage.calibration.chessboard_point_detector as pd
 import sksurgerycalibration.video.video_calibration_driver_mono as mc
 import sksurgerycalibration.video.video_calibration_driver_stereo as sc
 import sksurgerycalibration.video.video_calibration_utils as vu
+import tests.video.video_testing_utils as vtu
 
 
 def get_iterative_reference_data():
@@ -37,7 +38,6 @@ def test_chessboard_mono():
     files = glob.glob('tests/data/laparoscope_calibration/left/*.png')
     for file in files:
         image = cv2.imread(file)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         images.append(image)
 
     # This illustrates that the PointDetector sub-class holds the knowledge of the model.
@@ -118,23 +118,8 @@ def test_chessboard_mono():
 
 def test_chessboard_stereo():
 
-    left_images = []
-    files = glob.glob('tests/data/laparoscope_calibration/left/*.png')
-    files.sort()
-    for file in files:
-        image = cv2.imread(file)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        left_images.append(image)
-    assert(len(left_images) == 9)
-
-    right_images = []
-    files = glob.glob('tests/data/laparoscope_calibration/right/*.png')
-    files.sort()
-    for file in files:
-        image = cv2.imread(file)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        right_images.append(image)
-    assert (len(right_images) == 9)
+    left_images, right_images \
+        = vtu.load_left_right_pngs('tests/data/laparoscope_calibration/', 9)
 
     chessboard_detector = \
         pd.ChessboardPointDetector((14, 10),
@@ -147,8 +132,9 @@ def test_chessboard_stereo():
 
     # Repeatedly grab data, until you have enough.
     for i, _ in enumerate(left_images):
-        successful = calibrator.grab_data(left_images[i], right_images[i])
-        assert successful > 0
+        number_left, number_right = calibrator.grab_data(left_images[i], right_images[i])
+        assert number_left > 0
+        assert number_right > 0
     assert not calibrator.is_device_tracked()
     assert not calibrator.is_calibration_target_tracked()
 
@@ -157,7 +143,7 @@ def test_chessboard_stereo():
 
     # Just for a regression test, checking reprojection error, and recon error.
     assert reproj_err < 0.7
-    assert recon_err < 1.7
+    assert recon_err < 1.8
     print("Stereo, default=" + str(reproj_err) + ", " + str(recon_err))
 
     # Now test rerunning where we optimize the extrinsics with other params fixed.
@@ -172,7 +158,7 @@ def test_chessboard_stereo():
         )
 
     assert reproj_err < 0.7
-    assert recon_err < 1.7
+    assert recon_err < 1.8
     print("Stereo, extrinsics=" + str(reproj_err) + ", " + str(recon_err))
 
     # Test iterative calibration.
@@ -183,5 +169,5 @@ def test_chessboard_stereo():
                                                                      reference_points,
                                                                      reference_image_size)
     assert reproj_err < 0.7
-    assert recon_err < 1.5
+    assert recon_err < 1.6
     print("Stereo, iterative=" + str(reproj_err) + ", " + str(recon_err))
