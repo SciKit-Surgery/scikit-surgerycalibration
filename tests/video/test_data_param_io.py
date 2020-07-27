@@ -9,6 +9,7 @@ import cv2
 import sksurgeryimage.calibration.chessboard_point_detector as pd
 import sksurgerycalibration.video.video_calibration_driver_mono as mc
 import sksurgerycalibration.video.video_calibration_driver_stereo as sc
+import tests.video.video_testing_utils as vtu
 
 
 def test_chessboard_mono_io():
@@ -49,21 +50,8 @@ def test_chessboard_mono_io():
 
 def test_chessboard_stereo_io():
 
-    left_images = []
-    files = glob.glob('tests/data/laparoscope_calibration/left/*.png')
-    files.sort()
-    for file in files:
-        image = cv2.imread(file)
-        left_images.append(image)
-    assert(len(left_images) == 9)
-
-    right_images = []
-    files = glob.glob('tests/data/laparoscope_calibration/right/*.png')
-    files.sort()
-    for file in files:
-        image = cv2.imread(file)
-        right_images.append(image)
-    assert (len(right_images) == 9)
+    left_images, right_images \
+        = vtu.load_left_right_pngs('tests/data/laparoscope_calibration/', 9)
 
     chessboard_detector = \
         pd.ChessboardPointDetector((14, 10),
@@ -75,8 +63,9 @@ def test_chessboard_stereo_io():
         sc.StereoVideoCalibrationDriver(chessboard_detector, 140)
 
     for i, _ in enumerate(left_images):
-        successful = calibrator.grab_data(left_images[i], right_images[i], np.eye(4), np.eye(3))
-        assert successful > 0
+        num_left, num_right = calibrator.grab_data(left_images[i], right_images[i], np.eye(4), np.eye(3))
+        assert num_left > 0
+        assert num_right > 0
 
     # Then do calibration
     reproj_err_1, recon_err_1, params_1 = calibrator.calibrate()
