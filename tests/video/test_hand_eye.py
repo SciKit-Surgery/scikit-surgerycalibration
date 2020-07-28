@@ -91,7 +91,7 @@ def test_handeye_calibration_mono():
     assert reproj_err_1 < one_pixel
     assert recon_err_1 < one_pixel
 
-    proj_err, recon_err = calibrator.handeye_calibration()
+    proj_err, recon_err, _ = calibrator.handeye_calibration()
 
     print(f'Reproj err {proj_err}')
     print(f'Recon err {recon_err}')
@@ -152,7 +152,7 @@ def test_handeye_calibration_stereo():
     assert reproj_err_1 < one_pixel
     assert recon_err_1 < one_pixel
 
-    proj_err, recon_err = calibrator.handeye_calibration()
+    proj_err, recon_err, _ = calibrator.handeye_calibration()
 
     print(f'Reproj err {proj_err}')
     print(f'Recon err {recon_err}')
