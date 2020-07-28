@@ -183,4 +183,4 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
 
         self.calibration_params.set_handeye(handeye, pattern2marker)
 
-        return proj_err, recon_err
+        return proj_err, recon_err, copy.deepcopy(self.calibration_params)
