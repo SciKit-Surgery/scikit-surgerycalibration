@@ -92,8 +92,8 @@ def compute_stereo_2d_err(l2r_rmat,
 
     if return_residuals:
         return np.hstack(residuals)
-    else:
-        return lse + rse, number_of_samples
+
+    return lse + rse, number_of_samples
 
 
 def compute_stereo_3d_error(l2r_rmat,

@@ -7,7 +7,6 @@ from typing import List
 import numpy as np
 import cv2
 from scipy.optimize import least_squares
-from scipy.optimize import minimize
 import sksurgerycore.transforms.matrix as skcm
 import sksurgerycalibration.video.video_calibration_utils as vu
 import sksurgerycalibration.video.video_calibration_metrics as vm
@@ -159,13 +158,13 @@ def stereo_video_calibration(left_ids,
 
     else:
 
-        l_rms, l_c, l_d, l_rvecs, l_tvecs \
+        _, l_c, l_d, l_rvecs, l_tvecs \
             = cv2.calibrateCamera(left_object_points,
                                   left_image_points,
                                   image_size,
                                   None, None)
 
-        r_rms, r_c, r_d, r_rvecs, r_tvecs \
+        _, r_c, r_d, r_rvecs, r_tvecs \
             = cv2.calibrateCamera(right_object_points,
                                   right_image_points,
                                   image_size,
@@ -184,7 +183,7 @@ def stereo_video_calibration(left_ids,
 
         # Do OpenCV stereo calibration, using override intrinsics,
         # just so we can get the essential and fundamental matrix out.
-        s_rms, l_c, l_d, r_c, r_d, \
+        _, l_c, l_d, r_c, r_d, \
             l2r_r, l2r_t, essential, fundamental = cv2.stereoCalibrate(
                 common_object_points,
                 common_left_image_points,
@@ -207,7 +206,7 @@ def stereo_video_calibration(left_ids,
     else:
 
         # Do OpenCV stereo calibration, using intrinsics from OpenCV mono.
-        s_rms, l_c, l_d, r_c, r_d, \
+        _, l_c, l_d, r_c, r_d, \
             l2r_r, l2r_t, essential, fundamental = cv2.stereoCalibrate(
                 common_object_points,
                 common_left_image_points,
@@ -220,7 +219,7 @@ def stereo_video_calibration(left_ids,
                 flags=cv2.CALIB_USE_INTRINSIC_GUESS | cv2.CALIB_FIX_INTRINSIC)
 
         # Then do it again, using the passed in flags.
-        s_rms, l_c, l_d, r_c, r_d, \
+        _, l_c, l_d, r_c, r_d, \
             l2r_r, l2r_t, essential, fundamental = cv2.stereoCalibrate(
                 common_object_points,
                 common_left_image_points,
@@ -243,7 +242,7 @@ def stereo_video_calibration(left_ids,
         # But we then would still want to optimise the camera extrinsics
         # as the camera poses directly affect the hand-eye calibration.
 
-        s_reproj, l_rvecs, l_tvecs, \
+        _, l_rvecs, l_tvecs, \
             = stereo_calibration_extrinsics(
                 common_object_points,
                 common_left_image_points,
