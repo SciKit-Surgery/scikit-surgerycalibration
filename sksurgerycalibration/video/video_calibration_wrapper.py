@@ -6,6 +6,7 @@ import logging
 from typing import List
 import numpy as np
 import cv2
+from scipy.optimize import least_squares
 from scipy.optimize import minimize
 import sksurgerycore.transforms.matrix as skcm
 import sksurgerycalibration.video.video_calibration_utils as vu
@@ -111,21 +112,66 @@ def stereo_video_calibration(left_ids,
     :param flags: OpenCV flags to pass to calibrateCamera().
     :return:
     """
-    # Calibrate left, using all available points
-    l_rms, l_c, l_d, l_rvecs, l_tvecs \
-        = cv2.calibrateCamera(left_object_points,
-                              left_image_points,
-                              image_size,
-                              None, None)
 
-    # Calibrate right using all available points.
-    r_rms, r_c, r_d, r_rvecs, r_tvecs \
-        = cv2.calibrateCamera(right_object_points,
-                              right_image_points,
-                              image_size,
-                              None, None)
+    # We only do override if all override params are specified.
+    # pylint:disable=too-many-boolean-expressions
+    do_override = False
+    if override_left_intrinsics is not None \
+        and override_left_distortion is not None \
+        and override_right_intrinsics is not None \
+        and override_right_distortion is not None \
+        and override_l2r_rmat is not None \
+        and override_l2r_tvec is not None:
 
-    # But for stereo, OpenCV needs common points.
+        do_override = True
+
+        l_c = override_left_intrinsics
+        l_d = override_left_distortion
+        r_c = override_right_intrinsics
+        r_d = override_right_distortion
+
+    number_of_frames = len(left_object_points)
+
+    l_rvecs = []
+    l_tvecs = []
+    r_rvecs = []
+    r_tvecs = []
+
+    if do_override:
+
+        for i in range(0, number_of_frames):
+
+            _, rvecs, tvecs = cv2.solvePnP(
+                left_object_points[i],
+                left_image_points[i],
+                l_c,
+                l_d)
+            l_rvecs.append(rvecs)
+            l_tvecs.append(tvecs)
+
+            _, rvecs, tvecs = cv2.solvePnP(
+                right_object_points[i],
+                right_image_points[i],
+                r_c,
+                r_d)
+            r_rvecs.append(rvecs)
+            r_tvecs.append(tvecs)
+
+    else:
+
+        l_rms, l_c, l_d, l_rvecs, l_tvecs \
+            = cv2.calibrateCamera(left_object_points,
+                                  left_image_points,
+                                  image_size,
+                                  None, None)
+
+        r_rms, r_c, r_d, r_rvecs, r_tvecs \
+            = cv2.calibrateCamera(right_object_points,
+                                  right_image_points,
+                                  image_size,
+                                  None, None)
+
+    # For stereo, OpenCV needs common points.
     _, common_object_points, common_left_image_points, \
         common_right_image_points \
         = vu.filter_common_points_all_images(left_ids,
@@ -134,48 +180,69 @@ def stereo_video_calibration(left_ids,
                                              right_ids,
                                              right_image_points, 10)
 
-    # First do stereo calibration, using fixed intrinsics.
-    s_rms, l_c, l_d, r_c, r_d, \
-        l2r_r, l2r_t, essential, fundamental = cv2.stereoCalibrate(
-            common_object_points,
-            common_left_image_points,
-            common_right_image_points,
-            l_c,
-            l_d,
-            r_c,
-            r_d,
-            image_size,
-            flags=cv2.CALIB_USE_INTRINSIC_GUESS | cv2.CALIB_FIX_INTRINSIC)
+    if do_override:
 
-    # Then do it again, using the passed in flags.
-    s_rms, l_c, l_d, r_c, r_d, \
-        l2r_r, l2r_t, essential, fundamental = cv2.stereoCalibrate(
-            common_object_points,
-            common_left_image_points,
-            common_right_image_points,
-            l_c,
-            l_d,
-            r_c,
-            r_d,
-            image_size,
-            flags=flags)
+        # Do OpenCV stereo calibration, using override intrinsics,
+        # just so we can get the essential and fundamental matrix out.
+        s_rms, l_c, l_d, r_c, r_d, \
+            l2r_r, l2r_t, essential, fundamental = cv2.stereoCalibrate(
+                common_object_points,
+                common_left_image_points,
+                common_right_image_points,
+                l_c,
+                l_d,
+                r_c,
+                r_d,
+                image_size,
+                flags=cv2.CALIB_USE_INTRINSIC_GUESS | cv2.CALIB_FIX_INTRINSIC)
 
-    # pylint:disable=too-many-boolean-expressions
-    if override_left_intrinsics is not None \
-        and override_left_distortion is not None \
-        and override_right_intrinsics is not None \
-        and override_right_distortion is not None \
-        and override_l2r_rmat is not None \
-            and override_l2r_tvec is not None:
+        l2r_r = override_l2r_rmat
+        l2r_t = override_l2r_tvec
+
+        assert np.allclose(l_c, override_left_intrinsics)
+        assert np.allclose(l_d, override_left_distortion)
+        assert np.allclose(r_c, override_right_intrinsics)
+        assert np.allclose(r_d, override_right_distortion)
+
+    else:
+
+        # Do OpenCV stereo calibration, using intrinsics from OpenCV mono.
+        s_rms, l_c, l_d, r_c, r_d, \
+            l2r_r, l2r_t, essential, fundamental = cv2.stereoCalibrate(
+                common_object_points,
+                common_left_image_points,
+                common_right_image_points,
+                l_c,
+                l_d,
+                r_c,
+                r_d,
+                image_size,
+                flags=cv2.CALIB_USE_INTRINSIC_GUESS | cv2.CALIB_FIX_INTRINSIC)
+
+        # Then do it again, using the passed in flags.
+        s_rms, l_c, l_d, r_c, r_d, \
+            l2r_r, l2r_t, essential, fundamental = cv2.stereoCalibrate(
+                common_object_points,
+                common_left_image_points,
+                common_right_image_points,
+                l_c,
+                l_d,
+                r_c,
+                r_d,
+                image_size,
+                flags=flags)
+
+    if do_override:
 
         # Stereo calibration is hard for a laparoscope.
         # In clinical practice, the data may be way too variable.
         # For stereo scopes, they are often fixed focus,
         # i.e. fixed intrinsics, and fixed stereo.
         # So, we may prefer to just do the best possible calibration
-        # in the lab, and then fix it.
+        # in the lab, and then keep those values constant.
         # But we then would still want to optimise the camera extrinsics
         # as the camera poses directly affect the hand-eye calibration.
+
         s_reproj, l_rvecs, l_tvecs, \
             = stereo_calibration_extrinsics(
                 common_object_points,
@@ -183,23 +250,30 @@ def stereo_video_calibration(left_ids,
                 common_right_image_points,
                 l_rvecs,
                 l_tvecs,
-                override_left_intrinsics,
-                override_left_distortion,
-                override_right_intrinsics,
-                override_right_distortion,
-                override_l2r_rmat,
-                override_l2r_tvec
+                l_c,
+                l_d,
+                r_c,
+                r_d,
+                l2r_r,
+                l2r_t
             )
 
-    # And recompute rvecs and tvecs, consistently, given new l2r params.
-    number_of_frames = len(left_object_points)
+    else:
+
+        # Normal OpenCV stereo calibration optimises intrinsics,
+        # distortion, and stereo parameters, but doesn't output pose.
+        # So here, we recompute the left camera pose.
+        for i in range(0, number_of_frames):
+            _, l_rvecs[i], l_tvecs[i] = cv2.solvePnP(
+                common_object_points[i],
+                common_left_image_points[i],
+                l_c,
+                l_d)
+
+    # Here, we are computing the right hand side rvecs and tvecs
+    # given the new left hand side rvecs, tvecs and the l2r.
     left_to_right = skcm.construct_rigid_transformation(l2r_r, l2r_t)
     for i in range(0, number_of_frames):
-        _, l_rvecs[i], l_tvecs[i] = cv2.solvePnP(
-            common_object_points[i],
-            common_left_image_points[i],
-            l_c,
-            l_d)
         left_chessboard_to_camera = \
             vu.extrinsic_vecs_to_matrix(l_rvecs[i], l_tvecs[i])
         right_chessboard_to_camera = \
@@ -244,8 +318,8 @@ def stereo_video_calibration(left_ids,
     mse = sse / num_samples
     s_recon = np.sqrt(mse)
 
-    LOGGER.info("Stereo Calib: l=%s, r=%s, opencv=%s, proj=%s, recon=%s",
-                str(l_rms), str(r_rms), str(s_rms), str(s_reproj), str(s_recon))
+    LOGGER.info("Stereo Calib: proj=%s, recon=%s",
+                str(s_reproj), str(s_recon))
 
     return s_reproj, s_recon, \
         l_c, l_d, l_rvecs, l_tvecs, \
@@ -470,21 +544,21 @@ def stereo_calibration_extrinsics(common_object_points,
         x_0[i * 6 + 4] = l_tvecs[i][1]
         x_0[i * 6 + 5] = l_tvecs[i][2]
 
-    res = minimize(vcf.stereo_2d_error, x_0,
-                   args=(common_object_points,
-                         common_left_image_points,
-                         common_right_image_points,
-                         override_left_intrinsics,
-                         override_left_distortion,
-                         override_right_intrinsics,
-                         override_right_distortion,
-                         override_l2r_rmat,
-                         override_l2r_tvec
-                         ),
-                   method='Powell',
-                   tol=1e-2,
-                   options={'disp': False, 'maxiter': 10000})
+    res = least_squares(vcf.stereo_2d_error, x_0,
+                        args=(common_object_points,
+                              common_left_image_points,
+                              common_right_image_points,
+                              override_left_intrinsics,
+                              override_left_distortion,
+                              override_right_intrinsics,
+                              override_right_distortion,
+                              override_l2r_rmat,
+                              override_l2r_tvec),
+                        method='lm',
+                        x_scale='jac',
+                        verbose=0)
 
+    LOGGER.info("Stereo Re-Calibration: status=%s", str(res.status))
     LOGGER.info("Stereo Re-Calibration: success=%s", str(res.success))
     LOGGER.info("Stereo Re-Calibration: msg=%s", str(res.message))
 

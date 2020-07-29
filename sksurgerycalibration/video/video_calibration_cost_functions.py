@@ -20,7 +20,7 @@ def stereo_2d_error(x_0,
                     l2r_tvec
                     ):
     """
-    Private method to RMSE cost function, in stereo, where x_0 contains
+    Private method to return vector of residuals, in stereo, where x_0 contains
     the left camera extrinsics.
     """
     rvecs = []
@@ -38,24 +38,22 @@ def stereo_2d_error(x_0,
         rvecs.append(rvec)
         tvecs.append(tvec)
 
-    tmp_sse, tmp_num = vm.compute_stereo_2d_err(l2r_rmat,
-                                                l2r_tvec,
-                                                common_object_points,
-                                                common_left_image_points,
-                                                left_intrinsics,
-                                                left_distortion,
-                                                common_object_points,
-                                                common_right_image_points,
-                                                right_intrinsics,
-                                                right_distortion,
-                                                rvecs,
-                                                tvecs
-                                                )
+    residual = vm.compute_stereo_2d_err(l2r_rmat,
+                                        l2r_tvec,
+                                        common_object_points,
+                                        common_left_image_points,
+                                        left_intrinsics,
+                                        left_distortion,
+                                        common_object_points,
+                                        common_right_image_points,
+                                        right_intrinsics,
+                                        right_distortion,
+                                        rvecs,
+                                        tvecs,
+                                        return_residuals=True
+                                        )
 
-    mse = tmp_sse / tmp_num
-    rmse = np.sqrt(mse)
-
-    return rmse
+    return residual
 
 
 def stereo_2d_and_3d_error(x_0,
