@@ -31,8 +31,11 @@ def test_stereo_davinci():
         right_images.append(image)
     assert (len(right_images) == 59)
 
+    ref_img = cv2.imread('tests/data/2020_01_20_storz/pattern_4x4_19x26_5_4_with_inset_9x14.png')
+
     minimum_number_of_points_per_image = 50
-    detector = pd.CharucoPlusChessboardPointDetector(error_if_no_chessboard=False) # Try to accept as many as possible.
+    detector = pd.CharucoPlusChessboardPointDetector(ref_img,
+                                                     error_if_no_chessboard=False) # Try to accept as many as possible.
     calibrator = sc.StereoVideoCalibrationDriver(detector, minimum_number_of_points_per_image)
     for i, _ in enumerate(left_images):
         try:

@@ -67,6 +67,9 @@ def test_handeye_calibration_mono():
     obj_tracking = load_tracking_from_glob(
         'tests/data/2020_01_20_storz/12_50_30/calib.calib_obj_tracking.*.txt')
 
+    ref_img = cv2.imread(
+        'tests/data/2020_01_20_storz/pattern_4x4_19x26_5_4_with_inset_9x14.png')
+
     assert len(images) == 10
 
     assert len(device_tracking) == 10
@@ -74,7 +77,8 @@ def test_handeye_calibration_mono():
 
     min_number_of_points_per_image = 50
     detector = \
-        chpd.CharucoPlusChessboardPointDetector(error_if_no_chessboard=False)
+        chpd.CharucoPlusChessboardPointDetector(ref_img,
+                                                error_if_no_chessboard=False)
 
     calibrator = \
         vidcal.video_calibration_driver_mono.MonoVideoCalibrationDriver(
@@ -122,6 +126,9 @@ def test_handeye_calibration_stereo():
     obj_tracking = load_tracking_from_glob(
         'tests/data/2020_01_20_storz/12_50_30/calib.calib_obj_tracking.*.txt')
 
+    ref_img = cv2.imread(
+        'tests/data/2020_01_20_storz/pattern_4x4_19x26_5_4_with_inset_9x14.png')
+
     assert len(left_images) == 10
     assert len(right_images) == 10
     assert len(device_tracking) == 10
@@ -129,7 +136,8 @@ def test_handeye_calibration_stereo():
 
     min_number_of_points_per_image = 50
     detector = \
-        chpd.CharucoPlusChessboardPointDetector(charuco_filtering=True,
+        chpd.CharucoPlusChessboardPointDetector(ref_img,
+                                                charuco_filtering=True,
                                                 error_if_no_chessboard=False)
 
     calibrator = \
