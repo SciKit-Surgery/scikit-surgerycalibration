@@ -166,13 +166,7 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                               reference_ids,
                               reference_image_points,
                               reference_image_size,
-                              flags: int = cv2.CALIB_USE_INTRINSIC_GUESS,
-                              override_left_intrinsics=None,
-                              override_left_distortion=None,
-                              override_right_intrinsics=None,
-                              override_right_distortion=None,
-                              override_l2r_rmat=None,
-                              override_l2r_tvec=None
+                              flags: int = cv2.CALIB_USE_INTRINSIC_GUESS
                               ):
         """
         Does iterative calibration, like Datta 2009.
@@ -203,14 +197,7 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                 reference_image_size)
 
             proj_err, recon_err, param_copy = \
-                self.calibrate(flags,
-                               override_left_intrinsics,
-                               override_left_distortion,
-                               override_right_intrinsics,
-                               override_right_distortion,
-                               override_l2r_rmat,
-                               override_l2r_tvec
-                               )
+                self.calibrate(flags)
 
             LOGGER.info("Iterative calibration: %s: proj_err=%s, recon_err=%s.",
                         str(i), str(proj_err), str(recon_err))

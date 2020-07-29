@@ -1,0 +1,52 @@
+{
+    "tracker": {
+        "tracker type": "unit test",
+        "use quaternions": false,
+        "tracked objects": {
+            "marker": "config/8700339.rom",
+            "laparoscope": "config/8700449.rom",
+            "pointer": "config/8700340.rom"
+        }
+    },
+    "calibration": {
+        "general": {
+            "load previous calibration file": true,
+            "left intrinsics": "",
+            "left distortion": "",
+            "right intrinsics": "",
+            "right distortion": "",
+            "l2r": "",
+            "features": "dots",
+            "frames required": 5,
+            "smooth images": false,
+            "iterative": false,
+            "maximum reprojection error": 20,
+            "maximum reconstruction error": 5,
+            "display good or bad": true,
+            "required to pass": false
+        },
+        "charuco": {
+            "minimum points per frame": 50,
+            "squares": [19, 26],
+            "square sizes": [5, 4],
+            "chessboard squares": [9, 14],
+            "chessboard square size": 3,
+            "filter markers": false,
+            "error if no chessboard": true,
+            "error if no charuco": false
+        },
+        "dots": {
+            "intrinsic params": "tests/data/calibration/cbh-viking/calib.left.intrinsics.txt",
+            "distortion coeffs": "tests/data/calibration/cbh-viking/calib.left.distortion.txt",
+            "minimum points per frame": 36,
+            "dots": [14, 16],
+            "separation in mm": 4,
+            "fiducial indexes": [69, 74, 149, 154],
+            "reference image size in pixels": [1200, 1360],
+            "pixels per mm": 80
+        }
+    },
+    "recording": {
+        "output dir": "output/"
+    }
+}

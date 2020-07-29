@@ -26,9 +26,10 @@ def compute_stereo_2d_err(l2r_rmat,
                           right_camera_matrix,
                           right_distortion,
                           left_rvecs,
-                          left_tvecs):
+                          left_tvecs,
+                          return_residuals=False):
     """
-    Function to compute stereo SSE re-projection error, over multiple views.
+    Function to compute stereo re-projection error, over multiple views.
 
     :param l2r_rmat: [3x3] ndarray, rotation for l2r transform
     :param l2r_tvec: [3x1] ndarray, translation for l2r transform
@@ -42,12 +43,15 @@ def compute_stereo_2d_err(l2r_rmat,
     :param right_distortion: [1x5] ndarray
     :param left_rvecs: Vector of [3x1] ndarray, Rodrigues rotations, left camera
     :param left_tvecs: Vector of [3x1] ndarray, translations, left camera
-    :return: SSE re-reprojection error, number_samples
+    :param return_residuals: if True returns vector of residuals for LM,
+    otherwise, returns SSE.
+    :return: re-reprojection error, number_samples
     """
     left_to_right = mu.construct_rigid_transformation(l2r_rmat, l2r_tvec)
 
     lse = 0
     rse = 0
+    residuals = []
     number_of_samples = 0
     number_of_frames = len(left_object_points)
 
@@ -72,18 +76,23 @@ def compute_stereo_2d_err(l2r_rmat,
                                                right_camera_matrix,
                                                right_distortion)
 
-        diff_left = left_image_points[i] - projected_left
-
-        lse = lse + np.sum(np.square(diff_left))
-
-        diff_right = right_image_points[i] - projected_right
-        rse = rse + np.sum(np.square(diff_right))
         number_of_samples = number_of_samples \
             + len(left_image_points[i]) \
             + len(right_image_points[i])
 
-    LOGGER.debug("Stereo RMS reprojection: left sse=%s, right sse=%s, num=%s",
-                 str(lse), str(rse), str(number_of_samples))
+        diff_left = left_image_points[i] - projected_left
+        diff_right = right_image_points[i] - projected_right
+
+        if return_residuals:
+            residuals.append(diff_left.reshape((-1)))
+            residuals.append(diff_right.reshape((-1)))
+        else:
+            lse = lse + np.sum(np.square(diff_left))
+            rse = rse + np.sum(np.square(diff_right))
+
+    if return_residuals:
+        return np.hstack(residuals)
+
     return lse + rse, number_of_samples
 
 

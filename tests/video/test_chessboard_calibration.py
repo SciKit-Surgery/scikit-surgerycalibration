@@ -142,11 +142,12 @@ def test_chessboard_stereo():
     reproj_err, recon_err, params = calibrator.calibrate()
 
     # Just for a regression test, checking reprojection error, and recon error.
+    print("\nStereo, default=" + str(reproj_err) + ", " + str(recon_err))
     assert reproj_err < 0.7
-    assert recon_err < 1.8
-    print("Stereo, default=" + str(reproj_err) + ", " + str(recon_err))
+    assert recon_err < 1.7
 
-    # Now test rerunning where we optimize the extrinsics with other params fixed.
+    # Test running with fixed intrinsics and fixed stereo, using existing
+    # calibration parameters, thereby re-optimising the camera poses.
     reproj_err, recon_err, params = \
         calibrator.calibrate(
             override_left_intrinsics=params.left_params.camera_matrix,
@@ -157,9 +158,10 @@ def test_chessboard_stereo():
             override_l2r_tvec=params.l2r_tvec
         )
 
+    # The above re-optimisation shouldn't make things worse, as its using same intrinsics and stereo.
+    print("Stereo, re-optimise=" + str(reproj_err) + ", " + str(recon_err))
     assert reproj_err < 0.7
-    assert recon_err < 1.8
-    print("Stereo, extrinsics=" + str(reproj_err) + ", " + str(recon_err))
+    assert recon_err < 1.7
 
     # Test iterative calibration.
     reference_ids, reference_points, reference_image_size = get_iterative_reference_data()
@@ -168,6 +170,38 @@ def test_chessboard_stereo():
                                                                      reference_ids,
                                                                      reference_points,
                                                                      reference_image_size)
+    print("Stereo, iterative=" + str(reproj_err) + ", " + str(recon_err))
     assert reproj_err < 0.7
     assert recon_err < 1.6
-    print("Stereo, iterative=" + str(reproj_err) + ", " + str(recon_err))
+
+    # Now test re-optimising extrinsics, using a completely different set of calibration params.
+    ov_l_c = np.loadtxt('tests/data/laparoscope_calibration/cbh-viking/calib.left.intrinsics.txt')
+    ov_l_d = np.loadtxt('tests/data/laparoscope_calibration/cbh-viking/calib.left.distortion.txt')
+    ov_r_c = np.loadtxt('tests/data/laparoscope_calibration/cbh-viking/calib.right.intrinsics.txt')
+    ov_r_d = np.loadtxt('tests/data/laparoscope_calibration/cbh-viking/calib.right.distortion.txt')
+
+    ov_l2r_t = np.zeros((3, 1))
+    ov_l2r_t[0][0] = -4.5
+
+    reproj_err, recon_err, params = \
+        calibrator.calibrate(
+            override_left_intrinsics=ov_l_c,
+            override_left_distortion=ov_l_d,
+            override_right_intrinsics=ov_r_c,
+            override_right_distortion=ov_r_d,
+            override_l2r_rmat=np.eye(3),
+            override_l2r_tvec=ov_l2r_t
+        )
+
+    # Must check that the overrides have actually been set on the output.
+    assert np.allclose(params.left_params.camera_matrix, ov_l_c)
+    assert np.allclose(params.left_params.dist_coeffs, ov_l_d)
+    assert np.allclose(params.right_params.camera_matrix, ov_r_c)
+    assert np.allclose(params.right_params.dist_coeffs, ov_r_d)
+    assert np.allclose(params.l2r_rmat, np.eye(3))
+    assert np.allclose(params.l2r_tvec, ov_l2r_t)
+
+    # Not expecting good results, as the camera parameters are completely wrong.
+    print("Stereo, override=" + str(reproj_err) + ", " + str(recon_err))
+    assert reproj_err < 33
+    assert recon_err < 109
