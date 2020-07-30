@@ -29,8 +29,9 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         :param minimum_points_per_frame: Minimum number to accept frame
         """
         super(MonoVideoCalibrationDriver, self).\
-            __init__(point_detector,
-                     minimum_points_per_frame)
+            __init__(minimum_points_per_frame)
+
+        self.point_detector = point_detector
 
         # Create data holders, and parameter holders, specific to Mono.
         calibration_data = cd.MonoVideoData()

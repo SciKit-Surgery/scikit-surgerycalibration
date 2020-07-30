@@ -36,7 +36,7 @@ def test_stereo_davinci():
     minimum_number_of_points_per_image = 50
     detector = pd.CharucoPlusChessboardPointDetector(ref_img,
                                                      error_if_no_chessboard=False) # Try to accept as many as possible.
-    calibrator = sc.StereoVideoCalibrationDriver(detector, minimum_number_of_points_per_image)
+    calibrator = sc.StereoVideoCalibrationDriver(detector, detector, minimum_number_of_points_per_image)
     for i, _ in enumerate(left_images):
         try:
             number_left, number_right = calibrator.grab_data(left_images[i], right_images[i])

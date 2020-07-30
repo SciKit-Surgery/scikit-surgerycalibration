@@ -19,7 +19,7 @@ def test_set_model2hand_arrays():
 
     stereo_calib = \
         vidcal.video_calibration_driver_stereo.StereoVideoCalibrationDriver(
-            chessboard_detector, 140)
+            chessboard_detector, chessboard_detector, 140)
 
     tracking_data_dir = 'tests/data/2020_01_20_storz/12_50_30'
     file_prefix = 'calib'
@@ -142,7 +142,7 @@ def test_handeye_calibration_stereo():
 
     calibrator = \
         vidcal.video_calibration_driver_stereo.StereoVideoCalibrationDriver(
-            detector, min_number_of_points_per_image)
+            detector, detector, min_number_of_points_per_image)
 
     # Grab data from images/tracking arrays
     for left, right, device, calib_obj in \
@@ -180,7 +180,7 @@ def test_load_data_stereo_calib():
 
     stereo_calib = \
         vidcal.video_calibration_driver_stereo.StereoVideoCalibrationDriver(
-            chessboard_detector, 140)
+            chessboard_detector, chessboard_detector, 140)
 
     tracking_data_dir = 'tests/data/2020_01_20_storz/12_50_30'
     file_prefix = 'calib'
