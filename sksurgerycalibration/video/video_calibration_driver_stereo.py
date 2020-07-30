@@ -20,18 +20,22 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
     Class to do stateful video calibration of a stereo camera.
     """
     def __init__(self,
-                 point_detector: pd.PointDetector,
+                 left_point_detector: pd.PointDetector,
+                 right_point_detector: pd.PointDetector,
                  minimum_points_per_frame: int
                  ):
         """
         Stateful class for stereo video calibration.
 
-        :param point_detector: Class derived from PointDetector
+        :param left_point_detector: Class derived from PointDetector
+        :param right_point_detector: Class derived from PointDetector
         :param minimum_points_per_frame: Minimum number to accept frame
         """
         super(StereoVideoCalibrationDriver, self).\
-            __init__(point_detector,
-                     minimum_points_per_frame)
+            __init__(minimum_points_per_frame)
+
+        self.left_point_detector = left_point_detector
+        self.right_point_detector = right_point_detector
 
         # Create data holders, and parameter holders, specific to Stereo.
         calibration_data = cd.StereoVideoData()
@@ -65,7 +69,7 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
 
         # This can return None's if none are found.
         left_ids, left_object_points, left_image_points = \
-            self.point_detector.get_points(left_image)
+            self.left_point_detector.get_points(left_image)
 
         if left_ids is not None:
             number_left = left_ids.shape[0]
@@ -73,7 +77,7 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         if number_left >= self.minimum_points_per_frame:
 
             right_ids, right_object_points, right_image_points = \
-                self.point_detector.get_points(right_image)
+                self.right_point_detector.get_points(right_image)
 
             if right_ids is not None:
                 number_right = right_ids.shape[0]
@@ -182,7 +186,8 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
             right_images = copy.deepcopy(cached_right_images)
 
             cu.detect_points_in_stereo_canonical_space(
-                self.point_detector,
+                self.left_point_detector,
+                self.right_point_detector,
                 self.minimum_points_per_frame,
                 self.video_data.left_data,
                 left_images,

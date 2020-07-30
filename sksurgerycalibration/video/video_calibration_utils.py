@@ -390,7 +390,8 @@ def detect_points_in_canonical_space(point_detector,
 
 
 # pylint: disable=too-many-arguments
-def detect_points_in_stereo_canonical_space(point_detector,
+def detect_points_in_stereo_canonical_space(left_point_detector,
+                                            right_point_detector,
                                             minimum_points_per_frame,
                                             left_video_data,
                                             left_images,
@@ -411,7 +412,8 @@ def detect_points_in_stereo_canonical_space(point_detector,
     one twice, is because at any point, if either left or right channel
     fails feature detection, we need to drop that image from BOTH channels.
 
-    :param point_detector:
+    :param left_point_detector:
+    :param right_point_detector:
     :param minimum_points_per_frame:
     :param left_video_data:
     :param left_images:
@@ -437,7 +439,7 @@ def detect_points_in_stereo_canonical_space(point_detector,
             left_camera_matrix
         )
         left_ids, left_obj_pts, left_img_pts = \
-            point_detector.get_points(left_undistorted)
+            left_point_detector.get_points(left_undistorted)
 
         right_undistorted = cv2.undistort(
             right_images[j],
@@ -446,7 +448,7 @@ def detect_points_in_stereo_canonical_space(point_detector,
             right_camera_matrix
         )
         right_ids, right_obj_pts, right_img_pts = \
-            point_detector.get_points(right_undistorted)
+            right_point_detector.get_points(right_undistorted)
 
         if left_ids is not None \
                 and left_ids.shape[0] >= minimum_points_per_frame \
@@ -465,7 +467,7 @@ def detect_points_in_stereo_canonical_space(point_detector,
                                               reference_image_size,)
 
             left_ids, left_obj_pts, left_img_pts = \
-                point_detector.get_points(left_warped)
+                left_point_detector.get_points(left_warped)
 
             right_common_points = match_points_by_id(right_ids,
                                                      right_img_pts,
@@ -479,7 +481,7 @@ def detect_points_in_stereo_canonical_space(point_detector,
                                                reference_image_size,)
 
             right_ids, right_obj_pts, right_img_pts = \
-                point_detector.get_points(right_warped)
+                right_point_detector.get_points(right_warped)
 
             if left_ids is not None \
                     and left_ids.shape[0] >= minimum_points_per_frame \

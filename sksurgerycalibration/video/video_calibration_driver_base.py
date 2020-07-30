@@ -4,7 +4,6 @@
 
 import copy
 import logging
-import sksurgeryimage.calibration.point_detector as pd
 import sksurgerycalibration.video.video_calibration_data as vcd
 import sksurgerycalibration.video.video_calibration_params as vcp
 import sksurgerycalibration.video.video_calibration_utils as vcu
@@ -17,7 +16,6 @@ class BaseVideoCalibrationDriver:
     Base class for video calibration drivers.
     """
     def __init__(self,
-                 point_detector: pd.PointDetector,
                  minimum_points_per_frame: int
                  ):
         """
@@ -33,10 +31,8 @@ class BaseVideoCalibrationDriver:
         This does mean that the underlying code can handle variable numbers
         of points in each view. OpenCV calibration math does this anyway.
 
-        :param point_detector: Class derived from PointDetector
         :param minimum_points_per_frame: Minimum number to accept frame
         """
-        self.point_detector = point_detector
         self.minimum_points_per_frame = minimum_points_per_frame
         self.tracking_data = vcd.TrackingData()
         self.video_data = None

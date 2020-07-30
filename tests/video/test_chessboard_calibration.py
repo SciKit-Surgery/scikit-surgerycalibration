@@ -128,7 +128,7 @@ def test_chessboard_stereo():
                                    )
 
     calibrator = \
-        sc.StereoVideoCalibrationDriver(chessboard_detector, 140)
+        sc.StereoVideoCalibrationDriver(chessboard_detector, chessboard_detector, 140)
 
     # Repeatedly grab data, until you have enough.
     for i, _ in enumerate(left_images):
