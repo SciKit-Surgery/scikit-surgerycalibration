@@ -7,6 +7,8 @@ scikit-surgerycalibration
    :target: https://github.com/UCL/scikit-surgerycalibration 
    :alt: Logo
 
+|
+
 .. image:: https://github.com/UCL/scikit-surgerycalibration/workflows/.github/workflows/ci.yml/badge.svg
    :target: https://github.com/UCL/scikit-surgerycalibration/actions
    :alt: GitHub Actions CI statuss
