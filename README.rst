@@ -1,7 +1,7 @@
 scikit-surgerycalibration
 ===============================
 
-.. image:: https://github.com/UCL/scikit-surgerycalibration /raw/master/project-icon.png
+.. image:: https://github.com/UCL/scikit-surgerycalibration /raw/master/weiss_logo.png
    :height: 128px
    :width: 128px
    :target: https://github.com/UCL/scikit-surgerycalibration 
@@ -30,6 +30,16 @@ scikit-surgerycalibration is tested on Python 3.6-8.
 scikit-surgerycalibration contains algorithms to perform calibrations useful during surgery, for example pointer calibration, ultrasound calibration, and camera calibration. 
 
 Please explore the project structure, and request or implement your desired functionality.
+
+.. features-start
+
+Features
+--------
+
+* `Pivot Calibration <https://scikit-surgerycalibration.readthedocs.io/en/latest/module_ref.html#pivot-calibration>`_ for pivot calibration.
+* `Calibration <https://scikit-surgerycalibration.readthedocs.io/en/latest/module_ref.html#video-calibration>`_ of mono or stereo tracked video data, calculating camera intrinsics and handeye transformation.
+
+.. features-end
 
 Developing
 ----------
