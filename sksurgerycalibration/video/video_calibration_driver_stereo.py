@@ -31,8 +31,7 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         :param right_point_detector: Class derived from PointDetector
         :param minimum_points_per_frame: Minimum number to accept frame
         """
-        super(StereoVideoCalibrationDriver, self).\
-            __init__(minimum_points_per_frame)
+        super().__init__(minimum_points_per_frame)
 
         self.left_point_detector = left_point_detector
         self.right_point_detector = right_point_detector

@@ -173,6 +173,22 @@ def test_handeye_calibration_stereo():
     assert proj_err == pytest.approx(expected_reproj_error, rel=1e-4)
     assert recon_err == pytest.approx(expected_recon_error, rel=1e-4)
 
+    # test save/load for hand-eye
+    calibrator.save_params('tests/output/test_handeye_calibration_stereo', '')
+    current_params = calibrator.get_params()
+
+    calibrator.reinit()
+    calibrator.load_params('tests/output/test_handeye_calibration_stereo', '')
+    loaded_params = calibrator.get_params()
+    assert np.allclose(current_params.left_params.handeye_matrix,
+                       loaded_params.left_params.handeye_matrix)
+    assert np.allclose(current_params.left_params.pattern2marker_matrix,
+                       loaded_params.left_params.pattern2marker_matrix)
+    assert np.allclose(current_params.right_params.handeye_matrix,
+                       loaded_params.right_params.handeye_matrix)
+    assert np.allclose(current_params.right_params.pattern2marker_matrix,
+                       loaded_params.right_params.pattern2marker_matrix)
+
 
 def test_load_data_stereo_calib():
     """ Load tracking and image data from test directory. """

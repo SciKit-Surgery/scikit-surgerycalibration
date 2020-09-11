@@ -47,7 +47,7 @@ class TrackingData(BaseVideoCalibrationData):
     Class for storing tracking data.
     """
     def __init__(self):
-        super(TrackingData, self).__init__()
+        super().__init__()
         self.device_tracking_array = None
         self.calibration_tracking_array = None
         self.use_quaternions = False
@@ -165,7 +165,7 @@ class MonoVideoData(BaseVideoCalibrationData):
     Stores data extracted from each video view of a mono calibration.
     """
     def __init__(self):
-        super(MonoVideoData, self).__init__()
+        super().__init__()
         self.images_array = None
         self.ids_arrays = None
         self.object_points_arrays = None
@@ -296,7 +296,7 @@ class StereoVideoData(BaseVideoCalibrationData):
     Stores data extracted from each view of a stereo calibration.
     """
     def __init__(self):
-        super(StereoVideoData, self).__init__()
+        super().__init__()
         self.left_data = MonoVideoData()
         self.right_data = MonoVideoData()
         self.reinit()

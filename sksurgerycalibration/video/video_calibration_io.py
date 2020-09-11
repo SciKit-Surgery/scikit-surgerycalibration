@@ -116,6 +116,21 @@ def get_l2r_file_name(dir_name: str,
     return l2r_file
 
 
+def get_handeye_file_name(dir_name: str,
+                          file_prefix: str):
+    handeye_file = os.path.join(dir_name,
+                                get_calib_prefix(file_prefix) + ".handeye.txt")
+    return handeye_file
+
+
+def get_pattern2marker_file_name(dir_name: str,
+                                 file_prefix: str):
+    p2m_file = os.path.join(dir_name,
+                            get_calib_prefix(file_prefix)
+                            + ".pattern2marker.txt")
+    return p2m_file
+
+
 def get_essential_matrix_file_name(dir_name: str,
                                    file_prefix: str):
     ess_file = os.path.join(dir_name,
