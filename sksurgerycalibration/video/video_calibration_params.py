@@ -39,7 +39,7 @@ class MonoCalibrationParams(BaseCalibrationParams):
     Holds a set of intrinsic and extrinsic camera parameters for 1 camera.
     """
     def __init__(self):
-        super(MonoCalibrationParams, self).__init__()
+        super().__init__()
         self.camera_matrix = None
         self.dist_coeffs = None
         self.rvecs = None
@@ -156,7 +156,7 @@ class StereoCalibrationParams(BaseCalibrationParams):
     Holds a pair of MonoCalibrationParams, and the left-to-right transform.
     """
     def __init__(self):
-        super(StereoCalibrationParams, self).__init__()
+        super().__init__()
         self.left_params = None
         self.right_params = None
         self.l2r_rmat = None
