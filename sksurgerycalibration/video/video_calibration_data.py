@@ -296,7 +296,7 @@ class StereoVideoData(BaseVideoCalibrationData):
     Stores data extracted from each view of a stereo calibration.
     """
     def __init__(self):
-        super(StereoVideoData, self).__init__()
+        super().__init__()
         self.left_data = MonoVideoData()
         self.right_data = MonoVideoData()
         self.reinit()
