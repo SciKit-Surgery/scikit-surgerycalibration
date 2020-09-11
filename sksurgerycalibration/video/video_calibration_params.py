@@ -95,6 +95,15 @@ class MonoCalibrationParams(BaseCalibrationParams):
         dist_coeff_file = sksio.get_distortion_file_name(dir_name,
                                                          file_prefix)
         np.savetxt(dist_coeff_file, self.dist_coeffs, fmt='%.8f')
+
+        handeye_file = sksio.get_handeye_file_name(dir_name,
+                                                   file_prefix)
+        np.savetxt(handeye_file, self.handeye_matrix, fmt='%.8f')
+
+        p2m_file = sksio.get_pattern2marker_file_name(dir_name,
+                                                      file_prefix)
+        np.savetxt(p2m_file, self.pattern2marker_matrix, fmt='%.8f')
+
         for i in enumerate(self.rvecs):
             extrinsics_file = sksio.get_extrinsics_file_name(dir_name,
                                                              file_prefix,
@@ -122,6 +131,16 @@ class MonoCalibrationParams(BaseCalibrationParams):
         dist_coeff_file = sksio.get_distortion_file_name(dir_name,
                                                          file_prefix)
         self.dist_coeffs = np.loadtxt(dist_coeff_file)
+
+        handeye_file = sksio.get_handeye_file_name(dir_name,
+                                                   file_prefix)
+
+        self.handeye_matrix = np.loadtxt(handeye_file)
+
+        p2m_file = sksio.get_pattern2marker_file_name(dir_name,
+                                                      file_prefix)
+
+        self.pattern2marker_matrix = np.loadtxt(p2m_file)
 
         extrinsic_files = sksio.get_extrinsic_file_names(dir_name,
                                                          file_prefix)
