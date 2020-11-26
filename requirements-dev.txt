@@ -12,6 +12,7 @@ parameterized
 pylint
 sphinx
 sphinx_rtd_theme
+nbsphinx
 pyinstaller
 pytest
 tox
