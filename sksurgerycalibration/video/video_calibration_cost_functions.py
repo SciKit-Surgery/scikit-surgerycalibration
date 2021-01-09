@@ -52,7 +52,6 @@ def stereo_2d_error(x_0,
                                         tvecs,
                                         return_residuals=True
                                         )
-    residual = np.square(residual)
     return residual
 
 
@@ -313,6 +312,4 @@ def stereo_handeye_error(x_0,
                                         tvecs,
                                         return_residuals=True
                                         )
-
-    residual = np.square(residual)
     return residual
