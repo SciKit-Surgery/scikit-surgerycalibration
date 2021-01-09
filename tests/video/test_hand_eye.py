@@ -167,11 +167,11 @@ def test_handeye_calibration_stereo():
 
     # These values are taken from a previous successful run
     # Not objective measures of correctness
-    expected_reproj_error = 13.543016
-    expected_recon_error = 1.383223
+    expected_reproj_error = 1.77138
+    expected_recon_error = 1.24267
 
-    assert proj_err == pytest.approx(expected_reproj_error, rel=1e-4)
-    assert recon_err == pytest.approx(expected_recon_error, rel=1e-4)
+    assert proj_err == pytest.approx(expected_reproj_error, abs=1e-4)
+    assert recon_err == pytest.approx(expected_recon_error, abs=1e-4)
 
     # test save/load for hand-eye
     calibrator.save_params('tests/output/test_handeye_calibration_stereo', '')

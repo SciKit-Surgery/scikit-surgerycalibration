@@ -146,4 +146,4 @@ def test_precalbration():
     assert stereo_reproj_err < 4.5
     assert stereo_recon_err < 3.9
     assert tracked_reproj_err < 4.6
-    assert tracked_recon_err < 3.6
+    assert tracked_recon_err < 3.7
