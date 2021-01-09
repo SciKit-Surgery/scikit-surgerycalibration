@@ -3,6 +3,7 @@
 """ Video Calibration functions, that wrap OpenCV functions mainly. """
 
 import logging
+import copy
 from typing import List
 import numpy as np
 import cv2
@@ -468,7 +469,7 @@ def stereo_handeye_calibration(l2r_rmat: np.ndarray,
     left pattern to marker matrix, right handeye, right pattern to marker
     :rtype: float, float, np.ndarray, np.ndarray, np.ndarray, np.ndarray
     """
-    # Do calibration
+    # Do calibration, using Guofang's method on each left/right channel.
     left_handeye_matrix, left_pattern2marker_matrix =  \
         he.handeye_calibration(left_rvecs, left_tvecs, quat_model2hand_array,
                                trans_model2hand_array)
@@ -485,29 +486,138 @@ def stereo_handeye_calibration(l2r_rmat: np.ndarray,
         right_ids, right_image_points,
         minimum_points)
 
+    # Now try another optimisation.
+    # Have one version of the pattern2marker matrix and handeye matrix,
+    # and also optimise the tracking information to match.
+    number_of_frames = len(common_object_pts)
+
+    number_of_parameters = (number_of_frames * 6) + 12
+    x_0 = np.zeros(number_of_parameters)
+
+    for i in range(0, number_of_frames):
+        m2h = np.linalg.inv(device_tracking_array[i]) \
+              @ calibration_tracking_array[i]
+        m2h_rvec, m2h_tvec = vu.extrinsic_matrix_to_vecs(m2h)
+        x_0[i * 6 + 0] = m2h_rvec[0][0]
+        x_0[i * 6 + 1] = m2h_rvec[1][0]
+        x_0[i * 6 + 2] = m2h_rvec[2][0]
+        x_0[i * 6 + 3] = m2h_tvec[0][0]
+        x_0[i * 6 + 4] = m2h_tvec[1][0]
+        x_0[i * 6 + 5] = m2h_tvec[2][0]
+
+    p2m_rvec, p2m_tvec = vu.extrinsic_matrix_to_vecs(left_pattern2marker_matrix)
+    x_0[number_of_frames * 6 + 0] = p2m_rvec[0][0]
+    x_0[number_of_frames * 6 + 1] = p2m_rvec[1][0]
+    x_0[number_of_frames * 6 + 2] = p2m_rvec[2][0]
+    x_0[number_of_frames * 6 + 3] = p2m_tvec[0][0]
+    x_0[number_of_frames * 6 + 4] = p2m_tvec[1][0]
+    x_0[number_of_frames * 6 + 5] = p2m_tvec[2][0]
+
+    h2e_rvec, h2e_tvec = vu.extrinsic_matrix_to_vecs(left_handeye_matrix)
+    x_0[(number_of_frames + 1) * 6 + 0] = h2e_rvec[0][0]
+    x_0[(number_of_frames + 1) * 6 + 1] = h2e_rvec[1][0]
+    x_0[(number_of_frames + 1) * 6 + 2] = h2e_rvec[2][0]
+    x_0[(number_of_frames + 1) * 6 + 3] = h2e_tvec[0][0]
+    x_0[(number_of_frames + 1) * 6 + 4] = h2e_tvec[1][0]
+    x_0[(number_of_frames + 1) * 6 + 5] = h2e_tvec[2][0]
+
+    res = least_squares(vcf.stereo_handeye_error, x_0,
+                        args=(common_object_pts,
+                              common_l_image_pts,
+                              common_r_image_pts,
+                              left_camera_matrix,
+                              left_camera_distortion,
+                              right_camera_matrix,
+                              right_camera_distortion,
+                              l2r_rmat,
+                              l2r_tvec),
+                        method='lm',
+                        x_scale='jac',
+                        verbose=0)
+
+    LOGGER.info("Stereo Handeye Re-Calibration: status=%s", str(res.status))
+    LOGGER.info("Stereo Handeye Re-Calibration: success=%s", str(res.success))
+    LOGGER.info("Stereo Handeye Re-Calibration: msg=%s", str(res.message))
+
+    # Extract data from result object.
+    x_1 = res.x
+    tmp_rvec = np.zeros((3, 1))
+    tmp_rvec[0][0] = x_1[number_of_frames * 6 + 0]
+    tmp_rvec[1][0] = x_1[number_of_frames * 6 + 1]
+    tmp_rvec[2][0] = x_1[number_of_frames * 6 + 2]
+    tmp_tvec = np.zeros((3, 1))
+    tmp_tvec[0][0] = x_1[number_of_frames * 6 + 3]
+    tmp_tvec[1][0] = x_1[number_of_frames * 6 + 4]
+    tmp_tvec[2][0] = x_1[number_of_frames * 6 + 5]
+    left_pattern2marker_matrix = vu.extrinsic_vecs_to_matrix(tmp_rvec, tmp_tvec)
+
+    tmp_rvec[0][0] = x_1[(number_of_frames + 1) * 6 + 0]
+    tmp_rvec[1][0] = x_1[(number_of_frames + 1) * 6 + 1]
+    tmp_rvec[2][0] = x_1[(number_of_frames + 1) * 6 + 2]
+
+    tmp_tvec[0][0] = x_1[(number_of_frames + 1) * 6 + 3]
+    tmp_tvec[1][0] = x_1[(number_of_frames + 1) * 6 + 4]
+    tmp_tvec[2][0] = x_1[(number_of_frames + 1) * 6 + 5]
+    left_handeye_matrix = vu.extrinsic_vecs_to_matrix(tmp_rvec, tmp_tvec)
+
+    l2r_matrix = skcm.construct_rigid_transformation(l2r_rmat, l2r_tvec)
+    right_handeye_matrix = l2r_matrix @ left_handeye_matrix
+    right_pattern2marker_matrix = copy.deepcopy(left_pattern2marker_matrix)
+
+    # Remember that we have optimised tracking matrices.
+    # So computation of error statistics should include these new positions.
+    dummy_device_tracking_array = []
+    dummy_calibration_tracking_array = []
+
+    for i in range(0, number_of_frames):
+
+        tmp_rvec[0][0] = x_1[i * 6 + 0]
+        tmp_rvec[1][0] = x_1[i * 6 + 1]
+        tmp_rvec[2][0] = x_1[i * 6 + 2]
+
+        tmp_tvec[0][0] = x_1[i * 6 + 3]
+        tmp_tvec[1][0] = x_1[i * 6 + 4]
+        tmp_tvec[2][0] = x_1[i * 6 + 5]
+
+        calib_track_mat = vu.extrinsic_vecs_to_matrix(tmp_rvec, tmp_tvec)
+        device_track_mat = np.eye(4)
+
+        dummy_device_tracking_array.append(device_track_mat)
+        dummy_calibration_tracking_array.append(calib_track_mat)
+
+    # Now compute some output statistics.
     sse, num_samples = vm.compute_stereo_2d_err_handeye(
         common_object_pts,
         common_l_image_pts,
-        left_camera_matrix, left_camera_distortion,
+        left_camera_matrix,
+        left_camera_distortion,
         common_r_image_pts,
-        right_camera_matrix, right_camera_distortion,
-        device_tracking_array, calibration_tracking_array,
-        left_handeye_matrix, left_pattern2marker_matrix,
-        right_handeye_matrix, right_pattern2marker_matrix
+        right_camera_matrix,
+        right_camera_distortion,
+        dummy_device_tracking_array,
+        dummy_calibration_tracking_array,
+        left_handeye_matrix,
+        left_pattern2marker_matrix,
+        right_handeye_matrix,
+        right_pattern2marker_matrix
     )
-
     mse = sse / num_samples
     reproj_err = np.sqrt(mse)
 
     sse, num_samples = vm.compute_stereo_3d_err_handeye(
-        l2r_rmat, l2r_tvec,
+        l2r_rmat,
+        l2r_tvec,
         common_object_pts,
         common_l_image_pts,
-        left_camera_matrix, left_camera_distortion,
+        left_camera_matrix,
+        left_camera_distortion,
         common_r_image_pts,
-        right_camera_matrix, right_camera_distortion,
-        device_tracking_array, calibration_tracking_array,
-        left_handeye_matrix, left_pattern2marker_matrix,
+        right_camera_matrix,
+        right_camera_distortion,
+        dummy_device_tracking_array,
+        dummy_calibration_tracking_array,
+        left_handeye_matrix,
+        left_pattern2marker_matrix,
     )
     mse = sse / num_samples
     recon_err = np.sqrt(mse)

@@ -218,7 +218,12 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         :rtype: float, float
         """
 
+        # This combines chessboardmarker(model)-to-tracker and
+        # device-to-tracker to get a fixed transformation.
         self.tracking_data.set_model2hand_arrays()
+
+        # So, this is optimising the device hand-eye and the
+        # chessboard-to-chessboard marker transformation.
         proj_err, recon_err, l_handeye, l_pattern2marker, \
             r_handeye, r_pattern2marker = \
                 vc.stereo_handeye_calibration(
