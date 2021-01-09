@@ -1,15 +1,11 @@
-import os
-import logging
-import cv2
-import sys
+# pylint: disable=line-too-long, missing-module-docstring, invalid-name, missing-function-docstring
 
+import os
 from typing import Tuple
 import numpy as np
-import sksurgerycore.transforms.matrix as mu
-from sksurgeryimage.calibration.point_detector import PointDetector
+import cv2
 import sksurgeryimage.calibration.charuco_plus_chessboard_point_detector \
     as charuco_pd
-import sksurgeryimage.calibration.dotty_grid_point_detector as dotty_pd
 import sksurgerycalibration.video.video_calibration_driver_stereo as sc
 
 
@@ -55,7 +51,7 @@ def get_calib_driver(calib_dir: str):
             charuco_filtering=filter_markers,
             number_of_chessboard_squares=number_of_chessboard_squares,
             chessboard_square_size=chessboard_square_size,
-            chessboard_id_offset=500
+            chessboard_id_offset=chessboard_id_offset
         )
 
     right_pd = \
@@ -67,7 +63,7 @@ def get_calib_driver(calib_dir: str):
             charuco_filtering=filter_markers,
             number_of_chessboard_squares=number_of_chessboard_squares,
             chessboard_square_size=chessboard_square_size,
-            chessboard_id_offset=500
+            chessboard_id_offset=chessboard_id_offset
         )
 
     calibration_driver = sc.StereoVideoCalibrationDriver(left_pd,
@@ -78,7 +74,7 @@ def get_calib_driver(calib_dir: str):
         l_img, r_img, chessboard, scope = get_calib_data(calib_dir, i)
         calibration_driver.grab_data(l_img, r_img, scope, chessboard)
 
-    return calibration_driver 
+    return calibration_driver
 
 
 # Two datasets, A and B.
@@ -90,17 +86,17 @@ def test_charuco_dataset_A():
     calib_dir = 'tests/data/precalib/precalib_base_data'
     calib_driver = get_calib_driver(calib_dir)
 
-    stereo_reproj_err, stereo_recon_err, stereo_params = \
+    stereo_reproj_err, stereo_recon_err, _ = \
         calib_driver.calibrate()
 
-    tracked_reproj_err, tracked_recon_err, stereo_params = \
+    tracked_reproj_err, tracked_recon_err, _ = \
         calib_driver.handeye_calibration()
 
     print(stereo_reproj_err, stereo_recon_err, tracked_reproj_err, tracked_recon_err)
-    assert(stereo_reproj_err < 1)
-    assert(stereo_recon_err < 3)
-    assert(tracked_reproj_err < 3)
-    assert(tracked_recon_err < 3)
+    assert stereo_reproj_err < 1
+    assert stereo_recon_err < 3
+    assert tracked_reproj_err < 3
+    assert tracked_recon_err < 3
 
 
 def test_charuco_dataset_B():
@@ -108,17 +104,17 @@ def test_charuco_dataset_B():
     calib_dir = 'tests/data/precalib/data_moved_scope'
     calib_driver = get_calib_driver(calib_dir)
 
-    stereo_reproj_err, stereo_recon_err, stereo_params = \
+    stereo_reproj_err, stereo_recon_err, _ = \
         calib_driver.calibrate()
 
-    tracked_reproj_err, tracked_recon_err, stereo_params = \
+    tracked_reproj_err, tracked_recon_err, _ = \
         calib_driver.handeye_calibration()
 
     print(stereo_reproj_err, stereo_recon_err, tracked_reproj_err, tracked_recon_err)
-    assert(stereo_reproj_err < 1)
-    assert(stereo_recon_err < 3)
-    assert(tracked_reproj_err < 4)
-    assert(tracked_recon_err < 3)
+    assert stereo_reproj_err < 1
+    assert stereo_recon_err < 3
+    assert tracked_reproj_err < 4
+    assert tracked_recon_err < 3
 
 
 def test_precalbration():
@@ -134,20 +130,20 @@ def test_precalbration():
     calib_dir = 'tests/data/precalib/data_moved_scope'
     calib_driver = get_calib_driver(calib_dir)
 
-    stereo_reproj_err, stereo_recon_err, stereo_params = \
+    stereo_reproj_err, stereo_recon_err, _ = \
         calib_driver.calibrate(
-                override_left_intrinsics=left_intrinsics,
-                override_left_distortion=left_distortion,
-                override_right_intrinsics=right_intrinsics,
-                override_right_distortion=right_distortion,
-                override_l2r_rmat=l2r_rmat,
-                override_l2r_tvec=l2r_tvec)
+            override_left_intrinsics=left_intrinsics,
+            override_left_distortion=left_distortion,
+            override_right_intrinsics=right_intrinsics,
+            override_right_distortion=right_distortion,
+            override_l2r_rmat=l2r_rmat,
+            override_l2r_tvec=l2r_tvec)
 
-    tracked_reproj_err, tracked_recon_err, stereo_params = \
+    tracked_reproj_err, tracked_recon_err, _ = \
         calib_driver.handeye_calibration()
 
     print(stereo_reproj_err, stereo_recon_err, tracked_reproj_err, tracked_recon_err)
-    assert(stereo_reproj_err < 4.5)
-    assert(stereo_recon_err < 3.9)
-    assert(tracked_reproj_err < 4.6)
-    assert(tracked_recon_err < 3.6)
+    assert stereo_reproj_err < 4.5
+    assert stereo_recon_err < 3.9
+    assert tracked_reproj_err < 4.6
+    assert tracked_recon_err < 3.6

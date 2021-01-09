@@ -566,8 +566,8 @@ def stereo_handeye_calibration(l2r_rmat: np.ndarray,
 
     # Remember that we have optimised tracking matrices.
     # So computation of error statistics should include these new positions.
-    dummy_device_tracking_array = []
-    dummy_calibration_tracking_array = []
+    dummy_dt_array = []
+    dummy_ct_array = []
 
     for i in range(0, number_of_frames):
 
@@ -582,8 +582,8 @@ def stereo_handeye_calibration(l2r_rmat: np.ndarray,
         calib_track_mat = vu.extrinsic_vecs_to_matrix(tmp_rvec, tmp_tvec)
         device_track_mat = np.eye(4)
 
-        dummy_device_tracking_array.append(device_track_mat)
-        dummy_calibration_tracking_array.append(calib_track_mat)
+        dummy_dt_array.append(device_track_mat)
+        dummy_ct_array.append(calib_track_mat)
 
     # Now compute some output statistics.
     sse, num_samples = vm.compute_stereo_2d_err_handeye(
@@ -594,8 +594,8 @@ def stereo_handeye_calibration(l2r_rmat: np.ndarray,
         common_r_image_pts,
         right_camera_matrix,
         right_camera_distortion,
-        dummy_device_tracking_array,
-        dummy_calibration_tracking_array,
+        dummy_dt_array,
+        dummy_ct_array,
         left_handeye_matrix,
         left_pattern2marker_matrix,
         right_handeye_matrix,
@@ -614,8 +614,8 @@ def stereo_handeye_calibration(l2r_rmat: np.ndarray,
         common_r_image_pts,
         right_camera_matrix,
         right_camera_distortion,
-        dummy_device_tracking_array,
-        dummy_calibration_tracking_array,
+        dummy_dt_array,
+        dummy_ct_array,
         left_handeye_matrix,
         left_pattern2marker_matrix,
     )
