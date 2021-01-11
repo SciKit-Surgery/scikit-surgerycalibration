@@ -70,7 +70,7 @@ def get_calib_driver(calib_dir: str):
                                                          right_pd,
                                                          minimum_points)
 
-    for i in range(10):
+    for i in range(3):
         l_img, r_img, chessboard, scope = get_calib_data(calib_dir, i)
         calibration_driver.grab_data(l_img, r_img, scope, chessboard)
 
@@ -94,9 +94,9 @@ def test_charuco_dataset_A():
 
     print(stereo_reproj_err, stereo_recon_err, tracked_reproj_err, tracked_recon_err)
     assert stereo_reproj_err < 1
-    assert stereo_recon_err < 3
+    assert stereo_recon_err < 4
     assert tracked_reproj_err < 3
-    assert tracked_recon_err < 3
+    assert tracked_recon_err < 4
 
 
 def test_charuco_dataset_B():
