@@ -5,10 +5,12 @@
 # pylint:disable=invalid-name
 
 import collections
+import logging
 import numpy as np
 import cv2
 import sksurgerycore.transforms.matrix as skcm
 
+LOGGER = logging.getLogger(__name__)
 
 def convert_numpy2d_to_opencv(image_points):
     """
@@ -357,10 +359,12 @@ def detect_points_in_canonical_space(point_detector,
             images[j],
             camera_matrix,
             distortion_coefficients,
+            None,
             camera_matrix
         )
 
-        ids, obj_pts, img_pts = point_detector.get_points(undistorted)
+        ids, obj_pts, img_pts = \
+            point_detector.get_points(undistorted, is_distorted=False)
 
         if ids is not None and ids.shape[0] >= minimum_points_per_frame:
 
@@ -374,7 +378,8 @@ def detect_points_in_canonical_space(point_detector,
                                          homography,
                                          reference_image_size,)
 
-            ids, obj_pts, img_pts = point_detector.get_points(warped)
+            ids, obj_pts, img_pts = \
+                point_detector.get_points(warped, is_distorted=False)
 
             if ids is not None and ids.shape[0] >= minimum_points_per_frame:
 
@@ -432,14 +437,17 @@ def detect_points_in_stereo_canonical_space(left_point_detector,
     right_video_data.reinit()
 
     for j, _ in enumerate(left_images):
+
         left_undistorted = cv2.undistort(
             left_images[j],
             left_camera_matrix,
             left_distortion_coeffs,
             left_camera_matrix
         )
+
         left_ids, left_obj_pts, left_img_pts = \
-            left_point_detector.get_points(left_undistorted)
+            left_point_detector.get_points(
+                left_undistorted, is_distorted=False)
 
         right_undistorted = cv2.undistort(
             right_images[j],
@@ -448,7 +456,8 @@ def detect_points_in_stereo_canonical_space(left_point_detector,
             right_camera_matrix
         )
         right_ids, right_obj_pts, right_img_pts = \
-            right_point_detector.get_points(right_undistorted)
+            right_point_detector.get_points(
+                right_undistorted, is_distorted=False)
 
         if left_ids is not None \
                 and left_ids.shape[0] >= minimum_points_per_frame \
@@ -467,7 +476,7 @@ def detect_points_in_stereo_canonical_space(left_point_detector,
                                               reference_image_size,)
 
             left_ids, left_obj_pts, left_img_pts = \
-                left_point_detector.get_points(left_warped)
+                left_point_detector.get_points(left_warped, is_distorted=False)
 
             right_common_points = match_points_by_id(right_ids,
                                                      right_img_pts,
@@ -481,7 +490,8 @@ def detect_points_in_stereo_canonical_space(left_point_detector,
                                                reference_image_size,)
 
             right_ids, right_obj_pts, right_img_pts = \
-                right_point_detector.get_points(right_warped)
+                right_point_detector.get_points(
+                    right_warped, is_distorted=False)
 
             if left_ids is not None \
                     and left_ids.shape[0] >= minimum_points_per_frame \
@@ -507,3 +517,5 @@ def detect_points_in_stereo_canonical_space(left_point_detector,
                                                       right_homography,
                                                       right_camera_matrix,
                                                       right_distortion_coeffs)
+            else:
+                LOGGER.debug(f"Left ids is none: {j}")
