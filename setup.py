@@ -57,7 +57,7 @@ setup(
         'scipy',
         'opencv-contrib-python',
         'scikit-surgerycore',
-        'scikit-surgeryimage>=0.7.4',
+        'scikit-surgeryimage>=0.8.4',
         'scikit-surgeryopencvcpp',
     ],
 
