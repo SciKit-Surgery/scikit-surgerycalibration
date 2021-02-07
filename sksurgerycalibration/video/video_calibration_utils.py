@@ -12,6 +12,7 @@ import sksurgerycore.transforms.matrix as skcm
 
 LOGGER = logging.getLogger(__name__)
 
+
 def convert_numpy2d_to_opencv(image_points):
     """
     Converts numpy array to Vector of 1x2 vectors containing float32.
@@ -371,9 +372,11 @@ def detect_points_in_canonical_space(point_detector,
             common_points = match_points_by_id(ids, img_pts,
                                                reference_ids,
                                                reference_image_points)
+
             homography, _ = \
                 cv2.findHomography(common_points[0:, 0:2],
                                    common_points[0:, 2:4])
+
             warped = cv2.warpPerspective(undistorted,
                                          homography,
                                          reference_image_size,)
@@ -441,8 +444,7 @@ def detect_points_in_stereo_canonical_space(left_point_detector,
         left_undistorted = cv2.undistort(
             left_images[j],
             left_camera_matrix,
-            left_distortion_coeffs,
-            left_camera_matrix
+            left_distortion_coeffs
         )
 
         left_ids, left_obj_pts, left_img_pts = \
@@ -452,9 +454,9 @@ def detect_points_in_stereo_canonical_space(left_point_detector,
         right_undistorted = cv2.undistort(
             right_images[j],
             right_camera_matrix,
-            right_distortion_coeffs,
-            right_camera_matrix
+            right_distortion_coeffs
         )
+
         right_ids, right_obj_pts, right_img_pts = \
             right_point_detector.get_points(
                 right_undistorted, is_distorted=False)
@@ -471,6 +473,7 @@ def detect_points_in_stereo_canonical_space(left_point_detector,
             left_homography, _ = \
                 cv2.findHomography(left_common_points[0:, 0:2],
                                    left_common_points[0:, 2:4])
+
             left_warped = cv2.warpPerspective(left_undistorted,
                                               left_homography,
                                               reference_image_size,)
@@ -485,6 +488,7 @@ def detect_points_in_stereo_canonical_space(left_point_detector,
             right_homography, _ = \
                 cv2.findHomography(right_common_points[0:, 0:2],
                                    right_common_points[0:, 2:4])
+
             right_warped = cv2.warpPerspective(right_undistorted,
                                                right_homography,
                                                reference_image_size,)
