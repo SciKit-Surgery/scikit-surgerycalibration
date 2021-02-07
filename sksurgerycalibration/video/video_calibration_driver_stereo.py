@@ -5,7 +5,6 @@
 import copy
 import logging
 import cv2
-import time
 import sksurgeryimage.calibration.point_detector as pd
 import sksurgerycalibration.video.video_calibration_driver_base as vdb
 import sksurgerycalibration.video.video_calibration_data as cd
@@ -206,7 +205,14 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
             proj_err, recon_err, param_copy = \
                 self.calibrate(flags)
 
-            print ("Matt, errs=" + str(proj_err) + ", " + str(recon_err))
+            self.left_point_detector.set_camera_parameters(
+                self.calibration_params.left_params.camera_matrix,
+                self.calibration_params.left_params.dist_coeffs)
+
+            self.right_point_detector.set_camera_parameters(
+                self.calibration_params.right_params.camera_matrix,
+                self.calibration_params.right_params.dist_coeffs)
+
             LOGGER.info("Iterative calibration: %s: proj_err=%s, recon_err=%s.",
                         str(i), str(proj_err), str(recon_err))
 

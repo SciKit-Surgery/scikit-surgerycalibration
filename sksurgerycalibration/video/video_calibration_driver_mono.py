@@ -147,7 +147,13 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                 reference_ids,
                 reference_image_points,
                 reference_image_size)
+
             proj_err, recon_err, param_copy = self.calibrate(flags=flags)
+
+            self.point_detector.set_camera_parameters(
+                self.calibration_params.camera_matrix,
+                self.calibration_params.dist_coeffs)
+
             LOGGER.info("Iterative calibration: %s: proj_err=%s, recon_err=%s.",
                         str(i), str(proj_err), str(recon_err))
 
