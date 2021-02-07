@@ -2,7 +2,7 @@
 
 """ Various utilities, converters etc., to help video calibration. """
 
-# pylint:disable=invalid-name
+# pylint:disable=invalid-name,logging-not-lazy
 
 import collections
 import logging
@@ -522,4 +522,5 @@ def detect_points_in_stereo_canonical_space(left_point_detector,
                                                       right_camera_matrix,
                                                       right_distortion_coeffs)
             else:
-                LOGGER.debug(f"Left ids is none: {j}")
+                LOGGER.debug("Skipping frame " + str(j)
+                             + ", as not enough points.")
