@@ -176,25 +176,16 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         Does iterative calibration, like Datta 2009.
         """
         proj_err, recon_err, param_copy = self.calibrate(flags=flags)
+
         cached_left_images = copy.deepcopy(
             self.video_data.left_data.images_array)
         cached_right_images = copy.deepcopy(
             self.video_data.right_data.images_array)
 
         for i in range(0, number_of_iterations):
+
             left_images = copy.deepcopy(cached_left_images)
             right_images = copy.deepcopy(cached_right_images)
-
-            ###############
-            # Save some images on each iteration loop so we can debug
-            undistorted = cv2.undistort(left_images[0],
-                                        self.calibration_params.left_params.camera_matrix,
-                                        self.calibration_params.left_params.dist_coeffs)
-
-            cv2.imwrite(f'tests/output/iterative/iteration_{i}_left_frame_0.png', left_images[0])
-            cv2.imwrite(f'tests/output/iterative/iteration_{i}__left_frame_0_undistort.png', undistorted)
-            print(f'Distortion coeffs {self.calibration_params.left_params.dist_coeffs}')
-            ###############
 
             cu.detect_points_in_stereo_canonical_space(
                 self.left_point_detector,
@@ -215,8 +206,10 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
             proj_err, recon_err, param_copy = \
                 self.calibrate(flags)
 
+            print ("Matt, errs=" + str(proj_err) + ", " + str(recon_err))
             LOGGER.info("Iterative calibration: %s: proj_err=%s, recon_err=%s.",
                         str(i), str(proj_err), str(recon_err))
+
         return proj_err, recon_err, param_copy
 
     def handeye_calibration(self):
