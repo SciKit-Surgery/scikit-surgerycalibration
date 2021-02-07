@@ -4,10 +4,8 @@ import os
 from typing import Tuple
 import numpy as np
 import cv2
-import sksurgeryimage.calibration.charuco_plus_chessboard_point_detector \
-    as charuco_pd
-import sksurgerycalibration.video.video_calibration_driver_stereo as sc
 import sksurgeryimage.calibration.dotty_grid_point_detector as dotty_pd
+import sksurgerycalibration.video.video_calibration_driver_stereo as sc
 
 
 def get_calib_data(directory: str, idx: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
@@ -114,11 +112,15 @@ def test_dotty_grid_iterative():
     ref_detector = get_ref_dot_detector()
 
     ref_image = cv2.imread('tests/data/dot_calib/circles-25x18-r40-s3.png')
-    ref_ids, ref_object_points, ref_image_points = \
+    ref_ids, _, ref_image_points = \
         ref_detector.get_points(ref_image)
 
-    calib_driver.iterative_calibration(3,
-                                       ref_ids,
-                                       ref_image_points,
-                                       (ref_image.shape[1],
-                                        ref_image.shape[0]))
+    reprojection_err, recon_err, _ = calib_driver.iterative_calibration(
+        3,
+        ref_ids,
+        ref_image_points,
+        (ref_image.shape[1],
+         ref_image.shape[0]))
+
+    assert reprojection_err < 2
+    assert recon_err < 2
