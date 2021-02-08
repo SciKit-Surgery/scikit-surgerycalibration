@@ -57,6 +57,14 @@ def get_point_detector(intrinsic_matrix, distortion_matrix):
             model_points[counter][5] = 0
             counter = counter + 1
 
+    dot_detector_params = cv2.SimpleBlobDetector_Params()
+    dot_detector_params.filterByConvexity = False
+    dot_detector_params.filterByInertia = False
+    dot_detector_params.filterByCircularity = False
+    dot_detector_params.filterByArea = True
+    dot_detector_params.minArea = 50
+    dot_detector_params.maxArea = 50000
+
     point_detector = \
         dotty_pd.DottyGridPointDetector(
             model_points,
@@ -64,8 +72,11 @@ def get_point_detector(intrinsic_matrix, distortion_matrix):
             intrinsic_matrix,
             distortion_matrix,
             reference_image_size=(reference_image_size[1],
-                                  reference_image_size[0])
+                                  reference_image_size[0]),
+            threshold_window_size=191,
+            dot_detector_params=dot_detector_params
             )
+
     return point_detector
 
 
