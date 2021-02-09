@@ -175,12 +175,14 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         Does iterative calibration, like Datta 2009.
         """
         proj_err, recon_err, param_copy = self.calibrate(flags=flags)
+
         cached_left_images = copy.deepcopy(
             self.video_data.left_data.images_array)
         cached_right_images = copy.deepcopy(
             self.video_data.right_data.images_array)
 
         for i in range(0, number_of_iterations):
+
             left_images = copy.deepcopy(cached_left_images)
             right_images = copy.deepcopy(cached_right_images)
 
@@ -203,8 +205,17 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
             proj_err, recon_err, param_copy = \
                 self.calibrate(flags)
 
+            self.left_point_detector.set_camera_parameters(
+                self.calibration_params.left_params.camera_matrix,
+                self.calibration_params.left_params.dist_coeffs)
+
+            self.right_point_detector.set_camera_parameters(
+                self.calibration_params.right_params.camera_matrix,
+                self.calibration_params.right_params.dist_coeffs)
+
             LOGGER.info("Iterative calibration: %s: proj_err=%s, recon_err=%s.",
                         str(i), str(proj_err), str(recon_err))
+
         return proj_err, recon_err, param_copy
 
     def handeye_calibration(self):
@@ -218,7 +229,12 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         :rtype: float, float
         """
 
+        # This combines chessboardmarker(model)-to-tracker and
+        # device-to-tracker to get a fixed transformation.
         self.tracking_data.set_model2hand_arrays()
+
+        # So, this is optimising the device hand-eye and the
+        # chessboard-to-chessboard marker transformation.
         proj_err, recon_err, l_handeye, l_pattern2marker, \
             r_handeye, r_pattern2marker = \
                 vc.stereo_handeye_calibration(

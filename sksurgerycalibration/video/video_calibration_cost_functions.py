@@ -52,7 +52,6 @@ def stereo_2d_error(x_0,
                                         tvecs,
                                         return_residuals=True
                                         )
-
     return residual
 
 
@@ -223,3 +222,94 @@ def mono_recon_err_for_ext(x_0,
     mse = sse / num_samples
     rmse = np.sqrt(mse)
     return rmse
+
+
+def stereo_handeye_error(x_0,
+                         common_object_points,
+                         common_left_image_points,
+                         common_right_image_points,
+                         left_intrinsics,
+                         left_distortion,
+                         right_intrinsics,
+                         right_distortion,
+                         l2r_rmat,
+                         l2r_tvec
+                         ):
+    """
+    Cost function to return residual error. x_0 should contain an array
+    of combined chessboard-marker-to-device-marker tracking 6DOF (rvec, tvec),
+    chessboard-pattern-to-marker 6DOF and the device-hand-to-eye matrix 6DOF.
+
+    :param x_0:
+    :param common_object_points:
+    :param common_left_image_points:
+    :param common_right_image_points:
+    :param left_intrinsics:
+    :param left_distortion:
+    :param right_intrinsics:
+    :param right_distortion:
+    :param l2r_rmat:
+    :param l2r_tvec:
+    :return: matrix of residuals for Levenberg-Marquardt optimisation.
+    """
+    rvecs = []
+    tvecs = []
+    number_of_frames = len(common_object_points)
+
+    p2m_rvec = np.zeros((3, 1))
+    p2m_rvec[0][0] = x_0[6 * number_of_frames + 0]
+    p2m_rvec[1][0] = x_0[6 * number_of_frames + 1]
+    p2m_rvec[2][0] = x_0[6 * number_of_frames + 2]
+
+    p2m_tvec = np.zeros((3, 1))
+    p2m_tvec[0][0] = x_0[6 * number_of_frames + 3]
+    p2m_tvec[1][0] = x_0[6 * number_of_frames + 4]
+    p2m_tvec[2][0] = x_0[6 * number_of_frames + 5]
+
+    h2e_rvec = np.zeros((3, 1))
+    h2e_rvec[0][0] = x_0[6 * (number_of_frames + 1) + 0]
+    h2e_rvec[1][0] = x_0[6 * (number_of_frames + 1) + 1]
+    h2e_rvec[2][0] = x_0[6 * (number_of_frames + 1) + 2]
+
+    h2e_tvec = np.zeros((3, 1))
+    h2e_tvec[0][0] = x_0[6 * (number_of_frames + 1) + 3]
+    h2e_tvec[1][0] = x_0[6 * (number_of_frames + 1) + 4]
+    h2e_tvec[2][0] = x_0[6 * (number_of_frames + 1) + 5]
+
+    p2m = vu.extrinsic_vecs_to_matrix(p2m_rvec, p2m_tvec)
+    h2e = vu.extrinsic_vecs_to_matrix(h2e_rvec, h2e_tvec)
+
+    for i in range(0, number_of_frames):
+
+        m2h_rvec = np.zeros((3, 1))
+        m2h_rvec[0][0] = x_0[6 * i + 0]
+        m2h_rvec[1][0] = x_0[6 * i + 1]
+        m2h_rvec[2][0] = x_0[6 * i + 2]
+
+        m2h_tvec = np.zeros((3, 1))
+        m2h_tvec[0][0] = x_0[6 * i + 3]
+        m2h_tvec[1][0] = x_0[6 * i + 4]
+        m2h_tvec[2][0] = x_0[6 * i + 5]
+        m2h = vu.extrinsic_vecs_to_matrix(m2h_rvec, m2h_tvec)
+
+        extrinsics = h2e @ m2h @ p2m
+        rvec, tvec = vu.extrinsic_matrix_to_vecs(extrinsics)
+
+        rvecs.append(rvec)
+        tvecs.append(tvec)
+
+    residual = vm.compute_stereo_2d_err(l2r_rmat,
+                                        l2r_tvec,
+                                        common_object_points,
+                                        common_left_image_points,
+                                        left_intrinsics,
+                                        left_distortion,
+                                        common_object_points,
+                                        common_right_image_points,
+                                        right_intrinsics,
+                                        right_distortion,
+                                        rvecs,
+                                        tvecs,
+                                        return_residuals=True
+                                        )
+    return residual
