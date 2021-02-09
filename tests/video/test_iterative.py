@@ -96,7 +96,8 @@ def get_calib_driver(calib_dir: str):
                                                          right_point_detector,
                                                          minimum_points)
 
-    for i in range(3):
+    num_frames = 10
+    for i in range(num_frames):
         l_img, r_img, chessboard, scope = get_calib_data(calib_dir, i)
         calibration_driver.grab_data(l_img, r_img, scope, chessboard)
 
