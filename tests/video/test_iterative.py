@@ -134,5 +134,8 @@ def test_dotty_grid_iterative():
         (ref_image.shape[1],
          ref_image.shape[0]))
 
+    tracked_reprojection_err, tracked_recon_err = \
+        calib_driver.handeye_calibration()
+
     assert reprojection_err < 2
     assert recon_err < 2
