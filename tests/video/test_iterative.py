@@ -58,9 +58,10 @@ def get_point_detector(intrinsic_matrix, distortion_matrix):
             counter = counter + 1
 
     dot_detector_params = cv2.SimpleBlobDetector_Params()
-    dot_detector_params.filterByConvexity = False
-    dot_detector_params.filterByInertia = False
-    dot_detector_params.filterByCircularity = False
+    dot_detector_params.filterByConvexity = True
+    dot_detector_params.filterByInertia = True
+    dot_detector_params.filterByCircularity = True
+    dot_detector_params.minCircularity = 0.7
     dot_detector_params.filterByArea = True
     dot_detector_params.minArea = 50
     dot_detector_params.maxArea = 50000
@@ -73,7 +74,8 @@ def get_point_detector(intrinsic_matrix, distortion_matrix):
             distortion_matrix,
             reference_image_size=(reference_image_size[1],
                                   reference_image_size[0]),
-            threshold_window_size=191,
+            threshold_window_size=301,
+            threshold_offset=20,
             dot_detector_params=dot_detector_params
             )
 
@@ -113,7 +115,7 @@ def get_ref_dot_detector():
     return ref_point_detector
 
 
-def test_dotty_grid_iterative():
+def test_dotty_grid_iterative1():
 
     os.makedirs("tests/output/iterative", exist_ok=True)
 
@@ -135,3 +137,55 @@ def test_dotty_grid_iterative():
 
     assert reprojection_err < 2
     assert recon_err < 2
+
+    calib_driver.handeye_calibration()
+
+def test_dotty_grid_iterative2():
+
+    os.makedirs("tests/output/iterative", exist_ok=True)
+
+    calib_dir = 'tests/data/dot_calib/11_20_33'
+
+    calib_driver = get_calib_driver(calib_dir)
+    ref_detector = get_ref_dot_detector()
+
+    ref_image = cv2.imread('tests/data/dot_calib/circles-25x18-r40-s3.png')
+    ref_ids, _, ref_image_points = \
+        ref_detector.get_points(ref_image)
+
+    reprojection_err, recon_err, _ = calib_driver.iterative_calibration(
+        3,
+        ref_ids,
+        ref_image_points,
+        (ref_image.shape[1],
+         ref_image.shape[0]))
+
+    assert reprojection_err < 2
+    assert recon_err < 2
+
+    calib_driver.handeye_calibration()
+
+def test_dotty_grid_iterative3():
+
+    os.makedirs("tests/output/iterative", exist_ok=True)
+
+    calib_dir = 'tests/data/dot_calib/11_21_25'
+
+    calib_driver = get_calib_driver(calib_dir)
+    ref_detector = get_ref_dot_detector()
+
+    ref_image = cv2.imread('tests/data/dot_calib/circles-25x18-r40-s3.png')
+    ref_ids, _, ref_image_points = \
+        ref_detector.get_points(ref_image)
+
+    reprojection_err, recon_err, _ = calib_driver.iterative_calibration(
+        3,
+        ref_ids,
+        ref_image_points,
+        (ref_image.shape[1],
+         ref_image.shape[0]))
+
+    assert reprojection_err < 2
+    assert recon_err < 2
+
+    calib_driver.handeye_calibration()
