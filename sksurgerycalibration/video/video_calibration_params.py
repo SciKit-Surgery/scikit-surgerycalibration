@@ -123,7 +123,7 @@ class MonoCalibrationParams(BaseCalibrationParams):
         :param dir_name: directory to load from
         :param file_prefix: prefix for all files
         :param halt_on_ioerror: if false, handeye and pattern2marker will
-            be silently set to eye(4) if not present 
+            be silently set to eye(4) if not present
         """
         self.reinit()
 
