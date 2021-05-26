@@ -4,15 +4,13 @@
 
 import os
 import cv2
-from sksurgerycore.configuration.configuration_manager import \
-        ConfigurationManager
 import sksurgeryimage.calibration.chessboard_point_detector as cpd
 import sksurgerycalibration.video.video_calibration_driver_mono as mc
 
 # pylint:disable=too-many-nested-blocks,too-many-branches
 
 
-def run_video_calibration(config_file = None, save_dir = None, prefix = None):
+def run_video_calibration(configuration = {}, save_dir = None, prefix = None):
     """
     Performs Video Calibration using OpenCV
     source and scikit-surgerycalibration.
@@ -27,23 +25,25 @@ def run_video_calibration(config_file = None, save_dir = None, prefix = None):
     if prefix is not None and save_dir is None:
         save_dir = "./"
 
-    configurer = ConfigurationManager(config_file)
-    configuration = configurer.get_copy()
-
     # For now just doing chessboards.
     # The underlying framework works for several point detectors,
     # but each would have their own parameters etc.
-    source = configuration.get("source", 1)
+    method = configuration.get("method", "chessboard")
+    if method != "chessboard":
+        raise ValueError("Only chessboard calibration is currently supported")
+
+    source = configuration.get("source", 0)
     corners = configuration.get("corners", [14, 10])
     corners = (corners[0], corners[1])
     size = configuration.get("square size in mm", 3)
     min_num_views = configuration.get("minimum number of views", 5)
+    keypress_delay = configuration.get("keypress delay", 10)
 
     cap = cv2.VideoCapture(source)
     if not cap.isOpened():
         raise RuntimeError("Failed to open camera.")
 
-    window_size = configuration.get("window size")
+    window_size = configuration.get("window size", None)
     if window_size is not None:
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, window_size[0])
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, window_size[1])
@@ -63,12 +63,14 @@ def run_video_calibration(config_file = None, save_dir = None, prefix = None):
     print("Minimum number of views to calibrate:" + str(min_num_views))
 
     while True:
-        _, frame = cap.read()
-        if frame is None:
+        frame_ok, frame = cap.read()
+        
+        if not frame_ok:
             print("Reached end of video source or read failure.")
             break
+
         cv2.imshow("live image", frame)
-        key = cv2.waitKey(10)
+        key = cv2.waitKey(keypress_delay)
         if key == ord('q'):
             break
         if key == ord('c'):

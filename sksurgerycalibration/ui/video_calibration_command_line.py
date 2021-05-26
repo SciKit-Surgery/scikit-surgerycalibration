@@ -3,6 +3,8 @@
 """ Command line processing for video calibration app. """
 
 import argparse
+from sksurgerycore.configuration.configuration_manager import \
+        ConfigurationManager
 from sksurgerycalibration import __version__
 from sksurgerycalibration.ui.video_calibration_app import run_video_calibration
 
@@ -26,7 +28,6 @@ def main(args=None):
 
     parser.add_argument("-p", "--prefix",
                         required=False,
-                        default="calib",
                         type=str,
                         help="Filename prefix to save to.")
 
@@ -39,4 +40,7 @@ def main(args=None):
 
     args = parser.parse_args(args)
 
-    run_video_calibration(args.config, args.save, args.prefix)
+    configurer = ConfigurationManager(args.config)
+    configuration = configurer.get_copy()
+
+    run_video_calibration(configuration, args.save, args.prefix)
