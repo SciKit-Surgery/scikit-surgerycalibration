@@ -5,54 +5,49 @@
 import numpy as np
 import cv2
 import sksurgeryimage.calibration.chessboard_point_detector as cpd
-from sksurgerybard.algorithms.bard_config_algorithms import \
-    configure_camera, replace_calibration_dir
-
+from sksurgerycalibration.video.video_calibration_io import \
+                load_camera_calibration
 
 # pylint: disable=too-many-branches
 
 def run_video_calibration_checker(configuration, calib_dir):
     """
-    Simple app that detects a calibration pattern, runs
+    Application that detects a calibration pattern, runs
     solvePnP, and prints information out to enable you to
     check how accurate a calibration actually is.
 
     :param config_file: mandatory location of config file, containing params.
     """
-    if config_file is None or len(config_file) == 0:
-        raise ValueError("Config file must be provided.")
+    if configuration is None:
+        raise ValueError("Configuration must be provided.")
     if calib_dir is None or len(calib_dir) == 0:
         raise ValueError("Calibration directory must be specified")
 
-    configuration = replace_calibration_dir(configuration, calib_dir)
-
-    source = configuration.get("source", 1)
-    corners = configuration.get("corners")
-    if corners is None:
-        raise ValueError("You must specify the number of internal corners")
+    source = configuration.get("source", 0)
+    corners = configuration.get("corners", [14, 10])
     corners = (corners[0], corners[1])
-    size = configuration.get("square size in mm")
-    if size is None:
-        raise ValueError("You must specify the size of each square in mm.")
+    size = configuration.get("square size in mm", 3)
+    window_size = configuration.get("window size", None)
+    keypress_delay = configuration.get("keypress delay", 10)
+    interactive = configuration.get("interactive", True)
+    sample_frequency = configuration.get("sample frequency", 1)
+    
+    intrinsics, distortion, _handeye = load_camera_calibration(calib_dir)
 
-    window_size = configuration.get("window size")
-    if window_size is None:
-        raise ValueError("You must specify the window size.")
-
-    _, intrinsics, distortion, _ = configure_camera(configuration)
-    if intrinsics is None:
-        raise ValueError("Couldn't load intrinsic parameters")
-    if distortion is None:
-        raise ValueError("Couldn't load distortion parameters")
-
-    cap = cv2.VideoCapture(int(source))
+    cap = cv2.VideoCapture(source)
     if not cap.isOpened():
         raise RuntimeError("Failed to open camera:" + str(source))
 
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, window_size[0])
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, window_size[1])
-    print("Video feed set to ("
-          + str(window_size[0]) + " x " + str(window_size[1]) + ")")
+    if window_size is not None:
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, window_size[0])
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, window_size[1])
+        print("Video feed set to ("
+              + str(window_size[0]) + " x " + str(window_size[1]) + ")")
+    else:
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        print("Video feed defaults to ("
+              + str(width) + " x " + str(height) + ")")
 
     # For detecting the chessboard points
     detector = cpd.ChessboardPointDetector(corners, size)
@@ -61,7 +56,7 @@ def run_video_calibration_checker(configuration, calib_dir):
     while True:
         _, frame = cap.read()
         undistorted = cv2.undistort(frame, intrinsics, distortion)
-        key = cv2.waitKey(10)
+        key = cv2.waitKey(keypress_delay)
         if key == ord('q'):
             break
         if key == ord('c') or key == ord('m') or key == ord('t'):
