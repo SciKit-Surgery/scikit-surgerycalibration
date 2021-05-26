@@ -31,14 +31,13 @@ def run_video_calibration_checker(configuration, calib_dir, prefix):
     size = configuration.get("square size in mm", 3)
     window_size = configuration.get("window size", None)
     keypress_delay = configuration.get("keypress delay", 10)
-    interactive = configuration.get("interactive", True)
-    sample_frequency = configuration.get("sample frequency", 1)
+    _interactive = configuration.get("interactive", True)
+    _sample_frequency = configuration.get("sample frequency", 1)
 
     existing_calibration = MonoCalibrationParams()
     existing_calibration.load_data(calib_dir, prefix, halt_on_ioerror = False)
     intrinsics = existing_calibration.camera_matrix
     distortion = existing_calibration.dist_coeffs
-    handeye = existing_calibration.handeye_matrix
 
     cap = cv2.VideoCapture(source)
     if not cap.isOpened():

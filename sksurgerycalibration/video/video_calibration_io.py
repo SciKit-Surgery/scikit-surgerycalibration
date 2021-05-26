@@ -4,7 +4,6 @@
 
 import os
 import glob
-from numpy import loadtxt, eye
 
 # pylint: disable=missing-function-docstring, invalid-name
 
