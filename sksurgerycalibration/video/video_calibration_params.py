@@ -4,7 +4,6 @@
 
 import os
 import copy
-import warnings
 import numpy as np
 import sksurgerycore.transforms.matrix as sksm
 import sksurgerycalibration.video.video_calibration_utils as sksu
@@ -123,6 +122,8 @@ class MonoCalibrationParams(BaseCalibrationParams):
 
         :param dir_name: directory to load from
         :param file_prefix: prefix for all files
+        :param halt_on_ioerror: if false, handeye and pattern2marker will
+            be silently set to eye(4) if not present 
         """
         self.reinit()
 
@@ -142,12 +143,7 @@ class MonoCalibrationParams(BaseCalibrationParams):
         except IOError:
             if halt_on_ioerror:
                 raise
-
             self.handeye_matrix = np.eye(4)
-            warnings.warn(("Did not find " + handeye_file +
-                           " setting handeye" +
-                           " to identity."), UserWarning)
-
 
         p2m_file = sksio.get_pattern2marker_file_name(dir_name,
                                                       file_prefix)
@@ -157,12 +153,7 @@ class MonoCalibrationParams(BaseCalibrationParams):
         except IOError:
             if halt_on_ioerror:
                 raise
-
             self.pattern2marker_matrix = np.eye(4)
-            warnings.warn(("Did not find " + p2m_file +
-                           " setting pattern2marker" +
-                           " to identity."), UserWarning)
-
 
         extrinsic_files = sksio.get_extrinsic_file_names(dir_name,
                                                          file_prefix)
