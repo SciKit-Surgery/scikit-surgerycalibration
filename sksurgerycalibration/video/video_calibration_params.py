@@ -4,6 +4,7 @@
 
 import os
 import copy
+import warnings
 import numpy as np
 import sksurgerycore.transforms.matrix as sksm
 import sksurgerycalibration.video.video_calibration_utils as sksu
@@ -114,7 +115,8 @@ class MonoCalibrationParams(BaseCalibrationParams):
 
     def load_data(self,
                   dir_name: str,
-                  file_prefix: str
+                  file_prefix: str,
+                  halt_on_ioerror = True
                   ):
         """
         Loads calibration parameters from a directory.
@@ -135,12 +137,32 @@ class MonoCalibrationParams(BaseCalibrationParams):
         handeye_file = sksio.get_handeye_file_name(dir_name,
                                                    file_prefix)
 
-        self.handeye_matrix = np.loadtxt(handeye_file)
+        try:
+            self.handeye_matrix = np.loadtxt(handeye_file)
+        except IOError:
+            if halt_on_ioerror:
+                raise
+
+            self.handeye_matrix = np.eye(4)
+            warnings.warn(("Did not find " + handeye_file +
+                           " setting handeye" +
+                           " to identity."), UserWarning)
+
 
         p2m_file = sksio.get_pattern2marker_file_name(dir_name,
                                                       file_prefix)
 
-        self.pattern2marker_matrix = np.loadtxt(p2m_file)
+        try:
+            self.pattern2marker_matrix = np.loadtxt(p2m_file)
+        except IOError:
+            if halt_on_ioerror:
+                raise
+
+            self.pattern2marker_matrix = np.eye(4)
+            warnings.warn(("Did not find " + p2m_file +
+                           " setting pattern2marker" +
+                           " to identity."), UserWarning)
+
 
         extrinsic_files = sksio.get_extrinsic_file_names(dir_name,
                                                          file_prefix)

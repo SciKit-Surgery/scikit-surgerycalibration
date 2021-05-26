@@ -29,6 +29,11 @@ def main(args=None):
                         type=str,
                         help="Directory containing calibration data.")
 
+    parser.add_argument("-p", "--prefix",
+                        required=True,
+                        type=str,
+                        help="Prefix for calibration data.")
+
     version_string = __version__
     friendly_version_string = version_string if version_string else 'unknown'
     parser.add_argument(
@@ -41,4 +46,4 @@ def main(args=None):
     configurer = ConfigurationManager(args.config)
     configuration = configurer.get_copy()
 
-    run_video_calibration_checker(configuration, args.calib_dir)
+    run_video_calibration_checker(configuration, args.calib_dir, args.prefix)

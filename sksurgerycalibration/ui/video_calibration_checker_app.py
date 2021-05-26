@@ -5,12 +5,12 @@
 import numpy as np
 import cv2
 import sksurgeryimage.calibration.chessboard_point_detector as cpd
-from sksurgerycalibration.video.video_calibration_io import \
-                load_camera_calibration
+from sksurgerycalibration.video.video_calibration_params import \
+                MonoCalibrationParams
 
 # pylint: disable=too-many-branches
 
-def run_video_calibration_checker(configuration, calib_dir):
+def run_video_calibration_checker(configuration, calib_dir, prefix):
     """
     Application that detects a calibration pattern, runs
     solvePnP, and prints information out to enable you to
@@ -20,7 +20,9 @@ def run_video_calibration_checker(configuration, calib_dir):
     """
     if configuration is None:
         raise ValueError("Configuration must be provided.")
-    if calib_dir is None or len(calib_dir) == 0:
+    if calib_dir is None:
+        raise ValueError("Calibration directory must be specified")
+    if prefix is None:
         raise ValueError("Calibration directory must be specified")
 
     source = configuration.get("source", 0)
@@ -31,8 +33,12 @@ def run_video_calibration_checker(configuration, calib_dir):
     keypress_delay = configuration.get("keypress delay", 10)
     interactive = configuration.get("interactive", True)
     sample_frequency = configuration.get("sample frequency", 1)
-    
-    intrinsics, distortion, _handeye = load_camera_calibration(calib_dir)
+
+    existing_calibration = MonoCalibrationParams()
+    existing_calibration.load_data(calib_dir, prefix, halt_on_ioerror = False)
+    intrinsics = existing_calibration.camera_matrix
+    distortion = existing_calibration.dist_coeffs
+    handeye = existing_calibration.handeye_matrix
 
     cap = cv2.VideoCapture(source)
     if not cap.isOpened():
