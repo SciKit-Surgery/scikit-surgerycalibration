@@ -1,0 +1,10 @@
+{
+    "method": "chessboard",
+    "source": "tests/data/laparoscope_calibration/left/left.ogv",
+    "corners": [14, 10],
+    "square size in mm": 6,
+    "minimum number of views": 5,
+    "keypress delay": 0, 
+    "interactive" : false,
+    "sample frequency" : 2
+}

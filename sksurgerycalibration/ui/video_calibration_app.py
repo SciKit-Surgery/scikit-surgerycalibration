@@ -10,7 +10,7 @@ import sksurgerycalibration.video.video_calibration_driver_mono as mc
 # pylint:disable=too-many-nested-blocks,too-many-branches
 
 
-def run_video_calibration(configuration = {}, save_dir = None, prefix = None):
+def run_video_calibration(configuration, save_dir = None, prefix = None):
     """
     Performs Video Calibration using OpenCV
     source and scikit-surgerycalibration.
@@ -25,6 +25,9 @@ def run_video_calibration(configuration = {}, save_dir = None, prefix = None):
     if prefix is not None and save_dir is None:
         save_dir = "./"
 
+    if configuration is None:
+        configuration = {}
+
     # For now just doing chessboards.
     # The underlying framework works for several point detectors,
     # but each would have their own parameters etc.
@@ -38,6 +41,8 @@ def run_video_calibration(configuration = {}, save_dir = None, prefix = None):
     size = configuration.get("square size in mm", 3)
     min_num_views = configuration.get("minimum number of views", 5)
     keypress_delay = configuration.get("keypress delay", 10)
+    interactive = configuration.get("interactive", True)
+    sample_frequency = configuration.get("sample frequency", 1)
 
     cap = cv2.VideoCapture(source)
     if not cap.isOpened():
@@ -62,15 +67,23 @@ def run_video_calibration(configuration = {}, save_dir = None, prefix = None):
     print("Press 'q' to quit and 'c' to capture an image.")
     print("Minimum number of views to calibrate:" + str(min_num_views))
 
+    frames_sampled = 0
     while True:
         frame_ok, frame = cap.read()
-        
+
         if not frame_ok:
             print("Reached end of video source or read failure.")
             break
 
-        cv2.imshow("live image", frame)
-        key = cv2.waitKey(keypress_delay)
+        frames_sampled += 1
+        key = None
+        if interactive:
+            cv2.imshow("live image", frame)
+            key = cv2.waitKey(keypress_delay)
+        else:
+            if frames_sampled % sample_frequency == 0:
+                key = ord('c')
+
         if key == ord('q'):
             break
         if key == ord('c'):
@@ -80,7 +93,8 @@ def run_video_calibration(configuration = {}, save_dir = None, prefix = None):
                 img = cv2.drawChessboardCorners(frame, corners,
                                                 img_pts,
                                                 number_points)
-                cv2.imshow("detected points", img)
+                if interactive:
+                    cv2.imshow("detected points", img)
 
                 number_of_views = calibrator.get_number_of_views()
                 print("Number of frames = " + str(number_of_views))
