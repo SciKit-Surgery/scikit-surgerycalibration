@@ -20,7 +20,7 @@ def run_video_calibration(configuration, save_dir = None, prefix = None):
     :param save_dir: optional directory name to dump calibrations to.
     :param prefix: file name prefix when saving
 
-    :raises ValueError: if configuration is None or invalid
+    :raises ValueError: if method is not supported
     """
     if prefix is not None and save_dir is None:
         save_dir = "./"
@@ -71,18 +71,19 @@ def run_video_calibration(configuration, save_dir = None, prefix = None):
     while True:
         frame_ok, frame = cap.read()
 
+        key = None
+        frames_sampled += 1
+
         if not frame_ok:
             print("Reached end of video source or read failure.")
-            break
-
-        frames_sampled += 1
-        key = None
-        if interactive:
-            cv2.imshow("live image", frame)
-            key = cv2.waitKey(keypress_delay)
+            key = ord('q')
         else:
-            if frames_sampled % sample_frequency == 0:
-                key = ord('c')
+            if interactive:
+                cv2.imshow("live image", frame)
+                key = cv2.waitKey(keypress_delay)
+            else:
+                if frames_sampled % sample_frequency == 0:
+                    key = ord('c')
 
         if key == ord('q'):
             break
