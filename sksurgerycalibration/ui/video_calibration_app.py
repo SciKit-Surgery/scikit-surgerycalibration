@@ -12,20 +12,20 @@ import sksurgerycalibration.video.video_calibration_driver_mono as mc
 # pylint:disable=too-many-nested-blocks,too-many-branches
 
 
-def run_video_calibration(config_file, save_dir, prefix):
+def run_video_calibration(config_file = None, save_dir = None, prefix = None):
     """
     Performs Video Calibration using OpenCV
     source and scikit-surgerycalibration.
+    Currently only chessboards are supported
 
     :param config_file: mandatory location of config file.
     :param save_dir: optional directory name to dump calibrations to.
     :param prefix: file name prefix when saving
+
+    :raises ValueError: if configuration is None or invalid
     """
-    if config_file is None or len(config_file) == 0:
-        raise ValueError("Config file must be provided.")
-    if save_dir is not None and prefix is None:
-        raise ValueError("If you provide -s/--save, "
-                         "you must provide -p/--prefix")
+    if prefix is not None and save_dir is None:
+        save_dir = "./"
 
     configurer = ConfigurationManager(config_file)
     configuration = configurer.get_copy()
@@ -39,7 +39,7 @@ def run_video_calibration(config_file, save_dir, prefix):
     size = configuration.get("square size in mm", 3)
     min_num_views = configuration.get("minimum number of views", 5)
 
-    cap = cv2.VideoCapture(int(source))
+    cap = cv2.VideoCapture(source)
     if not cap.isOpened():
         raise RuntimeError("Failed to open camera.")
 
@@ -64,6 +64,9 @@ def run_video_calibration(config_file, save_dir, prefix):
 
     while True:
         _, frame = cap.read()
+        if frame is None:
+            print("Reached end of video source or read failure.")
+            break
         cv2.imshow("live image", frame)
         key = cv2.waitKey(10)
         if key == ord('q'):
@@ -89,8 +92,7 @@ def run_video_calibration(config_file, save_dir, prefix):
                     print("Distortion matrix is:")
                     print(params.dist_coeffs)
 
-                    if save_dir and prefix:
-
+                    if save_dir is not None:
                         if not os.path.isdir(save_dir):
                             os.makedirs(save_dir)
 
