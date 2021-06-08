@@ -10,20 +10,20 @@ from sksurgerycalibration.video.video_calibration_params import \
 
 # pylint: disable=too-many-branches
 
-def run_video_calibration_checker(configuration, calib_dir, prefix):
+def run_video_calibration_checker(configuration = None,
+                calib_dir = './', prefix = None):
     """
     Application that detects a calibration pattern, runs
     solvePnP, and prints information out to enable you to
     check how accurate a calibration actually is.
 
-    :param config_file: mandatory location of config file, containing params.
+    :param config_file: location of configuration file.
+    :param calib_dir: the location of the calibration directory you want to
+        check
+    :param prefix: the file prefix for the calibration data you want to check
     """
     if configuration is None:
-        raise ValueError("Configuration must be provided.")
-    if calib_dir is None:
-        raise ValueError("Calibration directory must be specified")
-    if prefix is None:
-        raise ValueError("Calibration directory must be specified")
+        configuration = {}
 
     source = configuration.get("source", 0)
     corners = configuration.get("corners", [14, 10])
@@ -31,8 +31,8 @@ def run_video_calibration_checker(configuration, calib_dir, prefix):
     size = configuration.get("square size in mm", 3)
     window_size = configuration.get("window size", None)
     keypress_delay = configuration.get("keypress delay", 10)
-    _interactive = configuration.get("interactive", True)
-    _sample_frequency = configuration.get("sample frequency", 1)
+    interactive = configuration.get("interactive", True)
+    sample_frequency = configuration.get("sample frequency", 1)
 
     existing_calibration = MonoCalibrationParams()
     existing_calibration.load_data(calib_dir, prefix, halt_on_ioerror = False)
@@ -58,50 +58,76 @@ def run_video_calibration_checker(configuration, calib_dir, prefix):
     detector = cpd.ChessboardPointDetector(corners, size)
     num_pts = corners[0] * corners[1]
     captured_positions = np.zeros((0, 3))
+    frames_sampled = 0
     while True:
-        _, frame = cap.read()
-        undistorted = cv2.undistort(frame, intrinsics, distortion)
-        key = cv2.waitKey(keypress_delay)
+        frame_ok, frame = cap.read()
+
+        key = None
+        frames_sampled += 1
+
+        if not frame_ok:
+            print("Reached end of video source or read failure.")
+            key = ord('q')
+        else:
+            undistorted = cv2.undistort(frame, intrinsics, distortion)
+            if interactive:
+                cv2.imshow("live image", undistorted)
+                key = cv2.waitKey(keypress_delay)
+            else:
+                if frames_sampled % sample_frequency == 0:
+                    key = ord('a')
+
         if key == ord('q'):
             break
-        if key == ord('c') or key == ord('m') or key == ord('t'):
-            _, object_points, image_points = detector.get_points(undistorted)
-            if image_points.shape[0] > 0:
-                img = cv2.drawChessboardCorners(undistorted, corners,
-                                                image_points,
-                                                num_pts)
-                retval, _, tvec = cv2.solvePnP(object_points,
-                                               image_points,
-                                               intrinsics,
-                                               None)
-                if retval:
-                    captured_positions = np.append(captured_positions,
-                                                   np.transpose(tvec),
-                                                   axis=0)
-                    cv2.imshow("detected points", img)
-                    if key == ord('t') and captured_positions.shape[0] > 1:
-                        print(
-                            str(captured_positions[-1][0]
-                                - captured_positions[-2][0]) + " "
-                            + str(captured_positions[-1][1]
-                                  - captured_positions[-2][1]) + " "
-                            + str(captured_positions[-1][2]
-                                  - captured_positions[-2][2]) + " ")
-                    elif key == ord('m'):
-                        print("Mean:"
-                              + str(np.mean(captured_positions, axis=0)))
-                        print("StdDev:"
-                              + str(np.std(captured_positions, axis=0)))
-                    else:
-                        print(str(tvec[0][0]) + " "
-                              + str(tvec[1][0]) + " "
-                              + str(tvec[2][0]))
-                else:
-                    print("Failed to solve PnP")
-            else:
-                print("Failed to detect points")
-        else:
-            cv2.imshow("live image", undistorted)
+
+        image_points = np.array([])
+        if key in [ord('c'), ord('m'), ord('t'), ord('a')]:
+            _, object_points, image_points = \
+                detector.get_points(undistorted)
+
+        pnp_ok = False
+        img = None
+        tvec = None
+        if image_points.shape[0] > 0:
+            img = cv2.drawChessboardCorners(undistorted, corners,
+                                            image_points,
+                                            num_pts)
+            if interactive:
+                cv2.imshow("detected points", img)
+
+            pnp_ok, _, tvec = cv2.solvePnP(object_points,
+                                           image_points,
+                                           intrinsics,
+                                           None)
+        if pnp_ok:
+            captured_positions = np.append(captured_positions,
+                                           np.transpose(tvec),
+                                           axis=0)
+
+        if key in [ord('t'), ord('a')] and captured_positions.shape[0] > 1:
+            print(str(captured_positions[-1][0]
+                  - captured_positions[-2][0]) + " "
+                  + str(captured_positions[-1][1]
+                  - captured_positions[-2][1]) + " "
+                  + str(captured_positions[-1][2]
+                  - captured_positions[-2][2]) + " ")
+        if key in [ord('m'), ord('a')] and \
+                            captured_positions.shape[0] > 1:
+            print("Mean:"
+                  + str(np.mean(captured_positions, axis=0)))
+            print("StdDev:"
+                  + str(np.std(captured_positions, axis=0)))
+
+        if key in [ord('c'), ord('a')] and pnp_ok:
+            print("Pose" + str(tvec[0][0]) + " "
+                  + str(tvec[1][0]) + " "
+                  + str(tvec[2][0]))
+
+        if not pnp_ok and image_points.shape[0] > 0:
+            print("Failed to solve PnP")
+
+        if image_points.shape[0] == 0:
+            print("Failed to detect points")
 
     cap.release()
     cv2.destroyAllWindows()

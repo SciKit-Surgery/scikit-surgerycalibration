@@ -10,13 +10,13 @@ import sksurgerycalibration.video.video_calibration_driver_mono as mc
 # pylint:disable=too-many-nested-blocks,too-many-branches
 
 
-def run_video_calibration(configuration, save_dir = None, prefix = None):
+def run_video_calibration(configuration = None, save_dir = None, prefix = None):
     """
     Performs Video Calibration using OpenCV
     source and scikit-surgerycalibration.
     Currently only chessboards are supported
 
-    :param config_file: mandatory location of config file.
+    :param config_file: location of a configuration file.
     :param save_dir: optional directory name to dump calibrations to.
     :param prefix: file name prefix when saving
 
