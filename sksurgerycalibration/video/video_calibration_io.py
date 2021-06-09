@@ -7,7 +7,6 @@ import glob
 
 # pylint: disable=missing-function-docstring, invalid-name
 
-
 def get_calib_prefix(file_prefix: str):
 
     prefix = 'calib'

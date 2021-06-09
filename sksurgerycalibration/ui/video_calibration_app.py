@@ -10,13 +10,13 @@ import sksurgerycalibration.video.video_calibration_driver_mono as mc
 # pylint:disable=too-many-nested-blocks,too-many-branches
 
 
-def run_video_calibration(configuration, save_dir = None, prefix = None):
+def run_video_calibration(configuration = None, save_dir = None, prefix = None):
     """
     Performs Video Calibration using OpenCV
     source and scikit-surgerycalibration.
     Currently only chessboards are supported
 
-    :param config_file: mandatory location of config file.
+    :param config_file: location of a configuration file.
     :param save_dir: optional directory name to dump calibrations to.
     :param prefix: file name prefix when saving
 
@@ -39,6 +39,7 @@ def run_video_calibration(configuration, save_dir = None, prefix = None):
     corners = configuration.get("corners", [14, 10])
     corners = (corners[0], corners[1])
     size = configuration.get("square size in mm", 3)
+    window_size = configuration.get("window size", None)
     min_num_views = configuration.get("minimum number of views", 5)
     keypress_delay = configuration.get("keypress delay", 10)
     interactive = configuration.get("interactive", True)
@@ -48,7 +49,6 @@ def run_video_calibration(configuration, save_dir = None, prefix = None):
     if not cap.isOpened():
         raise RuntimeError("Failed to open camera.")
 
-    window_size = configuration.get("window size", None)
     if window_size is not None:
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, window_size[0])
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, window_size[1])

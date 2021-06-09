@@ -114,13 +114,16 @@ class MonoCalibrationParams(BaseCalibrationParams):
 
     def load_data(self,
                   dir_name: str,
-                  file_prefix: str
+                  file_prefix: str,
+                  halt_on_ioerror = True
                   ):
         """
         Loads calibration parameters from a directory.
 
         :param dir_name: directory to load from
         :param file_prefix: prefix for all files
+        :param halt_on_ioerror: if false, and handeye or pattern2marker
+            are not found they will be left as None
         """
         self.reinit()
 
@@ -135,12 +138,20 @@ class MonoCalibrationParams(BaseCalibrationParams):
         handeye_file = sksio.get_handeye_file_name(dir_name,
                                                    file_prefix)
 
-        self.handeye_matrix = np.loadtxt(handeye_file)
+        try:
+            self.handeye_matrix = np.loadtxt(handeye_file)
+        except IOError:
+            if halt_on_ioerror:
+                raise
 
         p2m_file = sksio.get_pattern2marker_file_name(dir_name,
                                                       file_prefix)
 
-        self.pattern2marker_matrix = np.loadtxt(p2m_file)
+        try:
+            self.pattern2marker_matrix = np.loadtxt(p2m_file)
+        except IOError:
+            if halt_on_ioerror:
+                raise
 
         extrinsic_files = sksio.get_extrinsic_file_names(dir_name,
                                                          file_prefix)
