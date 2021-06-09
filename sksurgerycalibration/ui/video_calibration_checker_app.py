@@ -21,9 +21,12 @@ def run_video_calibration_checker(configuration = None,
     :param calib_dir: the location of the calibration directory you want to
         check
     :param prefix: the file prefix for the calibration data you want to check
+
+    :raises ValueError: if no configuration provided.
+    :raises RuntimeError: if can't open source.
     """
     if configuration is None:
-        configuration = {}
+        raise ValueError("Calibration Checker requires a config file")
 
     source = configuration.get("source", 0)
     corners = configuration.get("corners", [14, 10])
