@@ -1,26 +1,33 @@
 scikit-surgerycalibration
 ===============================
 
-.. image:: https://github.com/UCL/scikit-surgerycalibration /raw/master/weiss_logo.png
+.. image:: https://github.com/SciKit-Surgery/scikit-surgerycalibration /raw/master/weiss_logo.png
    :height: 128px
    :width: 128px
-   :target: https://github.com/UCL/scikit-surgerycalibration 
+   :target: https://github.com/SciKit-Surgery/scikit-surgerycalibration 
    :alt: Logo
 
 |
 
-.. image:: https://github.com/UCL/scikit-surgerycalibration/workflows/.github/workflows/ci.yml/badge.svg
-   :target: https://github.com/UCL/scikit-surgerycalibration/actions
+.. image:: https://github.com/SciKit-Surgery/scikit-surgerycalibration/workflows/.github/workflows/ci.yml/badge.svg
+   :target: https://github.com/SciKit-Surgery/scikit-surgerycalibration/actions
    :alt: GitHub Actions CI statuss
 
-.. image:: https://coveralls.io/repos/github/UCL/scikit-surgerycalibration/badge.svg?branch=master&service=github
-    :target: https://coveralls.io/github/UCL/scikit-surgerycalibration?branch=master
+.. image:: https://coveralls.io/repos/github/SciKit-Surgery/scikit-surgerycalibration/badge.svg?branch=master&service=github
+    :target: https://coveralls.io/github/SciKit-Surgery/scikit-surgerycalibration?branch=master
     :alt: Test coverage
 
 .. image:: https://readthedocs.org/projects/scikit-surgerycalibration /badge/?version=latest
     :target: http://scikit-surgerycalibration .readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
+.. image:: https://img.shields.io/badge/Cite-SciKit--Surgery-informational
+   :target: https://doi.org/10.1007/s11548-020-02180-5
+   :alt: The SciKit-Surgery paper
+
+.. image:: https://img.shields.io/twitter/follow/scikit_surgery?style=social
+   :target: https://twitter.com/scikit_surgery?ref_src=twsrc%5Etfw
+   :alt: Follow scikit_surgery on twitter
 
 
 Author: Stephen Thompson
@@ -53,7 +60,7 @@ You can clone the repository using the following command:
 
 ::
 
-    git clone https://github.com/UCL/scikit-surgerycalibration 
+    git clone https://github.com/SciKit-Surgery/scikit-surgerycalibration 
 
 
 Running tests
@@ -83,7 +90,7 @@ You can pip install directly from the repository as follows:
 
 ::
 
-    pip install git+https://github.com/UCL/scikit-surgerycalibration 
+    pip install git+https://github.com/SciKit-Surgery/scikit-surgerycalibration 
 
 
 
@@ -114,12 +121,12 @@ Supported by `Wellcome`_ and `EPSRC`_.
 
 
 .. _`Wellcome EPSRC Centre for Interventional and Surgical Sciences`: http://www.ucl.ac.uk/weiss
-.. _`source code repository`: https://github.com/UCL/scikit-surgerycalibration 
+.. _`source code repository`: https://github.com/SciKit-Surgery/scikit-surgerycalibration 
 .. _`Documentation`: https://scikit-surgerycalibration.readthedocs.io
-.. _`SciKit-Surgery`: https://github.com/UCL/scikit-surgery/wiki/home
+.. _`SciKit-Surgery`: https://github.com/SciKit-Surgery/scikit-surgery/wiki/home
 .. _`University College London (UCL)`: http://www.ucl.ac.uk/
 .. _`Wellcome`: https://wellcome.ac.uk/
 .. _`EPSRC`: https://www.epsrc.ac.uk/
-.. _`contributing guidelines`: https://github.com/UCL/scikit-surgerycalibration /blob/master/CONTRIBUTING.rst
-.. _`license file`: https://github.com/UCL/scikit-surgerycalibration /blob/master/LICENSE
+.. _`contributing guidelines`: https://github.com/SciKit-Surgery/scikit-surgerycalibration /blob/master/CONTRIBUTING.rst
+.. _`license file`: https://github.com/SciKit-Surgery/scikit-surgerycalibration /blob/master/LICENSE
 
