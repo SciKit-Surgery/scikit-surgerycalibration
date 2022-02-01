@@ -5,7 +5,7 @@ scikit-surgerycalibration documentation
    :start-after: .. features-start
    :end-before: .. features-end
 
-`Source code <https://github.com/UCL/scikit-surgerycalibration/>`_ is avaialble on GitHub.
+`Source code <https://github.com/SciKit-Surgery/scikit-surgerycalibration/>`_ is avaialble on GitHub.
 
 .. toctree::
    :maxdepth: 2
