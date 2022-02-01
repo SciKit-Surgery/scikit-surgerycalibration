@@ -263,6 +263,11 @@ def stereo_video_calibration(left_ids,
         # Normal OpenCV stereo calibration optimises intrinsics,
         # distortion, and stereo parameters, but doesn't output pose.
         # So here, we recompute the left camera pose.
+
+        #as of opencv 4.5.4.58 rvecs and tvecs are tuples, not lists and are
+        #thus immutable, causing problems if we try and change a member
+        l_rvecs = list(l_rvecs)
+        l_tvecs = list(l_tvecs)
         for i in range(0, number_of_frames):
             _, l_rvecs[i], l_tvecs[i] = cv2.solvePnP(
                 common_object_points[i],
@@ -273,6 +278,10 @@ def stereo_video_calibration(left_ids,
     # Here, we are computing the right hand side rvecs and tvecs
     # given the new left hand side rvecs, tvecs and the l2r.
     left_to_right = skcm.construct_rigid_transformation(l2r_r, l2r_t)
+
+    r_rvecs = list(r_rvecs)
+    r_tvecs = list(r_tvecs)
+
     for i in range(0, number_of_frames):
         left_chessboard_to_camera = \
             vu.extrinsic_vecs_to_matrix(l_rvecs[i], l_tvecs[i])
