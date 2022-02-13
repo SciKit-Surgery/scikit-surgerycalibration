@@ -194,7 +194,8 @@ def compute_mono_2d_err(object_points,
                         rvecs,
                         tvecs,
                         camera_matrix,
-                        distortion):
+                        distortion,
+                        return_residuals=False):
     """
     Function to compute mono RMS reprojection error over multiple views.
 
@@ -204,9 +205,11 @@ def compute_mono_2d_err(object_points,
     :param tvecs: Vector of [3x1] ndarray, translations for each camera
     :param camera_matrix: [3x3] ndarray
     :param distortion: [1x5] ndarray
-    :return: SSE re-reprojection error, number_samples
+    :param return_residuals: If True will return a big array of residuals for Levenberg-Marquardt
+    :return: SSE re-reprojection error, number_samples OR residuals
     """
     sse = 0
+    residuals = []
     number_of_samples = 0
     number_of_frames = len(object_points)
 
@@ -219,13 +222,20 @@ def compute_mono_2d_err(object_points,
                                          distortion)
 
         diff = image_points[i] - projected
-        squared = np.square(diff)
-        sum_square = np.sum(squared)
-        sse = sse + sum_square
+
+        if return_residuals:
+            residuals.append(diff.reshape((-1)))
+        else:
+            sse = sse + np.sum(np.square(diff))
+
         number_of_samples = number_of_samples + len(image_points[i])
 
     LOGGER.debug("Mono RMS reprojection: sse=%s, num=%s",
                  str(sse), str(number_of_samples))
+
+    if return_residuals:
+        return np.hstack(residuals)
+
     return sse, number_of_samples
 
 
