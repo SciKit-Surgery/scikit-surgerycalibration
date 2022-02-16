@@ -224,7 +224,7 @@ def mono_recon_err_for_ext(x_0,
     return rmse
 
 
-def stereo_handeye_recon_error(x_0,
+def stereo_handeye_proj_error(x_0,
                                common_object_points,
                                common_left_image_points,
                                common_right_image_points,

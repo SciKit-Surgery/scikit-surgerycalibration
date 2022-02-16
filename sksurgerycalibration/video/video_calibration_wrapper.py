@@ -530,7 +530,7 @@ def stereo_handeye_calibration(l2r_rmat: np.ndarray,
     x_0[(number_of_frames + 1) * 6 + 4] = h2e_tvec[1][0]
     x_0[(number_of_frames + 1) * 6 + 5] = h2e_tvec[2][0]
 
-    res = least_squares(vcf.stereo_handeye_recon_error, x_0,
+    res = least_squares(vcf.stereo_handeye_proj_error, x_0,
                         args=(common_object_pts,
                               common_l_image_pts,
                               common_r_image_pts,
