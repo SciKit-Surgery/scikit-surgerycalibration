@@ -224,17 +224,17 @@ def mono_recon_err_for_ext(x_0,
     return rmse
 
 
-def stereo_handeye_error(x_0,
-                         common_object_points,
-                         common_left_image_points,
-                         common_right_image_points,
-                         left_intrinsics,
-                         left_distortion,
-                         right_intrinsics,
-                         right_distortion,
-                         l2r_rmat,
-                         l2r_tvec
-                         ):
+def stereo_handeye_recon_error(x_0,
+                               common_object_points,
+                               common_left_image_points,
+                               common_right_image_points,
+                               left_intrinsics,
+                               left_distortion,
+                               right_intrinsics,
+                               right_distortion,
+                               l2r_rmat,
+                               l2r_tvec
+                               ):
     """
     Cost function to return residual error. x_0 should contain an array
     of combined chessboard-marker-to-device-marker tracking 6DOF (rvec, tvec),

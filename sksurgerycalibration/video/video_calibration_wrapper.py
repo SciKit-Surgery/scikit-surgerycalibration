@@ -530,7 +530,7 @@ def stereo_handeye_calibration(l2r_rmat: np.ndarray,
     x_0[(number_of_frames + 1) * 6 + 4] = h2e_tvec[1][0]
     x_0[(number_of_frames + 1) * 6 + 5] = h2e_tvec[2][0]
 
-    res = least_squares(vcf.stereo_handeye_error, x_0,
+    res = least_squares(vcf.stereo_handeye_recon_error, x_0,
                         args=(common_object_pts,
                               common_l_image_pts,
                               common_r_image_pts,
@@ -544,9 +544,9 @@ def stereo_handeye_calibration(l2r_rmat: np.ndarray,
                         x_scale='jac',
                         verbose=0)
 
-    LOGGER.info("Stereo Handeye Re-Calibration: status=%s", str(res.status))
-    LOGGER.info("Stereo Handeye Re-Calibration: success=%s", str(res.success))
-    LOGGER.info("Stereo Handeye Re-Calibration: msg=%s", str(res.message))
+    LOGGER.info("Stereo Handeye Re-Optimised: status=%s", str(res.status))
+    LOGGER.info("Stereo Handeye Re-Optimised: success=%s", str(res.success))
+    LOGGER.info("Stereo Handeye Re-Optimised: msg=%s", str(res.message))
 
     # Extract data from result object.
     x_1 = res.x
