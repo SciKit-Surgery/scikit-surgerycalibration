@@ -290,6 +290,43 @@ class MonoVideoData(BaseVideoCalibrationData):
             reshaped = np.reshape(image_points, (image_points.shape[0], 1, 2))
             self.image_points_arrays.append(reshaped.astype(np.float32))
 
+    def save_annotated_images(self,
+                              dir_name: str,
+                              file_prefix: str
+                             ):
+        """
+        Saves video images, annotated with the ID of
+        each 2D point detected.
+        """
+        if len(self.images_array) == 0:
+            raise ValueError("Can't dump out empty arrays")
+
+        if not os.path.isdir(dir_name):
+            os.makedirs(dir_name)
+
+        font = cv2.FONT_HERSHEY_SIMPLEX
+
+        for i in range(len(self.images_array)):
+
+            image_copy = copy.deepcopy(self.images_array[i])
+            points = self.image_points_arrays[i]
+            ids = self.ids_arrays[i]
+
+            for counter in range(ids.shape[0]):
+
+                cv2.putText(image_copy,
+                            str(ids[counter]),
+                            (int(points[counter][0][0]),
+                             int(points[counter][0][1])),
+                            font, 0.5, (0, 255, 0), 2, cv2.LINE_AA)
+
+            annotated_image_file_name = \
+                sksio.get_annotated_images_file_name(dir_name,
+                                                     file_prefix,
+                                                     i)
+
+            cv2.imwrite(annotated_image_file_name, image_copy)
+
 
 class StereoVideoData(BaseVideoCalibrationData):
     """
@@ -366,3 +403,16 @@ class StereoVideoData(BaseVideoCalibrationData):
         self.left_data.load_data(dir_name, left_prefix)
         right_prefix = sksio.get_right_prefix(file_prefix)
         self.right_data.load_data(dir_name, right_prefix)
+
+    def save_annotated_images(self,
+                              dir_name: str,
+                              file_prefix: str
+                              ):
+        """
+        Saves video images, annotated with the ID of
+        each 2D point detected.
+        """
+        left_prefix = sksio.get_left_prefix(file_prefix)
+        self.left_data.save_annotated_images(dir_name, left_prefix)
+        right_prefix = sksio.get_right_prefix(file_prefix)
+        self.right_data.save_annotated_images(dir_name, right_prefix)
