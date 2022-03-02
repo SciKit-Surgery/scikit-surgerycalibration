@@ -9,9 +9,9 @@ import sksurgeryimage.calibration.point_detector as pd
 import sksurgerycalibration.video.video_calibration_driver_base as vdb
 import sksurgerycalibration.video.video_calibration_data as cd
 import sksurgerycalibration.video.video_calibration_params as cp
-import sksurgerycalibration.video.video_calibration_metrics as cm
 import sksurgerycalibration.video.video_calibration_utils as cu
 import sksurgerycalibration.video.video_calibration_wrapper as vc
+import sksurgerycalibration.video.video_calibration_metrics as cm
 
 LOGGER = logging.getLogger(__name__)
 
@@ -83,15 +83,10 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
 
     def calibrate(self, flags=0):
         """
-        Do the video calibration.
+        Do the video calibration, returning re-projection error from OpenCV functions.
 
-        This returns RMS projection error, which is a common metric, but also,
-        the reconstruction error. If we have N views, we can take successive
-        pairs of views, triangulate points, and see how well they match the
-        model. Ideally, both metrics should be small.
-
-        :param flags: OpenCV flags, eg. cv2.CALIB_FIX_ASPECT_RATIO
-        :return: RMS projection, reconstruction error.
+        :param flags: OpenCV calibration flags, eg. cv2.CALIB_FIX_ASPECT_RATIO
+        :return: RMS projection
         """
         proj_err, camera_matrix, dist_coeffs, rvecs, tvecs = \
             vc.mono_video_calibration(
@@ -102,26 +97,13 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                 flags
             )
 
-        sse, num_samples = \
-            cm.compute_mono_3d_err(
-                self.video_data.ids_arrays,
-                self.video_data.object_points_arrays,
-                self.video_data.image_points_arrays,
-                rvecs,
-                tvecs,
-                camera_matrix,
-                dist_coeffs
-                )
-        recon_err = np.sqrt(sse / num_samples)
-
         self.calibration_params.set_data(camera_matrix,
                                          dist_coeffs,
                                          rvecs,
                                          tvecs)
 
-        LOGGER.info("Calibrated: proj_err=%s, recon_err=%s.",
-                    str(proj_err), str(recon_err))
-        return proj_err, recon_err, copy.deepcopy(self.calibration_params)
+        LOGGER.info("Mono calibration: proj_err=%s.", str(proj_err))
+        return proj_err, copy.deepcopy(self.calibration_params)
 
     def iterative_calibration(self,
                               number_of_iterations: int,
@@ -130,9 +112,9 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                               reference_image_size,
                               flags: int = 0):
         """
-        Does iterative calibration, like Datta 2009.
+        Does iterative calibration, like Datta 2009, returning re-projection error from OpenCV functions.
         """
-        proj_err, recon_err, param_copy = self.calibrate(flags=flags)
+        proj_err, param_copy = self.calibrate(flags=flags)
         cached_images = copy.deepcopy(self.video_data.images_array)
 
         for i in range(0, number_of_iterations):
@@ -148,31 +130,30 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                 reference_image_points,
                 reference_image_size)
 
-            proj_err, recon_err, param_copy = self.calibrate(flags=flags)
+            proj_err, param_copy = self.calibrate(flags=flags)
 
             self.point_detector.set_camera_parameters(
                 self.calibration_params.camera_matrix,
                 self.calibration_params.dist_coeffs)
 
-            LOGGER.info("Iterative calibration: %s: proj_err=%s, recon_err=%s.",
-                        str(i), str(proj_err), str(recon_err))
+            LOGGER.info("Iterative calibration: %s: proj_err=%s.", str(i), str(proj_err))
 
-        return proj_err, recon_err, param_copy
+        return proj_err, param_copy
 
-    def handeye_calibration(self):
-        """Do handeye calibration.
-
-        This returns RMS projection error, which is a common metric, but also,
-        the reconstruction error. If we have N views, we can take successive
-        pairs of views, triangulate points, and see how well they match the
-        model. Ideally, both metrics should be small.
-
-        :return: reprojection, reconstruction error
-        :rtype: float, float
+    def handeye_calibration(self, override_pattern2marker=None):
         """
-        self.tracking_data.set_model2hand_arrays()
+        Do handeye calibration, returning re-projection error from OpenCV functions.
 
-        proj_err, recon_err, handeye, pattern2marker = \
+        Note: This handeye_calibration on this class assumes you are tracking both
+        the calibration pattern (e.g. chessboard) and the device (e.g. laparoscope).
+        So, the calibration routines calibrate for hand2eye and pattern2marker.
+        If you want something more customised, work with video_calibration_hand_eye.py.
+
+        :return: reprojection error
+        :rtype: float
+        """
+
+        proj_err, handeye, pattern2marker = \
             vc.mono_handeye_calibration(
                 self.video_data.object_points_arrays,
                 self.video_data.image_points_arrays,
@@ -183,10 +164,9 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                 self.tracking_data.calibration_tracking_array,
                 self.calibration_params.rvecs,
                 self.calibration_params.tvecs,
-                self.tracking_data.quat_model2hand_array,
-                self.tracking_data.trans_model2hand_array
+                override_pattern2marker=override_pattern2marker
             )
 
         self.calibration_params.set_handeye(handeye, pattern2marker)
 
-        return proj_err, recon_err, copy.deepcopy(self.calibration_params)
+        return proj_err, copy.deepcopy(self.calibration_params)
