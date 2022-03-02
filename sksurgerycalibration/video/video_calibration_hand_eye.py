@@ -267,11 +267,11 @@ def calibrate_hand_eye_using_stationary_pattern(camera_rvecs: List[np.ndarray],
     """
     Hand-eye calibration using standard OpenCV methods. This method assumes
     a single set of tracking data, so it is useful for a stationary, untracked
-    calibration pattern, and a tracked video device.
+    calibration pattern, and a tracked video device, e.g. laparoscope.
 
     :param camera_rvecs: list of rvecs that we get from OpenCV camera extrinsics, pattern_to_camera.
     :param camera_tvecs: list of tvecs that we get from OpenCV camera extrinsics, pattern_to_camera.
-    :param tracking_matrices: list of tracking matrices for the tracked device, e.g. laparoscope, marker_to_tracker.
+    :param tracking_matrices: list of tracking matrices for the tracked device, marker_to_tracker.
     :param method: Choice of OpenCV Hand-Eye method.
     :param invert_camera: if True, we invert camera matrices before hand-eye calibration.
     :return hand-eye transform as 4x4 matrix.
@@ -304,14 +304,14 @@ def calibrate_hand_eye_using_stationary_pattern(camera_rvecs: List[np.ndarray],
         cam_tvecs.append(tvecs)
 
     # OpenCV outputs eye-to-hand.
-    e2h_rmat, e2y_tvec = cv2.calibrateHandEye(tracking_rvecs,
+    e2h_rmat, e2h_tvec = cv2.calibrateHandEye(tracking_rvecs,
                                               tracking_tvecs,
                                               cam_rvecs,
                                               cam_tvecs,
                                               method=method
                                               )
 
-    e2h = mu.construct_rigid_transformation(e2h_rmat, e2y_tvec)
+    e2h = mu.construct_rigid_transformation(e2h_rmat, e2h_tvec)
     h2e = np.linalg.inv(e2h)
 
     return h2e
@@ -326,11 +326,11 @@ def calibrate_hand_eye_using_tracked_pattern(camera_rvecs: List[np.ndarray],
     """
     Hand-eye calibration using standard OpenCV methods. This method assumes
     two sets of tracking data, so it is useful for a tracked device (e.g. laparoscope)
-    and a tracked calibration object.
+    and a tracked calibration object (e.g. chessboard).
 
     :param camera_rvecs: list of rvecs that we get from OpenCV camera extrinsics, pattern_to_camera.
     :param camera_tvecs: list of tvecs that we get from OpenCV camera extrinsics, pattern_to_camera.
-    :param device_tracking_matrices: list of tracking matrices for the tracked device, e.g. laparoscope, marker_to_tracker.
+    :param device_tracking_matrices: list of tracking matrices for the tracked device, marker_to_tracker.
     :param pattern_tracking_matrices: list of tracking matrices for the tracked calibration object, marker_to_tracker.
     :param method: Choice of OpenCV Hand-Eye method.
     :return hand-eye transform as 4x4 matrix.
@@ -368,7 +368,7 @@ def calibrate_pattern_to_tracking_marker(camera_rvecs: List[np.ndarray],
     In some calibration problems, people use a pattern (e.g. chessboard)
     that is tracked. If you manufacture this well, you should know the
     pattern_2_marker transform by DESIGN. However, if you assume a STATIONARY
-    video camera, and a moving pattern, it is also possible to use standard
+    video camera, and a moving pattern, this method allows you to use standard
     hand-eye techniques to estimate the pattern_2_marker transform from
     at least 2 motions (3 views) around different axes of rotation.
 
@@ -455,3 +455,49 @@ def calibrate_hand_eye_and_pattern_to_marker(camera_rvecs: List[np.ndarray],
     p2m = np.linalg.inv(m2p)
 
     return h2e, p2m
+
+
+def calibrate_hand_eye_and_grid_to_world(camera_rvecs: List[np.ndarray],
+                                         camera_tvecs: List[np.ndarray],
+                                         device_tracking_matrices: List[np.ndarray],
+                                         method=cv2.CALIB_ROBOT_WORLD_HAND_EYE_SHAH
+                                         ):
+    """
+    Hand-eye calibration using standard OpenCV methods. This method assumes
+    you have a stationary untracked calibration pattern, and a tracked device (e.g. laparoscope)
+
+    :param camera_rvecs: list of rvecs that we get from OpenCV camera extrinsics, pattern_to_camera.
+    :param camera_tvecs: list of tvecs that we get from OpenCV camera extrinsics, pattern_to_camera.
+    :param device_tracking_matrices: list of tracking matrices for the tracked device, e.g. laparoscope, marker_to_tracker.
+    :param method: Choice of OpenCV RobotWorldHandEye method.
+    :return hand-eye, grid-to-world transforms as 4x4 matrices
+    """
+    if len(camera_rvecs) != len(camera_tvecs):
+        raise ValueError("Camera rotation and translation vector lists must be the same length.")
+
+    if len(camera_tvecs) != len(device_tracking_matrices):
+        raise ValueError("The number of camera extrinsic transforms must equal the number of device tracking matrices.")
+
+    if len(camera_rvecs) < 3:
+        raise ValueError("You must have at least 3 views, include movements around at least 2 different rotation axes.")
+
+    base2gripper_rvecs = []
+    base2gripper_tvecs = []
+    for i in range(len(device_tracking_matrices)):
+        b2g = np.linalg.inv(device_tracking_matrices[i])
+        rvecs, tvecs = vu.extrinsic_matrix_to_vecs(b2g)
+        base2gripper_rvecs.append(rvecs)
+        base2gripper_tvecs.append(tvecs)
+
+    b2w_rmat, b2w_t, g2c_rmat, g2c_t = \
+        cv2.calibrateRobotWorldHandEye(camera_rvecs,
+                                       camera_tvecs,
+                                       base2gripper_rvecs,
+                                       base2gripper_tvecs,
+                                       method=method)
+
+    h2e = mu.construct_rigid_transformation(g2c_rmat, g2c_t)
+    b2w = mu.construct_rigid_transformation(b2w_rmat, b2w_t)
+    w2b = np.linalg.inv(b2w) # See OpenCV docs base2world == grid2tracker
+
+    return h2e, w2b

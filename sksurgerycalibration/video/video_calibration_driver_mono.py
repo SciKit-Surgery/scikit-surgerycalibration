@@ -81,12 +81,12 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
 
     def calibrate(self, flags=0):
         """
-        Do the video calibration, returning re-projection error from OpenCV functions.
+        Do the video calibration, returning RMS re-projection error.
 
         :param flags: OpenCV calibration flags, eg. cv2.CALIB_FIX_ASPECT_RATIO
         :return: RMS projection
         """
-        proj_err, camera_matrix, dist_coeffs, rvecs, tvecs = \
+        rms_proj_err, camera_matrix, dist_coeffs, rvecs, tvecs = \
             vc.mono_video_calibration(
                 self.video_data.object_points_arrays,
                 self.video_data.image_points_arrays,
@@ -100,8 +100,8 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                                          rvecs,
                                          tvecs)
 
-        LOGGER.info("Mono calibration: proj_err=%s.", str(proj_err))
-        return proj_err, copy.deepcopy(self.calibration_params)
+        LOGGER.info("Mono calibration: rms_proj_err=%s.", str(rms_proj_err))
+        return rms_proj_err, copy.deepcopy(self.calibration_params)
 
     def iterative_calibration(self,
                               number_of_iterations: int,
@@ -110,9 +110,10 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                               reference_image_size,
                               flags: int = 0):
         """
-        Does iterative calibration, like Datta 2009, returning re-projection error from OpenCV functions.
+        Does iterative calibration, like Datta 2009, returning RMS re-projection error.
+        :return: RMS projection
         """
-        proj_err, param_copy = self.calibrate(flags=flags)
+        rms_proj_err, param_copy = self.calibrate(flags=flags)
         cached_images = copy.deepcopy(self.video_data.images_array)
 
         for i in range(0, number_of_iterations):
@@ -128,43 +129,51 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                 reference_image_points,
                 reference_image_size)
 
-            proj_err, param_copy = self.calibrate(flags=flags)
+            rms_proj_err, param_copy = self.calibrate(flags=flags)
 
             self.point_detector.set_camera_parameters(
                 self.calibration_params.camera_matrix,
                 self.calibration_params.dist_coeffs)
 
-            LOGGER.info("Iterative calibration: %s: proj_err=%s.", str(i), str(proj_err))
+            LOGGER.info("Iterative calibration: %s: rms_proj_err=%s.", str(i), str(rms_proj_err))
 
-        return proj_err, param_copy
+        return rms_proj_err, param_copy
 
-    def handeye_calibration(self, override_pattern2marker=None):
+    def handeye_calibration(self,
+                            override_pattern2marker=None,
+                            use_opencv: bool=False,
+                            do_bundle_adjust: bool=False):
         """
-        Do handeye calibration, returning re-projection error from OpenCV functions.
+        Do handeye calibration, returning RMS re-projection error.
 
         Note: This handeye_calibration on this class assumes you are tracking both
         the calibration pattern (e.g. chessboard) and the device (e.g. laparoscope).
         So, the calibration routines calibrate for hand2eye and pattern2marker.
         If you want something more customised, work with video_calibration_hand_eye.py.
 
-        :return: reprojection error
+        :param override_pattern2marker: If provided a 4x4 pattern2marker that is taken as constant.
+        :param use_opencv: If True we use OpenCV based methods, if false, Guofang Xiao's method.
+        :param do_bundle_adjust: If True we do an additional bundle adjustment at the end.
+
+        :return: RMS reprojection error
         :rtype: float
         """
 
-        proj_err, handeye, pattern2marker = \
+        rms_proj_err, handeye, pattern2marker = \
             vc.mono_handeye_calibration(
                 self.video_data.object_points_arrays,
                 self.video_data.image_points_arrays,
-                self.video_data.ids_arrays,
                 self.calibration_params.camera_matrix,
                 self.calibration_params.dist_coeffs,
                 self.tracking_data.device_tracking_array,
                 self.tracking_data.calibration_tracking_array,
                 self.calibration_params.rvecs,
                 self.calibration_params.tvecs,
-                override_pattern2marker=override_pattern2marker
+                override_pattern2marker=override_pattern2marker,
+                use_opencv=use_opencv,
+                do_bundle_adjust=do_bundle_adjust
             )
 
         self.calibration_params.set_handeye(handeye, pattern2marker)
 
-        return proj_err, copy.deepcopy(self.calibration_params)
+        return rms_proj_err, copy.deepcopy(self.calibration_params)

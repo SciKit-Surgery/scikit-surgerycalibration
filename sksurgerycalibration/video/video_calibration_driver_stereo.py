@@ -130,6 +130,12 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         the reconstruction / triangulation error.
 
         :param flags: OpenCV flags, eg. cv2.CALIB_FIX_INTRINSIC
+        :param override_left_intrinsics:
+        :param override_left_distortion:
+        :param override_right_intrinsics:
+        :param override_right_distortion:
+        :param override_l2r_rmat:
+        :param override_l2r_tvec:
         :return: projection, reconstruction error.
         :rtype: float, float
         """
@@ -174,6 +180,7 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                               ):
         """
         Does iterative calibration, like Datta 2009, returning reprojection and reconstruction error.
+
         :return: projection, reconstruction error.
         :rtype: float, float
         """
@@ -221,7 +228,10 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
 
         return proj_err, recon_err, param_copy
 
-    def handeye_calibration(self):
+    def handeye_calibration(self,
+                            override_pattern2marker=None,
+                            use_opencv: bool=False,
+                            do_bundle_adjust: bool=False):
         """
         Do handeye calibration, returning reprojection and reconstruction error.
 
@@ -230,8 +240,12 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         So, the calibration routines calibrate for hand2eye and pattern2marker.
         If you want something more customised, work with video_calibration_hand_eye.py.
 
-        :return: reprojection, reconstruction error
-        :rtype: float, float
+        :param override_pattern2marker: If provided a 4x4 pattern2marker that is taken as constant.
+        :param use_opencv: If True we use OpenCV based methods, if false, Guofang Xiao's method.
+        :param do_bundle_adjust: If True we do an additional bundle adjustment at the end.
+
+        :return: reprojection, reconstruction error, camera parameters
+        :rtype: float, float, object
         """
 
         proj_err, recon_err, l_handeye, l_pattern2marker, \
@@ -253,7 +267,10 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                     self.calibration_params.left_params.rvecs,
                     self.calibration_params.left_params.tvecs,
                     self.calibration_params.right_params.rvecs,
-                    self.calibration_params.right_params.tvecs
+                    self.calibration_params.right_params.tvecs,
+                    override_pattern2marker=override_pattern2marker,
+                    use_opencv=use_opencv,
+                    do_bundle_adjust=do_bundle_adjust
                     )
 
         self.calibration_params.left_params.set_handeye(
