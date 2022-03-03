@@ -68,12 +68,11 @@ def test_chessboard_mono():
     assert calibrator.get_number_of_views() == 9
 
     # Then do calibration
-    reproj_err, recon_err, params = calibrator.calibrate()
+    reproj_err, params = calibrator.calibrate()
 
-    # Just for a regression test, checking reprojection error, and recon error.
+    # Just for a regression test, checking reprojection error.
     # We do appear to get different performance on Linux/Mac
     assert reproj_err < 0.6
-    assert recon_err < 0.3
 
     # Test components of iterative calibration.
     original_image = calibrator.video_data.images_array[0]

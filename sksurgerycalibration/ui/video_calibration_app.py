@@ -101,9 +101,8 @@ def run_video_calibration(configuration = None, save_dir = None, prefix = None):
                 print("Number of frames = " + str(number_of_views))
 
                 if number_of_views >= min_num_views:
-                    proj_err, recon_err, params = calibrator.calibrate()
+                    proj_err, params = calibrator.calibrate()
                     print("Reprojection (2D) error is:" + str(proj_err))
-                    print("Reconstruction (3D) error is:" + str(recon_err))
                     print("Intrinsics are:")
                     print(params.camera_matrix)
                     print("Distortion matrix is:")
