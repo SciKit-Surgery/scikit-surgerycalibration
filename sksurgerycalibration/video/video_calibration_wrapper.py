@@ -115,7 +115,7 @@ def mono_handeye_calibration(object_points: List,
     :type tvecs: List[np.ndarray]
     :param override_pattern2marker: If provided a 4x4 pattern2marker that is taken as constant.
     :param use_opencv: If True we use OpenCV based methods, if false, Guofang Xiao's method.
-    :param do_bundle_adjust: If True we do an additional bundle adjustment at the end.
+    :param do_bundle_adjust: If True we do an additional bundle adjustment at the end. Needs pattern tracking too.
     :return: Reprojection error, handeye matrix, patter to marker matrix
     :rtype: float, float, np.ndarray, np.ndarray
     """
@@ -136,7 +136,9 @@ def mono_handeye_calibration(object_points: List,
 
         pattern2marker_matrix = override_pattern2marker
 
-        if pattern2marker_matrix is None and len(pattern_tracking_array) > 3 and pattern_tracking_array[0] is not None:
+        if pattern2marker_matrix is None \
+                and len(pattern_tracking_array) > 3 \
+                and pattern_tracking_array[0] is not None:
 
             handeye_matrix, pattern2marker_matrix = \
                 he.calibrate_hand_eye_and_pattern_to_marker(rvecs,
@@ -192,7 +194,9 @@ def mono_handeye_calibration(object_points: List,
             tvec[2] = x_1[11]
             handeye_matrix = vu.extrinsic_vecs_to_matrix(rvec, tvec)
 
-        elif pattern2marker_matrix is not None and len(pattern_tracking_array) > 3 and pattern_tracking_array[0] is not None:
+        elif pattern2marker_matrix is not None \
+                and len(pattern_tracking_array) > 3 \
+                and pattern_tracking_array[0] is not None:
 
             handeye_matrix, _ = he.calibrate_hand_eye_and_pattern_to_marker(rvecs,
                                                                             tvecs,
@@ -275,23 +279,9 @@ def mono_handeye_calibration(object_points: List,
             tvec[2] = x_1[5]
             handeye_matrix = vu.extrinsic_vecs_to_matrix(rvec, tvec)
 
-    if do_bundle_adjust:
-
-        # Note:
-        # If you now have an accurate p2m and h2e, and believe that your tracking
-        # data is more reliable than your camera extrinsics which were estimated,
-        # then you could reset the camera extrinsics? You could then recalibrate
-        # and optimise the hand-eye, intrinsic and distortion parameters.
-        for i in range(len(object_points)):
-            p2c = handeye_matrix @ np.linalg.inv(device_tracking_array[i]) @ \
-                  pattern_tracking_array[i] @ pattern2marker_matrix
-            rvec, tvec = vu.extrinsic_matrix_to_vecs(p2c)
-            rvecs[i][0][0] = rvec[0][0]
-            rvecs[i][1][0] = rvec[1][0]
-            rvecs[i][2][0] = rvec[2][0]
-            tvecs[i][0][0] = tvec[0][0]
-            tvecs[i][1][0] = tvec[1][0]
-            tvecs[i][2][0] = tvec[2][0]
+    if do_bundle_adjust \
+            and len(pattern_tracking_array) > 3 \
+            and pattern_tracking_array[0] is not None:
 
         # Now optimise h2e, intrinsics, distortion
         x_0 = np.zeros(15)
@@ -340,17 +330,28 @@ def mono_handeye_calibration(object_points: List,
         camera_distortion[0][3] = x_1[13]
         camera_distortion[0][4] = x_1[14]
 
-    # Finally, compute error measures.
-    sse, num_samples = vm.compute_mono_2d_err_handeye(object_points,
-                                                      image_points,
-                                                      camera_matrix,
-                                                      camera_distortion,
-                                                      device_tracking_array,
-                                                      pattern_tracking_array,
-                                                      handeye_matrix,
-                                                      pattern2marker_matrix
-                                                      )
+    elif do_bundle_adjust and (len(pattern_tracking_array) == 0 or pattern_tracking_array[0] is None):
+        # To Do: We could still optimise h2e and g2w, for untracked cases?
+        raise NotImplementedError("Bundled adjustment isn't implemented for untracked calibration patterns.")
 
+    if len(pattern_tracking_array) > 3 and pattern_tracking_array[0] is not None:
+
+        sse, num_samples = vm.compute_mono_2d_err_handeye(object_points,
+                                                          image_points,
+                                                          camera_matrix,
+                                                          camera_distortion,
+                                                          device_tracking_array,
+                                                          pattern_tracking_array,
+                                                          handeye_matrix,
+                                                          pattern2marker_matrix
+                                                          )
+    else:
+        sse, num_samples = vm.compute_mono_2d_err(object_points,
+                                                  image_points,
+                                                  rvecs,
+                                                  tvecs,
+                                                  camera_matrix,
+                                                  camera_distortion)
     mse = sse / num_samples
     reproj_err = np.sqrt(mse)
 
@@ -709,8 +710,6 @@ def stereo_handeye_calibration(l2r_rmat: np.ndarray,
             minimum_points)
 
     if do_bundle_adjust:
-
-        # First optimise p2m and h2e, keeping camera params the same.
 
         if override_pattern2marker is None \
                 and len(calibration_tracking_array) > 3 \

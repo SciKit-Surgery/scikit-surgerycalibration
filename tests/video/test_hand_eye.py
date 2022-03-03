@@ -140,20 +140,13 @@ def test_handeye_calibration_stereo():
     assert reproj_err_1 == pytest.approx(0.6, rel=0.2)
     assert recon_err_1 == pytest.approx(1., rel=0.2)
 
-    proj_err, recon_err, _ = calibrator.handeye_calibration()
+    proj_err, recon_err, _ = calibrator.handeye_calibration(use_opencv=True, do_bundle_adjust=True)
 
     print(f'Reproj err {proj_err}')
     print(f'Recon err {recon_err}')
 
-    # These values are taken from a previous successful run
-    # Not objective measures of correctness
-    # expected_reproj_error = 1.77138
-    # expected_recon_error = 1.24267
-    # Unfortunately the tolerances need to change depending on OS and
-    # software versions. py3.7 on ubuntu returned 2.94
-
-    assert proj_err == pytest.approx(1.8, rel=1.7)
-    assert recon_err == pytest.approx(1.2, rel=0.2)
+    assert proj_err == pytest.approx(7.3, rel=1.7)
+    assert recon_err == pytest.approx(2.5, rel=0.2)
 
     # test save/load for hand-eye
     calibrator.save_params('tests/output/test_handeye_calibration_stereo', '')

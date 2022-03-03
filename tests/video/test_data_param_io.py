@@ -35,7 +35,7 @@ def test_chessboard_mono_io():
     # Technically, you aren't running the 'grab' bit again.
     # The calibration works off the already extracted points.
     calibrator.load_data('tests/output/test_chessboard_mono_io', '')
-    reproj_err_2, recon_err_2, params_2 = calibrator.calibrate()
+    reproj_err_2, params_2 = calibrator.calibrate()
     assert (np.isclose(reproj_err_1, reproj_err_2))
 
     calibrator.load_params('tests/output/test_chessboard_mono_io', '')
