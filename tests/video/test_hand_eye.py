@@ -77,7 +77,7 @@ def test_handeye_calibration_mono():
 
     assert reproj_err_1 == pytest.approx(1., rel=0.2)
 
-    proj_err, recon_err, _ = calibrator.handeye_calibration()
+    proj_err, _ = calibrator.handeye_calibration()
 
     print(f'Reproj err {proj_err}')
 
