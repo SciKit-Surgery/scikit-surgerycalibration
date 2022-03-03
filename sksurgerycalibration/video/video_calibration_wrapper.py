@@ -891,7 +891,7 @@ def stereo_calibration_extrinsics(common_object_points,
         x_0[i * 6 + 4] = l_tvecs[i][1]
         x_0[i * 6 + 5] = l_tvecs[i][2]
 
-    res = least_squares(vcf._stereo_2d_error_for_extrinsics, x_0,
+    res = least_squares(vcf.stereo_2d_error_for_extrinsics, x_0,
                         args=(common_object_points,
                               common_left_image_points,
                               common_right_image_points,
