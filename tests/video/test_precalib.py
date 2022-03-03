@@ -7,27 +7,7 @@ import cv2
 import sksurgeryimage.calibration.charuco_plus_chessboard_point_detector \
     as charuco_pd
 import sksurgerycalibration.video.video_calibration_driver_stereo as sc
-
-
-def get_calib_data(directory: str, idx: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """ Generate filenames for calibration data in a given directory. """
-    left_image = cv2.imread(
-        os.path.join(directory, f'calib.left.images.{idx}.png')
-    )
-
-    right_image = cv2.imread(
-        os.path.join(directory, f'calib.right.images.{idx}.png')
-    )
-
-    chessboard_tracking = np.loadtxt(
-        os.path.join(directory, f'calib.calib_obj_tracking.{idx}.txt')
-    )
-
-    scope_tracking = np.loadtxt(
-        os.path.join(directory, f'calib.device_tracking.{idx}.txt')
-    )
-
-    return left_image, right_image, chessboard_tracking, scope_tracking
+import tests.video.test_load_calib_utils as lcu
 
 
 def get_calib_driver(calib_dir: str):
@@ -71,7 +51,7 @@ def get_calib_driver(calib_dir: str):
                                                          minimum_points)
 
     for i in range(3):
-        l_img, r_img, chessboard, scope = get_calib_data(calib_dir, i)
+        l_img, r_img, chessboard, scope = lcu.get_calib_data(calib_dir, i)
         calibration_driver.grab_data(l_img, r_img, scope, chessboard)
 
     return calibration_driver
