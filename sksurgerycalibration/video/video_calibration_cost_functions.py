@@ -3,7 +3,6 @@
 """ Cost functions for video calibration, used with scipy. """
 
 import numpy as np
-import cv2
 import sksurgerycalibration.video.video_calibration_utils as vu
 import sksurgerycalibration.video.video_calibration_metrics as vm
 
@@ -66,8 +65,8 @@ def mono_proj_err_h2e(x_0,
                       pattern2marker_matrix
                       ):
     """
-    Method to return a vector of residuals of projected
-    image points to actual image points, for a single camera,
+    Computes the SSE of projected
+    image points and actual image points, for a single camera,
     where we have a tracked calibration pattern, and assume the
     pattern2marker transform should remain fixed. Therefore we
     only optimise hand-eye. So, x_0 should be of length 6.
@@ -101,12 +100,13 @@ def mono_proj_err_h2e(x_0,
         rvecs.append(rvec)
         tvecs.append(tvec)
 
-    proj, recon = vm.compute_mono_2d_err(object_points,
-                                      image_points,
-                                      rvecs,
-                                      tvecs,
-                                      intrinsics,
-                                      distortion)
+    proj, _ = vm.compute_mono_2d_err(object_points,
+                                     image_points,
+                                     rvecs,
+                                     tvecs,
+                                     intrinsics,
+                                     distortion,
+                                     return_residuals=False)
     return proj
 
 
@@ -119,7 +119,7 @@ def mono_proj_err_p2m_h2e(x_0,
                           device_tracking
                           ):
     """
-    Method to return a vector of residuals of projected
+    Computes the SSE between projected
     image points to actual image points, for a single camera,
     where we have a tracked pattern. Both the
     pattern2marker and hand2eye are optimised.
@@ -164,12 +164,13 @@ def mono_proj_err_p2m_h2e(x_0,
         rvecs.append(rvec)
         tvecs.append(tvec)
 
-    proj, recon = vm.compute_mono_2d_err(object_points,
-                                         image_points,
-                                         rvecs,
-                                         tvecs,
-                                         intrinsics,
-                                         distortion)
+    proj, _ = vm.compute_mono_2d_err(object_points,
+                                     image_points,
+                                     rvecs,
+                                     tvecs,
+                                     intrinsics,
+                                     distortion,
+                                     return_residuals=False)
     return proj
 
 
@@ -181,7 +182,7 @@ def mono_proj_err_h2e_g2w(x_0,
                           device_tracking
                           ):
     """
-    Method to return a vector of residuals of projected
+    Method to the SSE of projected
     image points to actual image points, for a single camera,
     where we have an untracked pattern. Both the
     hand2eye and grid2world are optimised.
@@ -225,14 +226,14 @@ def mono_proj_err_h2e_g2w(x_0,
         rvecs.append(rvec)
         tvecs.append(tvec)
 
-    residual = vm.compute_mono_2d_err(object_points,
-                                      image_points,
-                                      rvecs,
-                                      tvecs,
-                                      intrinsics,
-                                      distortion,
-                                      return_residuals=True)
-    return residual
+    proj, _ = vm.compute_mono_2d_err(object_points,
+                                     image_points,
+                                     rvecs,
+                                     tvecs,
+                                     intrinsics,
+                                     distortion,
+                                     return_residuals=False)
+    return proj
 
 
 def mono_proj_err_h2e_int_dist(x_0,
@@ -243,7 +244,7 @@ def mono_proj_err_h2e_int_dist(x_0,
                                pattern2marker_matrix
                                ):
     """
-    Method to return a vector of residuals of projected
+    Computes the SSE between projected
     image points to actual image points, for a single camera,
     where we have a tracked pattern. The handeye, intrinsics and
     distortion parameters are optimised.
@@ -291,12 +292,12 @@ def mono_proj_err_h2e_int_dist(x_0,
         rvecs.append(rvec)
         tvecs.append(tvec)
 
-    proj, recon = vm.compute_mono_2d_err(object_points,
-                                         image_points,
-                                         rvecs,
-                                         tvecs,
-                                         intrinsics,
-                                         distortion)
+    proj, _ = vm.compute_mono_2d_err(object_points,
+                                     image_points,
+                                     rvecs,
+                                     tvecs,
+                                     intrinsics,
+                                     distortion)
     return proj
 
 
@@ -315,9 +316,11 @@ def stereo_handeye_proj_error(x_0,
                               left_pattern2marker_matrix=None
                               ):
     """
-    Cost function to return residual error. x_0 should contain an array
-    of combined chessboard-marker-to-device-marker tracking 6DOF (rvec, tvec),
-    chessboard-pattern-to-marker 6DOF and the device-hand-to-eye matrix 6DOF.
+    Computes the SSE of projected image points
+    and actual image points for left and right cameras. x_0 should contain
+    the 6DOF of hand-to-eye, and if left_pattern2marker_matrix is None,
+    then an additional 6DOF of pattern-to-marker. So, x_0 can be either
+    length 6 or length 12.
 
     :param x_0:
     :param common_object_points:
@@ -376,18 +379,17 @@ def stereo_handeye_proj_error(x_0,
         rvecs.append(rvec)
         tvecs.append(tvec)
 
-    sse, _ = vm.compute_stereo_2d_err(l2r_rmat,
-                                      l2r_tvec,
-                                      common_object_points,
-                                      common_left_image_points,
-                                      left_intrinsics,
-                                      left_distortion,
-                                      common_object_points,
-                                      common_right_image_points,
-                                      right_intrinsics,
-                                      right_distortion,
-                                      rvecs,
-                                      tvecs
-                                      )
-
-    return sse
+    proj, _ = vm.compute_stereo_2d_err(l2r_rmat,
+                                       l2r_tvec,
+                                       common_object_points,
+                                       common_left_image_points,
+                                       left_intrinsics,
+                                       left_distortion,
+                                       common_object_points,
+                                       common_right_image_points,
+                                       right_intrinsics,
+                                       right_distortion,
+                                       rvecs,
+                                       tvecs
+                                       )
+    return proj

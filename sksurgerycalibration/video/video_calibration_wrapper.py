@@ -257,16 +257,14 @@ def mono_handeye_calibration(object_points: List,
             x_0[10] = tvec[1]
             x_0[11] = tvec[2]
 
-            res = least_squares(vcf.mono_proj_err_h2e_g2w, x_0,
-                                args=(object_points,
-                                      image_points,
-                                      camera_matrix,
-                                      camera_distortion,
-                                      device_tracking_array
-                                      ),
-                                method='lm',
-                                x_scale='jac',
-                                verbose=0)
+            res = minimize(vcf.mono_proj_err_h2e_g2w, x_0,
+                           args=(object_points,
+                                 image_points,
+                                 camera_matrix,
+                                 camera_distortion,
+                                 device_tracking_array
+                                 ),
+                           method='Powell')
 
             x_1 = res.x
             rvec[0] = x_1[0]
