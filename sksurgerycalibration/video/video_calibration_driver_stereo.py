@@ -266,8 +266,6 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                     self.tracking_data.calibration_tracking_array,
                     self.calibration_params.left_params.rvecs,
                     self.calibration_params.left_params.tvecs,
-                    self.calibration_params.right_params.rvecs,
-                    self.calibration_params.right_params.tvecs,
                     override_pattern2marker=override_pattern2marker,
                     use_opencv=use_opencv,
                     do_bundle_adjust=do_bundle_adjust
