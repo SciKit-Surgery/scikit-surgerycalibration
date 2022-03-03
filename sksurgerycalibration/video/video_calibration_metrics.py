@@ -29,7 +29,8 @@ def compute_stereo_2d_err(l2r_rmat,
                           left_tvecs,
                           return_residuals=False):
     """
-    Function to compute stereo re-projection error (SSE), over multiple views.
+    Function to compute stereo re-projection error (SSE),
+    or residuals, over multiple views.
 
     :param l2r_rmat: [3x3] ndarray, rotation for l2r transform
     :param l2r_tvec: [3x1] ndarray, translation for l2r transform
@@ -45,7 +46,7 @@ def compute_stereo_2d_err(l2r_rmat,
     :param left_tvecs: Vector of [3x1] ndarray, translations, left camera
     :param return_residuals: if True returns vector of residuals for LM,
     otherwise, returns SSE.
-    :return: re-reprojection error, number_samples
+    :return: SSE, number_samples OR residuals
     """
     left_to_right = mu.construct_rigid_transformation(l2r_rmat, l2r_tvec)
 
@@ -109,7 +110,8 @@ def compute_stereo_3d_error(l2r_rmat,
                             left_tvecs,
                             return_residuals=False):
     """
-    Function to compute stereo reconstruction error (SSE) over multiple views.
+    Function to compute stereo reconstruction error (SSE),
+    or residuals over multiple views.
 
     :param l2r_rmat: [3x3] ndarray, rotation for l2r transform
     :param l2r_tvec: [3x1] ndarray, translation for l2r transform
@@ -208,7 +210,8 @@ def compute_mono_2d_err(object_points,
                         distortion,
                         return_residuals=False):
     """
-    Function to compute mono RMS reprojection (SSE) error over multiple views.
+    Function to compute mono reprojection (SSE) error,
+    or residuals over multiple views of a mono camera.
 
     :param object_points: Vector of Vector of 1x3 of type float32
     :param image_points: Vector of Vector of 1x2 of type float32
@@ -216,7 +219,7 @@ def compute_mono_2d_err(object_points,
     :param tvecs: Vector of [3x1] ndarray, translations for each camera
     :param camera_matrix: [3x3] ndarray
     :param distortion: [1x5] ndarray
-    :param return_residuals: If True will return a big array of residuals for Levenberg-Marquardt
+    :param return_residuals: If True will return a big array of residuals for LM.
     :return: SSE re-reprojection error, number_samples OR residuals
     """
     sse = 0
@@ -258,7 +261,7 @@ def compute_mono_3d_err(ids,
                         camera_matrix,
                         distortion):
     """
-    Function to compute mono RMS reconstruction error over multiple views.
+    Function to compute mono reconstruction error (SSE) over multiple views.
 
     Here, to triangulate, we take the i^th camera as left camera, and
     the i+1^th camera as the right camera, compute l2r, and triangulate.
@@ -342,7 +345,9 @@ def compute_mono_2d_err_handeye(model_points: List,
                                 pattern2marker_matrix: np.ndarray):
     """
     Function to compute mono reprojection error (SSE), mapping
-    from calibration to pattern, via tracking matrices and hand-eye calibration.
+    from the calibration pattern coordinate system to the
+    camera coordinate system, via tracking matrices and
+    hand-eye calibration.
 
     :param model_points: Vector of Vector of 1x3 float32
     :type model_points: List
@@ -376,7 +381,7 @@ def compute_mono_2d_err_handeye(model_points: List,
     for i in range(number_of_frames):
         pattern_to_camera = \
             handeye_matrix @ np.linalg.inv(hand_tracking_array[i]) @ \
-                model_tracking_array[i] @ pattern2marker_matrix
+            model_tracking_array[i] @ pattern2marker_matrix
 
         rvec, tvec = vu.extrinsic_matrix_to_vecs(pattern_to_camera)
         rvecs.append(rvec)
@@ -443,7 +448,7 @@ def compute_mono_3d_err_handeye(ids: List,
     for i in range(number_of_frames):
         pattern_to_camera = \
             handeye_matrix @ np.linalg.inv(hand_tracking_array[i]) @ \
-                model_tracking_array[i] @ pattern2marker_matrix
+            model_tracking_array[i] @ pattern2marker_matrix
 
         rvec, tvec = vu.extrinsic_matrix_to_vecs(pattern_to_camera)
         rvecs.append(rvec)
@@ -590,7 +595,7 @@ def compute_stereo_3d_err_handeye(l2r_rmat: np.ndarray,
 
         pattern_to_left_camera = \
             left_handeye_matrix @ np.linalg.inv(hand_tracking_array[i]) @ \
-                 model_tracking_array[i] @ left_pattern2marker_matrix
+            model_tracking_array[i] @ left_pattern2marker_matrix
 
         rvec, tvec = vu.extrinsic_matrix_to_vecs(pattern_to_left_camera)
         left_rvecs.append(rvec)
