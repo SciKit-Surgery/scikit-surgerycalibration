@@ -290,7 +290,7 @@ class MonoVideoData(BaseVideoCalibrationData):
 
         font = cv2.FONT_HERSHEY_SIMPLEX
 
-        for i in range(len(self.images_array)):
+        for i in enumerate(self.images_array):
 
             image_copy = copy.deepcopy(self.images_array[i])
             points = self.image_points_arrays[i]

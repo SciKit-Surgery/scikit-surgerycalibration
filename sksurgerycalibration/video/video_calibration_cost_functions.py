@@ -2,6 +2,8 @@
 
 """ Cost functions for video calibration, used with scipy. """
 
+# pylint:disable=invalid-name
+
 import numpy as np
 import sksurgerycalibration.video.video_calibration_utils as vu
 import sksurgerycalibration.video.video_calibration_metrics as vm
@@ -301,6 +303,7 @@ def mono_proj_err_h2e_int_dist(x_0,
     return proj
 
 
+# pylint:disable=too-many-arguments
 def stereo_proj_err_h2e(x_0,
                         common_object_points,
                         common_left_image_points,
@@ -373,7 +376,11 @@ def stereo_proj_err_h2e(x_0,
 
     for i in range(0, number_of_frames):
 
-        p2c = h2e @ np.linalg.inv(device_tracking_array[i]) @ pattern_tracking_array[i] @ p2m
+        p2c = h2e \
+              @ np.linalg.inv(device_tracking_array[i]) \
+              @ pattern_tracking_array[i] \
+              @ p2m
+
         rvec, tvec = vu.extrinsic_matrix_to_vecs(p2c)
 
         rvecs.append(rvec)

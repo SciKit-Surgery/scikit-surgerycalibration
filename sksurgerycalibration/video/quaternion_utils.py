@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+# pylint:disable=invalid-name
+
 """
 Utilities for manipulating quaternions.
 """
@@ -162,4 +164,3 @@ def to_one_hemisphere(quaternions):
             new_quaternions[i] = -quaternions[i]
 
     return new_quaternions
-

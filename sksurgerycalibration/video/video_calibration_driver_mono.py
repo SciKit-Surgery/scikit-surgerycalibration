@@ -110,7 +110,8 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                               reference_image_size,
                               flags: int = 0):
         """
-        Does iterative calibration, like Datta 2009, returning RMS re-projection error.
+        Does iterative calibration, like Datta 2009,
+        returning RMS re-projection error.
         :return: RMS projection
         """
         rms_proj_err, param_copy = self.calibrate(flags=flags)
@@ -135,7 +136,8 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                 self.calibration_params.camera_matrix,
                 self.calibration_params.dist_coeffs)
 
-            LOGGER.info("Iterative calibration: %s: rms_proj_err=%s.", str(i), str(rms_proj_err))
+            LOGGER.info("Iterative calibration: %s: rms_proj_err=%s.",
+                        str(i), str(rms_proj_err))
 
         return rms_proj_err, param_copy
 
@@ -146,14 +148,18 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         """
         Do handeye calibration, returning RMS re-projection error.
 
-        Note: This handeye_calibration on this class assumes you are tracking both
-        the calibration pattern (e.g. chessboard) and the device (e.g. laparoscope).
-        So, the calibration routines calibrate for hand2eye and pattern2marker.
-        If you want something more customised, work with video_calibration_hand_eye.py.
+        Note: This handeye_calibration on this class assumes you are
+        tracking both the calibration pattern (e.g. chessboard) and the
+        device (e.g. laparoscope). So, the calibration routines calibrate
+        for hand2eye and pattern2marker. If you want something more customised,
+        work with video_calibration_hand_eye.py.
 
-        :param override_pattern2marker: If provided a 4x4 pattern2marker that is taken as constant.
-        :param use_opencv: If True we use OpenCV based methods, if false, Guofang Xiao's method.
-        :param do_bundle_adjust: If True we do an additional bundle adjustment at the end.
+        :param override_pattern2marker: If provided a 4x4 pattern2marker
+        that is taken as constant.
+        :param use_opencv: If True we use OpenCV based methods, if false,
+        Guofang Xiao's method.
+        :param do_bundle_adjust: If True we do an additional bundle adjustment
+        at the end.
 
         :return: RMS reprojection error
         :rtype: float

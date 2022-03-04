@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 
-""" Video calibration metrics, used in cost functions for optimisation, and as measures of error generally.  """
+"""
+Video calibration metrics, used in cost functions for optimisation,
+and as measures of error generally.
+"""
 
 # pylint: disable=too-many-arguments
 
@@ -192,7 +195,8 @@ def compute_stereo_3d_error(l2r_rmat,
             squared = np.square(diff)
             sum_square = np.sum(squared)
             sse = sse + sum_square
-            number_of_samples = number_of_samples + len(common_left_image_points[i])
+            number_of_samples = number_of_samples \
+                                + len(common_left_image_points[i])
 
     if return_residuals:
         return np.hstack(residuals)
@@ -219,7 +223,7 @@ def compute_mono_2d_err(object_points,
     :param tvecs: Vector of [3x1] ndarray, translations for each camera
     :param camera_matrix: [3x3] ndarray
     :param distortion: [1x5] ndarray
-    :param return_residuals: If True will return a big array of residuals for LM.
+    :param return_residuals: If True returns a big array of residuals for LM.
     :return: SSE re-reprojection error, number_samples OR residuals
     """
     sse = 0

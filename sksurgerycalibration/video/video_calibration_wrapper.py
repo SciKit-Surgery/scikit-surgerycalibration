@@ -2,6 +2,8 @@
 
 """ Video Calibration functions, that wrap OpenCV functions mainly. """
 
+# pylint:disable=too-many-lines
+
 import logging
 import copy
 from typing import List
@@ -79,7 +81,7 @@ def mono_video_calibration(object_points, image_points, image_size, flags=0):
     return final_rms, camera_matrix, dist_coeffs, rvecs, tvecs
 
 
-#pylint:disable=too-many-arguments
+# pylint:disable=too-many-arguments,too-many-statements
 def mono_handeye_calibration(object_points: List,
                              image_points: List,
                              camera_matrix: np.ndarray,
@@ -113,9 +115,12 @@ def mono_handeye_calibration(object_points: List,
     :type rvecs: List[np.ndarray]
     :param tvecs: Vector of [3x1] ndarray, translations for each camera
     :type tvecs: List[np.ndarray]
-    :param override_pattern2marker: If provided a 4x4 pattern2marker that is taken as constant.
-    :param use_opencv: If True we use OpenCV based methods, if false, Guofang Xiao's method.
-    :param do_bundle_adjust: If True we do an additional bundle adjustment at the end. Needs pattern tracking too.
+    :param override_pattern2marker: If provided a 4x4 pattern2marker that
+    is taken as constant.
+    :param use_opencv: If True we use OpenCV based methods, if false,
+    Guofang Xiao's method.
+    :param do_bundle_adjust: If True we do an additional bundle adjustment
+    at the end. Needs pattern tracking too.
     :return: Reprojection error, handeye matrix, patter to marker matrix
     :rtype: float, float, np.ndarray, np.ndarray
     """
@@ -141,12 +146,13 @@ def mono_handeye_calibration(object_points: List,
                 and pattern_tracking_array[0] is not None:
 
             handeye_matrix, pattern2marker_matrix = \
-                he.calibrate_hand_eye_and_pattern_to_marker(rvecs,
-                                                            tvecs,
-                                                            device_tracking_array,
-                                                            pattern_tracking_array,
-                                                            method=cv2.CALIB_ROBOT_WORLD_HAND_EYE_SHAH
-                                                            )
+                he.calibrate_hand_eye_and_pattern_to_marker(
+                    rvecs,
+                    tvecs,
+                    device_tracking_array,
+                    pattern_tracking_array,
+                    method=cv2.CALIB_ROBOT_WORLD_HAND_EYE_SHAH
+                    )
 
             # Now optimise p2m and h2e
             x_0 = np.zeros(12)
@@ -198,12 +204,15 @@ def mono_handeye_calibration(object_points: List,
                 and len(pattern_tracking_array) > 3 \
                 and pattern_tracking_array[0] is not None:
 
-            handeye_matrix, _ = he.calibrate_hand_eye_and_pattern_to_marker(rvecs,
-                                                                            tvecs,
-                                                                            device_tracking_array,
-                                                                            pattern_tracking_array,
-                                                                            method=cv2.CALIB_ROBOT_WORLD_HAND_EYE_SHAH
-                                                                            )
+            handeye_matrix, _ = \
+                he.calibrate_hand_eye_and_pattern_to_marker(
+                    rvecs,
+                    tvecs,
+                    device_tracking_array,
+                    pattern_tracking_array,
+                    method=cv2.CALIB_ROBOT_WORLD_HAND_EYE_SHAH
+                    )
+
             # Now optimise just the h2e
             x_0 = np.zeros(6)
             rvec, tvec = vu.extrinsic_matrix_to_vecs(handeye_matrix)
@@ -237,10 +246,12 @@ def mono_handeye_calibration(object_points: List,
 
         else:
 
-            handeye_matrix = he.calibrate_hand_eye_using_stationary_pattern(rvecs,
-                                                                            tvecs,
-                                                                            device_tracking_array,
-                                                                            method=cv2.CALIB_HAND_EYE_TSAI)
+            handeye_matrix = \
+                he.calibrate_hand_eye_using_stationary_pattern(
+                    rvecs,
+                    tvecs,
+                    device_tracking_array,
+                    method=cv2.CALIB_HAND_EYE_TSAI)
 
     if do_bundle_adjust \
             and len(pattern_tracking_array) > 3 \
@@ -293,21 +304,25 @@ def mono_handeye_calibration(object_points: List,
         camera_distortion[0][3] = x_1[13]
         camera_distortion[0][4] = x_1[14]
 
-    elif do_bundle_adjust and (len(pattern_tracking_array) == 0 or pattern_tracking_array[0] is None):
+    elif do_bundle_adjust and (len(pattern_tracking_array) == 0
+                               or pattern_tracking_array[0] is None):
         # To Do: We could still optimise h2e and g2w, for untracked cases?
-        raise NotImplementedError("Bundled adjustment isn't implemented for untracked calibration patterns.")
+        raise NotImplementedError("Bundled adjustment isn't implemented for "
+                                  "untracked calibration patterns.")
 
-    if len(pattern_tracking_array) > 3 and pattern_tracking_array[0] is not None:
+    if len(pattern_tracking_array) > 3 \
+            and pattern_tracking_array[0] is not None:
 
-        sse, num_samples = vm.compute_mono_2d_err_handeye(object_points,
-                                                          image_points,
-                                                          camera_matrix,
-                                                          camera_distortion,
-                                                          device_tracking_array,
-                                                          pattern_tracking_array,
-                                                          handeye_matrix,
-                                                          pattern2marker_matrix
-                                                          )
+        sse, num_samples = \
+            vm.compute_mono_2d_err_handeye(object_points,
+                                           image_points,
+                                           camera_matrix,
+                                           camera_distortion,
+                                           device_tracking_array,
+                                           pattern_tracking_array,
+                                           handeye_matrix,
+                                           pattern2marker_matrix
+                                           )
     else:
 
         sse, num_samples = vm.compute_mono_2d_err(object_points,
@@ -581,7 +596,7 @@ def stereo_video_calibration(left_ids,
         essential, fundamental
 
 
-#pylint:disable=too-many-arguments
+# pylint:disable=too-many-arguments,too-many-statements
 def stereo_handeye_calibration(l2r_rmat: np.ndarray,
                                l2r_tvec: np.ndarray,
                                left_ids: List,
@@ -641,16 +656,19 @@ def stereo_handeye_calibration(l2r_rmat: np.ndarray,
     :type right_rvecs: List[np.ndarray]
     :param right_tvecs: Vector of [3x1] ndarray, translations for each camera
     :type right_tvecs: List[np.ndarray]
-    :param override_pattern2marker: If provided a 4x4 pattern2marker that is taken as constant.
-    :param use_opencv: If True we use OpenCV based methods, if false, Guofang Xiao's method.
-    :param do_bundle_adjust: If True we do an additional bundle adjustment at the end.
+    :param override_pattern2marker: If provided a 4x4 pattern2marker that
+    is taken as constant.
+    :param use_opencv: If True we use OpenCV based methods, if false,
+    Guofang Xiao's method.
+    :param do_bundle_adjust: If True we do an additional bundle adjustment
+    at the end.
     :return: Reprojection error, reconstruction error, left handeye matrix,
     left pattern to marker matrix, right handeye, right pattern to marker
     :rtype: float, float, np.ndarray, np.ndarray, np.ndarray, np.ndarray
     """
 
     # First, we do mono calibration, for maximum code re-use.
-    rms_proj_err, left_handeye_matrix, left_pattern2marker_matrix = \
+    _, left_handeye_matrix, left_pattern2marker_matrix = \
         mono_handeye_calibration(
             left_object_points,
             left_image_points,
@@ -714,9 +732,12 @@ def stereo_handeye_calibration(l2r_rmat: np.ndarray,
                            method='Powell',
                            )
 
-            LOGGER.info("Stereo Handeye Re-Optimised p2m and h2e: status=%s", str(res.status))
-            LOGGER.info("Stereo Handeye Re-Optimised p2m and h2e: success=%s", str(res.success))
-            LOGGER.info("Stereo Handeye Re-Optimised p2m and h2e: msg=%s", str(res.message))
+            LOGGER.info("Stereo Handeye Re-Optimised p2m and h2e: status=%s",
+                        str(res.status))
+            LOGGER.info("Stereo Handeye Re-Optimised p2m and h2e: success=%s",
+                        str(res.success))
+            LOGGER.info("Stereo Handeye Re-Optimised p2m and h2e: msg=%s",
+                        str(res.message))
 
             x_1 = res.x
 
@@ -766,9 +787,12 @@ def stereo_handeye_calibration(l2r_rmat: np.ndarray,
                                  ),
                            method='Powell')
 
-            LOGGER.info("Stereo Handeye Re-Optimised h2e: status=%s", str(res.status))
-            LOGGER.info("Stereo Handeye Re-Optimised h2e: success=%s", str(res.success))
-            LOGGER.info("Stereo Handeye Re-Optimised h2e: msg=%s", str(res.message))
+            LOGGER.info("Stereo Handeye Re-Optimised h2e: status=%s",
+                        str(res.status))
+            LOGGER.info("Stereo Handeye Re-Optimised h2e: success=%s",
+                        str(res.success))
+            LOGGER.info("Stereo Handeye Re-Optimised h2e: msg=%s",
+                        str(res.message))
 
             x_1 = res.x
             rvec[0] = x_1[0]
@@ -833,9 +857,12 @@ def stereo_handeye_calibration(l2r_rmat: np.ndarray,
                              ),
                        method='Powell')
 
-        LOGGER.info("Stereo Handeye bundle adjustment: status=%s", str(res.status))
-        LOGGER.info("Stereo Handeye bundle adjustment: success=%s", str(res.success))
-        LOGGER.info("Stereo Handeye bundle adjustment: msg=%s", str(res.message))
+        LOGGER.info("Stereo Handeye bundle adjustment: status=%s",
+                    str(res.status))
+        LOGGER.info("Stereo Handeye bundle adjustment: success=%s",
+                    str(res.success))
+        LOGGER.info("Stereo Handeye bundle adjustment: msg=%s",
+                    str(res.message))
 
         x_1 = res.x
         rvec[0] = x_1[0]
@@ -882,7 +909,8 @@ def stereo_handeye_calibration(l2r_rmat: np.ndarray,
     right_pattern2marker_matrix = copy.deepcopy(left_pattern2marker_matrix)
 
     # Now compute some output statistics.
-    if len(calibration_tracking_array) > 3 and calibration_tracking_array[0] is not None:
+    if len(calibration_tracking_array) > 3 \
+            and calibration_tracking_array[0] is not None:
 
         sse, num_samples = vm.compute_stereo_2d_err_handeye(
             common_object_pts,
@@ -938,18 +966,19 @@ def stereo_handeye_calibration(l2r_rmat: np.ndarray,
         mse = sse / num_samples
         reproj_err = np.sqrt(mse)
 
-        recon_err, num_samples = vm.compute_stereo_3d_error(l2r_rmat,
-                                                            l2r_tvec,
-                                                            common_object_pts,
-                                                            common_l_image_pts,
-                                                            left_camera_matrix,
-                                                            left_camera_distortion,
-                                                            common_r_image_pts,
-                                                            right_camera_matrix,
-                                                            right_camera_distortion,
-                                                            left_rvecs,
-                                                            left_tvecs
-                                                            )
+        recon_err, num_samples = \
+            vm.compute_stereo_3d_error(l2r_rmat,
+                                       l2r_tvec,
+                                       common_object_pts,
+                                       common_l_image_pts,
+                                       left_camera_matrix,
+                                       left_camera_distortion,
+                                       common_r_image_pts,
+                                       right_camera_matrix,
+                                       right_camera_distortion,
+                                       left_rvecs,
+                                       left_tvecs
+                                       )
         mse = sse / num_samples
         recon_err = np.sqrt(mse)
 

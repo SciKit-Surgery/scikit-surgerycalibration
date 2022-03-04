@@ -124,7 +124,8 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                   override_l2r_tvec=None
                   ):
         """
-        Do the stereo video calibration, returning reprojection and reconstruction error.
+        Do the stereo video calibration, returning reprojection and
+        reconstruction error.
 
         This returns RMS projection error, which is a common metric, but also,
         the reconstruction / triangulation error.
@@ -179,7 +180,8 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                               flags: int = cv2.CALIB_USE_INTRINSIC_GUESS
                               ):
         """
-        Does iterative calibration, like Datta 2009, returning reprojection and reconstruction error.
+        Does iterative calibration, like Datta 2009, returning reprojection
+        and reconstruction error.
 
         :return: projection, reconstruction error.
         :rtype: float, float
@@ -235,14 +237,18 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         """
         Do handeye calibration, returning reprojection and reconstruction error.
 
-        Note: This handeye_calibration on this class assumes you are tracking both
-        the calibration pattern (e.g. chessboard) and the device (e.g. laparoscope).
-        So, the calibration routines calibrate for hand2eye and pattern2marker.
-        If you want something more customised, work with video_calibration_hand_eye.py.
+        Note: This handeye_calibration on this class assumes you are tracking
+        both the calibration pattern (e.g. chessboard) and the device
+        (e.g. laparoscope). So, the calibration routines calibrate for
+        hand2eye and pattern2marker. If you want something more customised,
+        work with video_calibration_hand_eye.py.
 
-        :param override_pattern2marker: If provided a 4x4 pattern2marker that is taken as constant.
-        :param use_opencv: If True we use OpenCV based methods, if false, Guofang Xiao's method.
-        :param do_bundle_adjust: If True we do an additional bundle adjustment at the end.
+        :param override_pattern2marker: If provided a 4x4 pattern2marker
+        that is taken as constant.
+        :param use_opencv: If True we use OpenCV based methods, if false,
+        Guofang Xiao's method.
+        :param do_bundle_adjust: If True we do an additional bundle adjustment
+        at the end.
 
         :return: reprojection, reconstruction error, camera parameters
         :rtype: float, float, object

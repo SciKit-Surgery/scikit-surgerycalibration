@@ -1,7 +1,5 @@
 # pylint: disable=line-too-long, missing-module-docstring, invalid-name, missing-function-docstring
 
-import os
-from typing import Tuple
 import numpy as np
 import cv2
 import sksurgeryimage.calibration.charuco_plus_chessboard_point_detector \
