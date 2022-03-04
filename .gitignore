@@ -8,6 +8,9 @@
 .pytest_cache/
 /tests/output
 
+# Mac Finder:
+.DS_Store
+
 # PyInstaller
 build/
 dist/
