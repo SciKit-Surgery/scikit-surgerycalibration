@@ -306,7 +306,7 @@ def tests_for_smart_liver():
     p2m = get_pattern_to_marker()
     np.savetxt(os.path.join(output_dir, 'p2m.txt'), p2m)
 
-    # This should re-run calibration, as SmartLiver has it, so should match the input folder.
+    # For documentation, this should re-run calibration, as SmartLiver has it, so should match the input folder.
     results_sl = get_calibrations(
         ['tests/data/2022_02_28_fixed_position_calibs/calibration/14_58_31'],
         pattern2marker=None,
@@ -323,4 +323,5 @@ def tests_for_smart_liver():
         use_bundle_adjust=False,
         save_data=True)
 
-
+    print("SmartLiver, proj=" + str(results_sl[0][0]) + ", recon=" + str(results_sl[0][1]))
+    print("As of 2022-03-04, proj=" + str(results_2022_03_04[0][0]) + ", recon=" + str(results_2022_03_04[0][1]))
