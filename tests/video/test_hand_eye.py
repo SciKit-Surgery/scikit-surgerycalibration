@@ -147,7 +147,7 @@ def test_handeye_calibration_stereo():
     print(f'Recon err {recon_err}')
 
     assert proj_err == pytest.approx(7.3, rel=1.7)
-    assert recon_err == pytest.approx(2.5, rel=0.2)
+    assert recon_err == pytest.approx(2.5, rel=0.3)
 
     # test save/load for hand-eye
     calibrator.save_params('tests/output/test_handeye_calibration_stereo', '')

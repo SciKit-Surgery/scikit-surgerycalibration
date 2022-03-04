@@ -201,5 +201,5 @@ def test_chessboard_stereo():
 
     # Not expecting good results, as the camera parameters are completely wrong.
     print("Stereo, override=" + str(reproj_err) + ", " + str(recon_err))
-    assert reproj_err < 33
+    assert reproj_err < 35
     assert recon_err < 109
