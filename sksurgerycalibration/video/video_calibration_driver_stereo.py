@@ -230,8 +230,8 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
 
     def handeye_calibration(self,
                             override_pattern2marker=None,
-                            use_opencv: bool=False,
-                            do_bundle_adjust: bool=False):
+                            use_opencv: bool = True,
+                            do_bundle_adjust: bool = False):
         """
         Do handeye calibration, returning reprojection and reconstruction error.
 

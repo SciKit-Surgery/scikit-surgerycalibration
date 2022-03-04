@@ -16,9 +16,11 @@ def get_calib_data(directory: str, idx: int) -> Tuple[np.ndarray, np.ndarray, np
         os.path.join(directory, f'calib.right.images.{idx}.png')
     )
 
-    chessboard_tracking = np.loadtxt(
-        os.path.join(directory, f'calib.calib_obj_tracking.{idx}.txt')
-    )
+    chessboad_tracking_file = os.path.join(directory, f'calib.calib_obj_tracking.{idx}.txt')
+    if os.path.isfile(chessboad_tracking_file):
+        chessboard_tracking = np.loadtxt(chessboad_tracking_file)
+    else:
+        chessboard_tracking = None
 
     scope_tracking = np.loadtxt(
         os.path.join(directory, f'calib.device_tracking.{idx}.txt')

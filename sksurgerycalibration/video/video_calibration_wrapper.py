@@ -88,9 +88,9 @@ def mono_handeye_calibration(object_points: List,
                              pattern_tracking_array: List,
                              rvecs: List[np.ndarray],
                              tvecs: List[np.ndarray],
-                             override_pattern2marker: np.ndarray=None,
-                             use_opencv: bool=False,
-                             do_bundle_adjust: bool=False):
+                             override_pattern2marker: np.ndarray = None,
+                             use_opencv: bool = True,
+                             do_bundle_adjust: bool = False):
     """
     Wrapper around handeye calibration functions and reprojection /
     reconstruction error metrics.
@@ -235,49 +235,12 @@ def mono_handeye_calibration(object_points: List,
             tvec[2] = x_1[5]
             handeye_matrix = vu.extrinsic_vecs_to_matrix(rvec, tvec)
 
-        # No pattern tracking data, so just calculate hand-eye, which assumes pattern is stationary.
         else:
 
-            handeye_matrix, gridworld_matrix = \
-                he.calibrate_hand_eye_and_grid_to_world(rvecs,
-                                                        tvecs,
-                                                        device_tracking_array)
-
-            # Now optimise h2e and g2w
-            x_0 = np.zeros(12)
-            rvec, tvec = vu.extrinsic_matrix_to_vecs(handeye_matrix)
-            x_0[0] = rvec[0]
-            x_0[1] = rvec[1]
-            x_0[2] = rvec[2]
-            x_0[3] = tvec[0]
-            x_0[4] = tvec[1]
-            x_0[5] = tvec[2]
-
-            rvec, tvec = vu.extrinsic_matrix_to_vecs(gridworld_matrix)
-            x_0[6] = rvec[0]
-            x_0[7] = rvec[1]
-            x_0[8] = rvec[2]
-            x_0[9] = tvec[0]
-            x_0[10] = tvec[1]
-            x_0[11] = tvec[2]
-
-            res = minimize(vcf.mono_proj_err_h2e_g2w, x_0,
-                           args=(object_points,
-                                 image_points,
-                                 camera_matrix,
-                                 camera_distortion,
-                                 device_tracking_array
-                                 ),
-                           method='Powell')
-
-            x_1 = res.x
-            rvec[0] = x_1[0]
-            rvec[1] = x_1[1]
-            rvec[2] = x_1[2]
-            tvec[0] = x_1[3]
-            tvec[1] = x_1[4]
-            tvec[2] = x_1[5]
-            handeye_matrix = vu.extrinsic_vecs_to_matrix(rvec, tvec)
+            handeye_matrix = he.calibrate_hand_eye_using_stationary_pattern(rvecs,
+                                                                            tvecs,
+                                                                            device_tracking_array,
+                                                                            method=cv2.CALIB_HAND_EYE_TSAI)
 
     if do_bundle_adjust \
             and len(pattern_tracking_array) > 3 \
@@ -346,6 +309,7 @@ def mono_handeye_calibration(object_points: List,
                                                           pattern2marker_matrix
                                                           )
     else:
+
         sse, num_samples = vm.compute_mono_2d_err(object_points,
                                                   image_points,
                                                   rvecs,
@@ -634,8 +598,8 @@ def stereo_handeye_calibration(l2r_rmat: np.ndarray,
                                left_rvecs: List[np.ndarray],
                                left_tvecs: List[np.ndarray],
                                override_pattern2marker=None,
-                               use_opencv: bool=False,
-                               do_bundle_adjust: bool=False
+                               use_opencv: bool = True,
+                               do_bundle_adjust: bool = False
                                ):
     """
     Wrapper around handeye calibration functions and reprojection /
@@ -918,41 +882,76 @@ def stereo_handeye_calibration(l2r_rmat: np.ndarray,
     right_pattern2marker_matrix = copy.deepcopy(left_pattern2marker_matrix)
 
     # Now compute some output statistics.
-    sse, num_samples = vm.compute_stereo_2d_err_handeye(
-        common_object_pts,
-        common_l_image_pts,
-        left_camera_matrix,
-        left_camera_distortion,
-        common_r_image_pts,
-        right_camera_matrix,
-        right_camera_distortion,
-        device_tracking_array,
-        calibration_tracking_array,
-        left_handeye_matrix,
-        left_pattern2marker_matrix,
-        right_handeye_matrix,
-        right_pattern2marker_matrix
-    )
-    mse = sse / num_samples
-    reproj_err = np.sqrt(mse)
+    if len(calibration_tracking_array) > 3 and calibration_tracking_array[0] is not None:
 
-    sse, num_samples = vm.compute_stereo_3d_err_handeye(
-        l2r_rmat,
-        l2r_tvec,
-        common_object_pts,
-        common_l_image_pts,
-        left_camera_matrix,
-        left_camera_distortion,
-        common_r_image_pts,
-        right_camera_matrix,
-        right_camera_distortion,
-        device_tracking_array,
-        calibration_tracking_array,
-        left_handeye_matrix,
-        left_pattern2marker_matrix,
-    )
-    mse = sse / num_samples
-    recon_err = np.sqrt(mse)
+        sse, num_samples = vm.compute_stereo_2d_err_handeye(
+            common_object_pts,
+            common_l_image_pts,
+            left_camera_matrix,
+            left_camera_distortion,
+            common_r_image_pts,
+            right_camera_matrix,
+            right_camera_distortion,
+            device_tracking_array,
+            calibration_tracking_array,
+            left_handeye_matrix,
+            left_pattern2marker_matrix,
+            right_handeye_matrix,
+            right_pattern2marker_matrix
+        )
+        mse = sse / num_samples
+        reproj_err = np.sqrt(mse)
+
+        sse, num_samples = vm.compute_stereo_3d_err_handeye(
+            l2r_rmat,
+            l2r_tvec,
+            common_object_pts,
+            common_l_image_pts,
+            left_camera_matrix,
+            left_camera_distortion,
+            common_r_image_pts,
+            right_camera_matrix,
+            right_camera_distortion,
+            device_tracking_array,
+            calibration_tracking_array,
+            left_handeye_matrix,
+            left_pattern2marker_matrix,
+        )
+        mse = sse / num_samples
+        recon_err = np.sqrt(mse)
+
+    else:
+
+        sse, num_samples = vm.compute_stereo_2d_err(l2r_rmat,
+                                                    l2r_tvec,
+                                                    common_object_pts,
+                                                    common_l_image_pts,
+                                                    left_camera_matrix,
+                                                    left_camera_distortion,
+                                                    common_object_pts,
+                                                    common_r_image_pts,
+                                                    right_camera_matrix,
+                                                    right_camera_distortion,
+                                                    left_rvecs,
+                                                    left_tvecs
+                                                    )
+        mse = sse / num_samples
+        reproj_err = np.sqrt(mse)
+
+        recon_err, num_samples = vm.compute_stereo_3d_error(l2r_rmat,
+                                                            l2r_tvec,
+                                                            common_object_pts,
+                                                            common_l_image_pts,
+                                                            left_camera_matrix,
+                                                            left_camera_distortion,
+                                                            common_r_image_pts,
+                                                            right_camera_matrix,
+                                                            right_camera_distortion,
+                                                            left_rvecs,
+                                                            left_tvecs
+                                                            )
+        mse = sse / num_samples
+        recon_err = np.sqrt(mse)
 
     return reproj_err, recon_err, \
         left_handeye_matrix, left_pattern2marker_matrix, \

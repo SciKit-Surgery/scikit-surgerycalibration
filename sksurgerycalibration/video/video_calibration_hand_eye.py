@@ -106,7 +106,8 @@ def _gx_solve_2quaternions(qx, q_A, q_B):
     qx_2 = qx_2/np.linalg.norm(qx_2)
 
     for i in range(0, number_of_frames):
-        f.append(qu.quat_multiply(qu.quat_multiply(qx_1, q_A[i]), qx_2) - q_B[i])
+        f.append(qu.quat_multiply(qu.quat_multiply(qx_1, q_A[i]), qx_2)
+                 - q_B[i])
 
     f = np.ndarray.flatten(np.asarray(f))
 
@@ -155,11 +156,12 @@ def _gx_solve_2translations(q_handeye,
     return translations.flatten()
 
 
-def _gx_handeye_optimisation(quat_extrinsics_array: np.ndarray,
-                             trans_extrinsics_array: np.ndarray,
-                             quat_model2hand_array: np.ndarray,
-                             trans_model2hand_array: np.ndarray) ->  \
-                              Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+def _gx_handeye_optimisation(
+        quat_extrinsics_array: np.ndarray,
+        trans_extrinsics_array: np.ndarray,
+        quat_model2hand_array: np.ndarray,
+        trans_model2hand_array: np.ndarray) ->  \
+        Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Guofang Xiao's method. Solve handeye and pattern-to-marker transformations.
 
@@ -485,9 +487,9 @@ def calibrate_hand_eye_and_grid_to_world(camera_rvecs: List[np.ndarray],
     base2gripper_tvecs = []
     for i in range(len(device_tracking_matrices)):
         b2g = np.linalg.inv(device_tracking_matrices[i])
-        rvecs, tvecs = vu.extrinsic_matrix_to_vecs(b2g)
-        base2gripper_rvecs.append(rvecs)
-        base2gripper_tvecs.append(tvecs)
+        rvec, tvec = vu.extrinsic_matrix_to_vecs(b2g)
+        base2gripper_rvecs.append(rvec)
+        base2gripper_tvecs.append(tvec)
 
     b2w_rmat, b2w_t, g2c_rmat, g2c_t = \
         cv2.calibrateRobotWorldHandEye(camera_rvecs,
@@ -498,6 +500,6 @@ def calibrate_hand_eye_and_grid_to_world(camera_rvecs: List[np.ndarray],
 
     h2e = mu.construct_rigid_transformation(g2c_rmat, g2c_t)
     b2w = mu.construct_rigid_transformation(b2w_rmat, b2w_t)
-    w2b = np.linalg.inv(b2w) # See OpenCV docs base2world == grid2tracker
+    w2b = np.linalg.inv(b2w)
 
     return h2e, w2b
