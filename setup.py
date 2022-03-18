@@ -19,7 +19,7 @@ setup(
     long_description_content_type='text/x-rst',
     url='https://github.com/SciKit-Surgery/scikit-surgerycalibration ',
     author='Stephen Thompson',
-    author_email='YOUR-EMAIL@ucl.ac.uk',
+    author_email='s.thompson@ucl.ac.uk',
     license='BSD-3 license',
     classifiers=[
         'Development Status :: 3 - Alpha',
@@ -55,7 +55,7 @@ setup(
         'ipykernel',
         'nbsphinx',
         'scipy',
-        'opencv-contrib-python',
+        'opencv-contrib-python-headless',
         'scikit-surgerycore',
         'scikit-surgeryimage>=0.8.5',
         'scikit-surgeryopencvcpp',
@@ -64,7 +64,6 @@ setup(
     entry_points={
         'console_scripts': [
                 'sksPivotCalibration=sksurgerycalibration.ui.pivot_calibration_command_line:main',
-                'sksVideoCalibration=sksurgerycalibration.ui.video_calibration_command_line:main',
                 ],
     },
 )
