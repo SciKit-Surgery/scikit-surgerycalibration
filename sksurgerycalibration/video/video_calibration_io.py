@@ -156,6 +156,18 @@ def get_images_file_name(dir_name: str,
     return images_file
 
 
+def get_annotated_images_file_name(dir_name: str,
+                                   file_prefix: str,
+                                   view_number: int
+                                   ):
+    annotated_file = get_enumerated_file_name(dir_name,
+                                              file_prefix,
+                                              "annotated",
+                                              view_number,
+                                              ".png")
+    return annotated_file
+
+
 def get_ids_file_name(dir_name: str,
                       file_prefix: str,
                       view_number: int

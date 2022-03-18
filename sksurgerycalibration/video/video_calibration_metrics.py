@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 
-""" Video calibration metrics. """
+"""
+Video calibration metrics, used in cost functions for optimisation,
+and as measures of error generally.
+"""
 
 # pylint: disable=too-many-arguments
 
@@ -29,7 +32,8 @@ def compute_stereo_2d_err(l2r_rmat,
                           left_tvecs,
                           return_residuals=False):
     """
-    Function to compute stereo re-projection error, over multiple views.
+    Function to compute stereo re-projection error (SSE),
+    or residuals, over multiple views.
 
     :param l2r_rmat: [3x3] ndarray, rotation for l2r transform
     :param l2r_tvec: [3x1] ndarray, translation for l2r transform
@@ -45,7 +49,7 @@ def compute_stereo_2d_err(l2r_rmat,
     :param left_tvecs: Vector of [3x1] ndarray, translations, left camera
     :param return_residuals: if True returns vector of residuals for LM,
     otherwise, returns SSE.
-    :return: re-reprojection error, number_samples
+    :return: SSE, number_samples OR residuals
     """
     left_to_right = mu.construct_rigid_transformation(l2r_rmat, l2r_tvec)
 
@@ -106,9 +110,11 @@ def compute_stereo_3d_error(l2r_rmat,
                             right_camera_matrix,
                             right_distortion,
                             left_rvecs,
-                            left_tvecs):
+                            left_tvecs,
+                            return_residuals=False):
     """
-    Function to compute stereo SSE reconstruction error over multiple views.
+    Function to compute stereo reconstruction error (SSE),
+    or residuals over multiple views.
 
     :param l2r_rmat: [3x3] ndarray, rotation for l2r transform
     :param l2r_tvec: [3x1] ndarray, translation for l2r transform
@@ -121,9 +127,12 @@ def compute_stereo_3d_error(l2r_rmat,
     :param right_distortion: [1x5] ndarray
     :param left_rvecs: Vector of [3x1] ndarray, Rodrigues rotations, left camera
     :param left_tvecs: Vector of [3x1] ndarray, translations, left camera
+    :param return_residuals: if True returns vector of residuals for LM,
+    otherwise, returns SSE.
     :return: SSE re-reprojection error, number_samples
     """
     sse = 0
+    residuals = []
     number_of_samples = 0
     number_of_frames = len(common_object_points)
 
@@ -179,10 +188,18 @@ def compute_stereo_3d_error(l2r_rmat,
 
         # Now compute squared error
         diff = triangulated - transformed
-        squared = np.square(diff)
-        sum_square = np.sum(squared)
-        sse = sse + sum_square
-        number_of_samples = number_of_samples + len(common_left_image_points[i])
+
+        if return_residuals:
+            residuals.append(diff.reshape((-1)))
+        else:
+            squared = np.square(diff)
+            sum_square = np.sum(squared)
+            sse = sse + sum_square
+            number_of_samples = number_of_samples \
+                                + len(common_left_image_points[i])
+
+    if return_residuals:
+        return np.hstack(residuals)
 
     LOGGER.debug("Stereo RMS reconstruction: sse=%s, num=%s",
                  str(sse), str(number_of_samples))
@@ -194,9 +211,11 @@ def compute_mono_2d_err(object_points,
                         rvecs,
                         tvecs,
                         camera_matrix,
-                        distortion):
+                        distortion,
+                        return_residuals=False):
     """
-    Function to compute mono RMS reprojection error over multiple views.
+    Function to compute mono reprojection (SSE) error,
+    or residuals over multiple views of a mono camera.
 
     :param object_points: Vector of Vector of 1x3 of type float32
     :param image_points: Vector of Vector of 1x2 of type float32
@@ -204,9 +223,11 @@ def compute_mono_2d_err(object_points,
     :param tvecs: Vector of [3x1] ndarray, translations for each camera
     :param camera_matrix: [3x3] ndarray
     :param distortion: [1x5] ndarray
-    :return: SSE re-reprojection error, number_samples
+    :param return_residuals: If True returns a big array of residuals for LM.
+    :return: SSE re-reprojection error, number_samples OR residuals
     """
     sse = 0
+    residuals = []
     number_of_samples = 0
     number_of_frames = len(object_points)
 
@@ -219,13 +240,20 @@ def compute_mono_2d_err(object_points,
                                          distortion)
 
         diff = image_points[i] - projected
-        squared = np.square(diff)
-        sum_square = np.sum(squared)
-        sse = sse + sum_square
+
+        if return_residuals:
+            residuals.append(diff.reshape((-1)))
+        else:
+            sse = sse + np.sum(np.square(diff))
+
         number_of_samples = number_of_samples + len(image_points[i])
 
     LOGGER.debug("Mono RMS reprojection: sse=%s, num=%s",
                  str(sse), str(number_of_samples))
+
+    if return_residuals:
+        return np.hstack(residuals)
+
     return sse, number_of_samples
 
 
@@ -237,10 +265,13 @@ def compute_mono_3d_err(ids,
                         camera_matrix,
                         distortion):
     """
-    Function to compute mono RMS reconstruction error over multiple views.
+    Function to compute mono reconstruction error (SSE) over multiple views.
 
     Here, to triangulate, we take the i^th camera as left camera, and
     the i+1^th camera as the right camera, compute l2r, and triangulate.
+
+    Note: This may fail if the difference between two successive views
+    is too large, and there are not enough common points.
 
     :param ids: Vector of ndarray of integer point ids
     :param object_points: Vector of Vector of 1x3 of type float32
@@ -279,6 +310,7 @@ def compute_mono_3d_err(ids,
                                                             tvecs[j])
         left_to_right = np.matmul(right_camera_to_world,
                                   np.linalg.inv(left_camera_to_world))
+
         l2r_rmat = left_to_right[0:3, 0:3]
         l2r_tvec = left_to_right[0:3, 3]
 
@@ -315,7 +347,11 @@ def compute_mono_2d_err_handeye(model_points: List,
                                 model_tracking_array: List,
                                 handeye_matrix: np.ndarray,
                                 pattern2marker_matrix: np.ndarray):
-    """Function to compute mono SSE reprojection error
+    """
+    Function to compute mono reprojection error (SSE), mapping
+    from the calibration pattern coordinate system to the
+    camera coordinate system, via tracking matrices and
+    hand-eye calibration.
 
     :param model_points: Vector of Vector of 1x3 float32
     :type model_points: List
@@ -349,7 +385,7 @@ def compute_mono_2d_err_handeye(model_points: List,
     for i in range(number_of_frames):
         pattern_to_camera = \
             handeye_matrix @ np.linalg.inv(hand_tracking_array[i]) @ \
-                model_tracking_array[i] @ pattern2marker_matrix
+            model_tracking_array[i] @ pattern2marker_matrix
 
         rvec, tvec = vu.extrinsic_matrix_to_vecs(pattern_to_camera)
         rvecs.append(rvec)
@@ -377,7 +413,8 @@ def compute_mono_3d_err_handeye(ids: List,
                                 model_tracking_array: List,
                                 handeye_matrix: np.ndarray,
                                 pattern2marker_matrix: np.ndarray):
-    """Function to compute mono SSE reconstruction error. Calculates new
+    """
+    Function to compute mono reconstruction error (SSE). Calculates new
     rvec/tvec values for pattern_to_camera based on handeye calibration and
     then calls compute_mono_3d_err().
 
@@ -415,7 +452,7 @@ def compute_mono_3d_err_handeye(ids: List,
     for i in range(number_of_frames):
         pattern_to_camera = \
             handeye_matrix @ np.linalg.inv(hand_tracking_array[i]) @ \
-                model_tracking_array[i] @ pattern2marker_matrix
+            model_tracking_array[i] @ pattern2marker_matrix
 
         rvec, tvec = vu.extrinsic_matrix_to_vecs(pattern_to_camera)
         rvecs.append(rvec)
@@ -445,7 +482,8 @@ def compute_stereo_2d_err_handeye(common_object_points: List,
                                   left_pattern2marker_matrix: np.ndarray,
                                   right_handeye_matrix: np.ndarray,
                                   right_pattern2marker_matrix: np.ndarray):
-    """Function to compute stereo SSE reprojection error, taking into account
+    """
+    Function to compute stereo reprojection error (SSE), taking into account
     handeye calibration.
 
     :param common_object_points: Vector of Vector of 1x3 float32
@@ -515,7 +553,8 @@ def compute_stereo_3d_err_handeye(l2r_rmat: np.ndarray,
                                   left_handeye_matrix: np.ndarray,
                                   left_pattern2marker_matrix: np.ndarray):
 
-    """Function to compute stereo SSE reconstruction error, taking into account
+    """
+    Function to compute stereo reconstruction error (SSE), taking into account
     handeye calibration.
 
     :param l2r_rmat: Rotation for l2r transform
@@ -560,7 +599,7 @@ def compute_stereo_3d_err_handeye(l2r_rmat: np.ndarray,
 
         pattern_to_left_camera = \
             left_handeye_matrix @ np.linalg.inv(hand_tracking_array[i]) @ \
-                 model_tracking_array[i] @ left_pattern2marker_matrix
+            model_tracking_array[i] @ left_pattern2marker_matrix
 
         rvec, tvec = vu.extrinsic_matrix_to_vecs(pattern_to_left_camera)
         left_rvecs.append(rvec)

@@ -27,7 +27,7 @@ def test_chessboard_mono_io():
         successful = calibrator.grab_data(image, np.eye(4), np.eye(3))
         assert successful > 0
 
-    reproj_err_1, recon_err_1, params_1 = calibrator.calibrate()
+    reproj_err_1, params_1 = calibrator.calibrate()
     calibrator.save_data('tests/output/test_chessboard_mono_io', '')
     calibrator.save_params('tests/output/test_chessboard_mono_io', '')
 
@@ -35,9 +35,8 @@ def test_chessboard_mono_io():
     # Technically, you aren't running the 'grab' bit again.
     # The calibration works off the already extracted points.
     calibrator.load_data('tests/output/test_chessboard_mono_io', '')
-    reproj_err_2, recon_err_2, params_2 = calibrator.calibrate()
+    reproj_err_2, params_2 = calibrator.calibrate()
     assert (np.isclose(reproj_err_1, reproj_err_2))
-    assert (np.isclose(recon_err_1, recon_err_2))
 
     calibrator.load_params('tests/output/test_chessboard_mono_io', '')
     params_3 = calibrator.get_params()

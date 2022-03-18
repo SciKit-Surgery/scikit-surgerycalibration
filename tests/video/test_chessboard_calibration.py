@@ -68,12 +68,11 @@ def test_chessboard_mono():
     assert calibrator.get_number_of_views() == 9
 
     # Then do calibration
-    reproj_err, recon_err, params = calibrator.calibrate()
+    reproj_err, params = calibrator.calibrate()
 
-    # Just for a regression test, checking reprojection error, and recon error.
+    # Just for a regression test, checking reprojection error.
     # We do appear to get different performance on Linux/Mac
     assert reproj_err < 0.6
-    assert recon_err < 0.3
 
     # Test components of iterative calibration.
     original_image = calibrator.video_data.images_array[0]
@@ -108,12 +107,11 @@ def test_chessboard_mono():
     # Test iterative calibration.
     reference_ids, reference_points, reference_image_size = get_iterative_reference_data()
 
-    reproj_err, recon_err, params = calibrator.iterative_calibration(3,
-                                                                     reference_ids,
-                                                                     reference_points,
-                                                                     reference_image_size)
+    reproj_err, params = calibrator.iterative_calibration(3,
+                                                          reference_ids,
+                                                          reference_points,
+                                                          reference_image_size)
     assert reproj_err < 0.7
-    assert recon_err < 0.4
 
 
 def test_chessboard_stereo():
@@ -203,5 +201,5 @@ def test_chessboard_stereo():
 
     # Not expecting good results, as the camera parameters are completely wrong.
     print("Stereo, override=" + str(reproj_err) + ", " + str(recon_err))
-    assert reproj_err < 33
+    assert reproj_err < 35
     assert recon_err < 109

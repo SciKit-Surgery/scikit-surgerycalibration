@@ -124,13 +124,21 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                   override_l2r_tvec=None
                   ):
         """
-        Do the stereo video calibration.
+        Do the stereo video calibration, returning reprojection and
+        reconstruction error.
 
         This returns RMS projection error, which is a common metric, but also,
         the reconstruction / triangulation error.
 
         :param flags: OpenCV flags, eg. cv2.CALIB_FIX_INTRINSIC
-        :return: RMS projection, reconstruction error.
+        :param override_left_intrinsics:
+        :param override_left_distortion:
+        :param override_right_intrinsics:
+        :param override_right_distortion:
+        :param override_l2r_rmat:
+        :param override_l2r_tvec:
+        :return: projection, reconstruction error.
+        :rtype: float, float
         """
         s_reproj, s_recon, \
             l_c, l_d, l_rvecs, l_tvecs, \
@@ -172,7 +180,11 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                               flags: int = cv2.CALIB_USE_INTRINSIC_GUESS
                               ):
         """
-        Does iterative calibration, like Datta 2009.
+        Does iterative calibration, like Datta 2009, returning reprojection
+        and reconstruction error.
+
+        :return: projection, reconstruction error.
+        :rtype: float, float
         """
         proj_err, recon_err, param_copy = self.calibrate(flags=flags)
 
@@ -218,23 +230,30 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
 
         return proj_err, recon_err, param_copy
 
-    def handeye_calibration(self):
+    def handeye_calibration(self,
+                            override_pattern2marker=None,
+                            use_opencv: bool = True,
+                            do_bundle_adjust: bool = False):
         """
-        Do handeye calibration.
+        Do handeye calibration, returning reprojection and reconstruction error.
 
-        This returns RMS projection error, which is a common metric, but also,
-        the reconstruction / triangulation error.
+        Note: This handeye_calibration on this class assumes you are tracking
+        both the calibration pattern (e.g. chessboard) and the device
+        (e.g. laparoscope). So, the calibration routines calibrate for
+        hand2eye and pattern2marker. If you want something more customised,
+        work with video_calibration_hand_eye.py.
 
-        :return: reprojection, reconstruction error
-        :rtype: float, float
+        :param override_pattern2marker: If provided a 4x4 pattern2marker
+        that is taken as constant.
+        :param use_opencv: If True we use OpenCV based methods, if false,
+        Guofang Xiao's method.
+        :param do_bundle_adjust: If True we do an additional bundle adjustment
+        at the end.
+
+        :return: reprojection, reconstruction error, camera parameters
+        :rtype: float, float, object
         """
 
-        # This combines chessboardmarker(model)-to-tracker and
-        # device-to-tracker to get a fixed transformation.
-        self.tracking_data.set_model2hand_arrays()
-
-        # So, this is optimising the device hand-eye and the
-        # chessboard-to-chessboard marker transformation.
         proj_err, recon_err, l_handeye, l_pattern2marker, \
             r_handeye, r_pattern2marker = \
                 vc.stereo_handeye_calibration(
@@ -253,10 +272,9 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                     self.tracking_data.calibration_tracking_array,
                     self.calibration_params.left_params.rvecs,
                     self.calibration_params.left_params.tvecs,
-                    self.calibration_params.right_params.rvecs,
-                    self.calibration_params.right_params.tvecs,
-                    self.tracking_data.quat_model2hand_array,
-                    self.tracking_data.trans_model2hand_array
+                    override_pattern2marker=override_pattern2marker,
+                    use_opencv=use_opencv,
+                    do_bundle_adjust=do_bundle_adjust
                     )
 
         self.calibration_params.left_params.set_handeye(

@@ -1,256 +1,29 @@
 # -*- coding: utf-8 -*-
 
-""" SmartLiver calibration interface. """
+""" Various routines for Hand-Eye calibration. """
+
+# pylint:disable=invalid-name,consider-using-enumerate
 
 import logging
 from typing import List, Tuple
 import numpy as np
+import cv2
 from scipy.optimize import least_squares
+import sksurgerycore.transforms.matrix as mu
+import sksurgerycalibration.video.video_calibration_utils as vu
+import sksurgerycalibration.video.quaternion_utils as qu
+
 
 LOGGER = logging.getLogger(__name__)
-
-
-# pylint: disable=invalid-name, no-member, unsubscriptable-object
-# pylint: disable=too-many-locals, too-many-arguments, too-many-lines
-# pylint: disable=too-many-branches
-
-def quat_conjugate(q):
-    """
-    Obtains the conjugate of a quaternion.
-    """
-    assert len(q) == 4
-
-    result = [q[0], -q[1], -q[2], -q[3]]
-
-    return np.asarray(result)
-
-
-def quat_multiply(q, r):
-    """
-    Calculates the quaternion product n, for two given quaternions q and r:
-    n = q x r
-    """
-    assert len(q) == 4
-    assert len(r) == 4
-    n0 = r[0] * q[0] - r[1] * q[1] - r[2] * q[2] - r[3] * q[3]
-    n1 = r[0] * q[1] + r[1] * q[0] - r[2] * q[3] + r[3] * q[2]
-    n2 = r[0] * q[2] + r[1] * q[3] + r[2] * q[0] - r[3] * q[1]
-    n3 = r[0] * q[3] - r[1] * q[2] + r[2] * q[1] + r[3] * q[0]
-
-    result = [n0, n1, n2, n3]
-
-    return np.asarray(result)
-
-
-def quat_to_rotm(q):
-    """
-    Get the corresponding rotation matrix of a quaternion.
-    """
-    assert len(q) == 4
-
-    qn = q / np.linalg.norm(q)
-    s = qn[0]
-    x = qn[1]
-    y = qn[2]
-    z = qn[3]
-    M = [[s**2 + x**2 - y**2 - z**2, 2*(x*y - s*z), 2*(x*z + s*y)],
-         [2*(x*y + s*z), s**2 - x**2 + y**2 - z**2, 2*(y*z - s*x)],
-         [2*(x*z - s*y), 2*(y*z + s*x), s**2 - x**2 - y**2 + z**2]]
-
-    return np.asarray(M)
-
-
-def rotm_to_quat_precise(M):
-    """
-    Get the corresponding quaternion of a rotation matrix.
-    Assuming the rotation matrix is orthonormal.
-    """
-    q = np.empty((4,))
-    tr = np.trace(M)
-    if tr > 0:
-        q[0] = tr + 1.0
-        q[3] = M[1, 0] - M[0, 1]
-        q[2] = M[0, 2] - M[2, 0]
-        q[1] = M[2, 1] - M[1, 2]
-    else:
-        i, j, k = 0, 1, 2
-        if M[1, 1] > M[0, 0]:
-            i, j, k = 1, 2, 0
-        if M[2, 2] > M[i, i]:
-            i, j, k = 2, 0, 1
-        tr = M[i, i] - (M[j, j] + M[k, k])
-        q[i] = tr + 1.0
-        q[j] = M[i, j] + M[j, i]
-        q[k] = M[k, i] + M[i, k]
-        q[3] = M[k, j] - M[j, k]
-        q = q[[3, 0, 1, 2]]
-
-    q *= 0.5 / np.sqrt(tr + 1.0)
-
-    if q[0] < 0.0:
-        np.negative(q, q)
-
-    return q
-
-
-def rotm_to_quat(M):
-    """
-    Get the corresponding quaternion of a rotation matrix.
-    Assuming the rotation matrix is not strictly orthonormal.
-    """
-    m00 = M[0, 0]
-    m01 = M[0, 1]
-    m02 = M[0, 2]
-    m10 = M[1, 0]
-    m11 = M[1, 1]
-    m12 = M[1, 2]
-    m20 = M[2, 0]
-    m21 = M[2, 1]
-    m22 = M[2, 2]
-
-    # symmetric matrix K
-    K = np.array([[m00-m11-m22, 0.0, 0.0, 0.0],
-                  [m01+m10, m11-m00-m22, 0.0, 0.0],
-                  [m02+m20, m12+m21, m22-m00-m11, 0.0],
-                  [m21-m12, m02-m20, m10-m01, m00+m11+m22]])
-    K /= 3.0
-
-    # quaternion is eigenvector of K that corresponds to largest eigenvalue
-    w, V = np.linalg.eigh(K)
-    q = V[[3, 0, 1, 2], np.argmax(w)]
-
-    if q[0] < 0.0:
-        np.negative(q, q)
-
-    return q
-
-
-def rvec_to_quat(rvec):
-    """
-    Get the corresponding quaternion of a rotation vector.
-    """
-    rad = np.linalg.norm(rvec)
-    axis = rvec/rad
-    q = np.concatenate([[np.cos(rad/2)], np.sin(rad/2) * axis])
-
-    return q
-
-
-def to_one_hemisphere(quaternions):
-    """
-    Transform a group of quaternions to one hemisphere.
-    """
-    new_quaternions = np.zeros(np.shape(quaternions))
-
-    sum_1 = np.sum(np.abs(quaternions[:, 0]))
-    sum_2 = np.sum(np.abs(quaternions[:, 1]))
-    sum_3 = np.sum(np.abs(quaternions[:, 2]))
-    sum_4 = np.sum(np.abs(quaternions[:, 3]))
-
-    max_sum = sum_1
-    flag = 0
-
-    if sum_2 > max_sum:
-        max_sum = sum_2
-        flag = 1
-
-    if sum_3 > max_sum:
-        max_sum = sum_3
-        flag = 2
-
-    if sum_4 > max_sum:
-        flag = 3
-
-    number = np.shape(quaternions)[0]
-
-    for i in range(0, number):
-        if quaternions[i, flag] > 0:
-            new_quaternions[i] = quaternions[i]
-        else:
-            new_quaternions[i] = -quaternions[i]
-
-    return new_quaternions
-
-
-def solve_2quaternions(qx, q_A, q_B):
-    """
-    Provide cost function for least-square optimisation
-    to solve quaternions qx1 and qx2 in: q_B = qx1 * q_A * qx2
-
-    :param qx: 1x8 vector of 2 quaternions
-    :param q_A: Nx4 matrices of N quaternions
-    :param q_B: Nx4 matrices of N quaternions
-    :return:
-    """
-    if np.shape(q_A) != np.shape(q_B):
-        raise AssertionError("q_A and q_B must have the same shape.")
-
-    number_of_frames = np.shape(q_A)[0]
-
-    f = []
-
-    qx_1 = qx[0:4]
-    qx_2 = qx[4:8]
-
-    qx_1 = qx_1/np.linalg.norm(qx_1)
-    qx_2 = qx_2/np.linalg.norm(qx_2)
-
-    for i in range(0, number_of_frames):
-        f.append(quat_multiply(quat_multiply(qx_1, q_A[i]), qx_2) - q_B[i])
-
-    f = np.ndarray.flatten(np.asarray(f))
-
-    return f
-
-
-def solve_2translations(q_handeye,
-                        quat_model2hand_array,
-                        trans_model2hand_array,
-                        trans_extrinsics_array):
-    """
-    Solve translations t_handeye and t_pattern2marker.
-    translations = [t_handeye t_pattern2marker]
-
-    :param q_handeye: 1x4 matrix quaternion
-    :param quat_model2hand_array: Nx4 matrix of N quaternions
-    :param trans_model2hand_array: Nx3 matrices of N translations
-    :param trans_extrinsics_array: Nx3 matrices of extrinsic translation vectors
-    :return:
-    """
-    if np.shape(quat_model2hand_array)[0] \
-            != np.shape(trans_model2hand_array)[0]:
-        raise AssertionError("Wrong dimensions in solve_2translations().")
-    if np.shape(trans_model2hand_array) != np.shape(trans_extrinsics_array):
-        raise AssertionError("Wrong dimensions in solve_2translations().")
-
-    number_of_frames = np.shape(quat_model2hand_array)[0]
-
-    A = np.zeros((3 * number_of_frames, 6))
-    B = np.zeros((3 * number_of_frames, 1))
-
-    for i in range(0, number_of_frames):
-        qHEqMH = quat_multiply(q_handeye, quat_model2hand_array[i])
-        rHErMH = quat_to_rotm(qHEqMH)
-        rHE = quat_to_rotm(q_handeye)
-
-        A[i*3:i*3+3, :] = np.hstack([np.identity(3), rHErMH])
-        b_i = np.transpose(trans_extrinsics_array[i, :])\
-            - np.matmul(rHE, np.transpose(trans_model2hand_array[i, :]))
-        B[i*3:i*3+3] = np.reshape(b_i, (3, 1))
-
-    A_T = np.transpose(A)
-    translations = np.linalg.inv(A_T @ A) @ A_T @ B
-    translations = np.transpose(translations)
-
-    return translations.flatten()
 
 
 def set_model2hand_arrays(calibration_tracking_array: List,
                           device_tracking_array: List,
                           use_quaternions=False) \
                             -> Tuple[np.ndarray, np.ndarray]:
-    """ Set the model-to-hand quaternion and translation arrays
-    from tracking data.
+    """
+    Guofang Xiao's method. Set the model-to-hand quaternion
+    and translation arrays from tracking data.
 
     :param calibration_tracking_array: Array of tracking data for
     calibration target
@@ -258,7 +31,8 @@ def set_model2hand_arrays(calibration_tracking_array: List,
     :param device_tracking_array: Array of tracking data for
     device (e.g. camera)
     :type device_tracking_array: List of tracking data
-
+    :param use_quaternions: If True input should be quaternions
+    :type device_tracking_array: bool
     :return: quaternion model to hand array and translation model to hand
     array
     :rtype: np.ndarray, np.ndarray
@@ -284,38 +58,114 @@ def set_model2hand_arrays(calibration_tracking_array: List,
             trans_hand = \
                 device_tracking_array[i][0, 4:7]
 
-            quat_model2hand = quat_multiply(quat_conjugate(quat_hand),
+            quat_model2hand = qu.quat_multiply(qu.quat_conjugate(quat_hand),
                                             quat_model)
             q_translation = np.append([0], (trans_model - trans_hand))
-            quat_hand_conj = quat_conjugate(quat_hand)
+            quat_hand_conj = qu.quat_conjugate(quat_hand)
 
-            trans_model2hand = quat_multiply(quat_hand_conj,
-                                             quat_multiply(q_translation,
-                                                           quat_hand))
+            trans_model2hand = qu.quat_multiply(quat_hand_conj,
+                                                qu.quat_multiply(q_translation,
+                                                                 quat_hand))
             trans_model2hand = trans_model2hand[1:4]
         else:
             tracking_model = calibration_tracking_array[i]
             tracking_hand = device_tracking_array[i]
             model_to_hand = np.linalg.inv(tracking_hand) @ tracking_model
 
-            quat_model2hand = rotm_to_quat(model_to_hand[0:3, 0:3])
+            quat_model2hand = qu.rotm_to_quat(model_to_hand[0:3, 0:3])
             trans_model2hand = model_to_hand[0:3, 3]
 
         quat_model2hand_array[i] = quat_model2hand
         trans_model2hand_array[i] = trans_model2hand
 
     quat_model2hand_array = \
-        to_one_hemisphere(quat_model2hand_array)
+        qu.to_one_hemisphere(quat_model2hand_array)
 
     return quat_model2hand_array, trans_model2hand_array
 
 
-def handeye_optimisation(quat_extrinsics_array: np.ndarray,
-                         trans_extrinsics_array: np.ndarray,
-                         quat_model2hand_array: np.ndarray,
-                         trans_model2hand_array: np.ndarray) ->  \
-                          Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Solve handeye and pattern-to-marker transformations.
+def _gx_solve_2quaternions(qx, q_A, q_B):
+    """
+    Guofang Xiao's method. Provide cost function for least-square optimisation
+    to solve quaternions qx1 and qx2 in: q_B = qx1 * q_A * qx2
+
+    :param qx: 1x8 vector of 2 quaternions
+    :param q_A: Nx4 matrices of N quaternions
+    :param q_B: Nx4 matrices of N quaternions
+    :return:
+    """
+    if np.shape(q_A) != np.shape(q_B):
+        raise AssertionError("q_A and q_B must have the same shape.")
+
+    number_of_frames = np.shape(q_A)[0]
+
+    f = []
+
+    qx_1 = qx[0:4]
+    qx_2 = qx[4:8]
+
+    qx_1 = qx_1/np.linalg.norm(qx_1)
+    qx_2 = qx_2/np.linalg.norm(qx_2)
+
+    for i in range(0, number_of_frames):
+        f.append(qu.quat_multiply(qu.quat_multiply(qx_1, q_A[i]), qx_2)
+                 - q_B[i])
+
+    f = np.ndarray.flatten(np.asarray(f))
+
+    return f
+
+
+def _gx_solve_2translations(q_handeye,
+                            quat_model2hand_array,
+                            trans_model2hand_array,
+                            trans_extrinsics_array):
+    """
+    Guofang Xiao's method. Solve translations t_handeye and t_pattern2marker.
+    translations = [t_handeye t_pattern2marker]
+
+    :param q_handeye: 1x4 matrix quaternion
+    :param quat_model2hand_array: Nx4 matrix of N quaternions
+    :param trans_model2hand_array: Nx3 matrices of N translations
+    :param trans_extrinsics_array: Nx3 matrices of extrinsic translation vectors
+    :return:
+    """
+    if np.shape(quat_model2hand_array)[0] \
+            != np.shape(trans_model2hand_array)[0]:
+        raise AssertionError("Wrong dimensions in solve_2translations().")
+    if np.shape(trans_model2hand_array) != np.shape(trans_extrinsics_array):
+        raise AssertionError("Wrong dimensions in solve_2translations().")
+
+    number_of_frames = np.shape(quat_model2hand_array)[0]
+
+    A = np.zeros((3 * number_of_frames, 6))
+    B = np.zeros((3 * number_of_frames, 1))
+
+    for i in range(0, number_of_frames):
+        qHEqMH = qu.quat_multiply(q_handeye, quat_model2hand_array[i])
+        rHErMH = qu.quat_to_rotm(qHEqMH)
+        rHE = qu.quat_to_rotm(q_handeye)
+
+        A[i*3:i*3+3, :] = np.hstack([np.identity(3), rHErMH])
+        b_i = np.transpose(trans_extrinsics_array[i, :])\
+            - np.matmul(rHE, np.transpose(trans_model2hand_array[i, :]))
+        B[i*3:i*3+3] = np.reshape(b_i, (3, 1))
+
+    A_T = np.transpose(A)
+    translations = np.linalg.inv(A_T @ A) @ A_T @ B
+    translations = np.transpose(translations)
+
+    return translations.flatten()
+
+
+def _gx_handeye_optimisation(
+        quat_extrinsics_array: np.ndarray,
+        trans_extrinsics_array: np.ndarray,
+        quat_model2hand_array: np.ndarray,
+        trans_model2hand_array: np.ndarray) ->  \
+        Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Guofang Xiao's method. Solve handeye and pattern-to-marker transformations.
 
     :param quat_extrinsics_array: An array of quaternions representing the
         rotations of the camera extrinsics.
@@ -335,13 +185,13 @@ def handeye_optimisation(quat_extrinsics_array: np.ndarray,
 
     # self.quat_model2hand_array should already be in one hemisphere.
 
-    quat_extrinsics_array = to_one_hemisphere(quat_extrinsics_array)
+    quat_extrinsics_array = qu.to_one_hemisphere(quat_extrinsics_array)
 
     qx_0 = [1, 0, 0, 0, 1, 0, 0, 0]
     lb = [-1, -1, -1, -1, -1, -1, -1, -1]
     ub = [1, 1, 1, 1, 1, 1, 1, 1]
 
-    op_result = least_squares(solve_2quaternions, qx_0,
+    op_result = least_squares(_gx_solve_2quaternions, qx_0,
                               bounds=(lb, ub),
                               args=(quat_model2hand_array,
                                     quat_extrinsics_array)
@@ -353,10 +203,10 @@ def handeye_optimisation(quat_extrinsics_array: np.ndarray,
     q_handeye = q_handeye / np.linalg.norm(q_handeye)
     q_pattern2marker = q_pattern2marker / np.linalg.norm(q_pattern2marker)
 
-    translations = solve_2translations(q_handeye,
-                                       quat_model2hand_array,
-                                       trans_model2hand_array,
-                                       trans_extrinsics_array)
+    translations = _gx_solve_2translations(q_handeye,
+                                           quat_model2hand_array,
+                                           trans_model2hand_array,
+                                           trans_extrinsics_array)
 
     t_handeye = translations[0:3]
     t_pattern2marker = translations[3:6]
@@ -364,39 +214,337 @@ def handeye_optimisation(quat_extrinsics_array: np.ndarray,
     return q_handeye, t_handeye, q_pattern2marker, t_pattern2marker
 
 
-def handeye_calibration(rvecs: List[np.ndarray], tvecs: List[np.ndarray],
-                        quat_model2hand_array: np.ndarray,
-                        trans_model2hand_array: np.ndarray) \
-                             -> Tuple[np.ndarray, np.ndarray]:
-    """Solve for the handeye transformation, as well as the transformation
-     from the pattern to the markers on the model.
+def guofang_xiao_handeye_calibration(rvecs: List[np.ndarray],
+                                     tvecs: List[np.ndarray],
+                                     quat_model2hand_array: np.ndarray,
+                                     trans_model2hand_array: np.ndarray) \
+                                     -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Guofang Xiao's method. Solve for the hand-eye transformation,
+    as well as the transformation from the pattern to the tracking markers
+    on the calibration object.
 
-    :param rvecs: Array of rotation vectors
+    This method, developed for the SmartLiver project, assumes both
+    device (laparoscope), and the calibration object are tracked. We also, keep
+    the device (laparoscope) stationary while moving the calibration object.
+
+    :param rvecs: Array of rotation vectors, from OpenCV, camera extrinsics
+    (pattern to camera transform)
     :type rvecs: List[np.ndarray]
-    :param tvecs: Array of translation vectors
+    :param tvecs: Array of translation vectors, from OpenCV, camera extrinsics
+    (pattern to camera transform)
     :type tvecs: List[np.ndarray]
-    :return: [description]
-    :rtype: np.ndarray
+    :param quat_model2hand_array: Array of quaternions representing rotational
+    part of marker-to-hand.
+    :type quat_model2hand_array: np.ndarray
+    :param trans_model2hand_array: Array of quaternions representing
+    translational part of marker-to-hand.
+    :type trans_model2hand_array: np.ndarray
+    :return: two 4x4 matrices as np.ndarray, representing handeye_matrix,
+    pattern2marker_matrix
+    :rtype: np.ndarray, np.ndarray
     """
 
     number_of_frames = len(rvecs)
     quat_extrinsics_array = np.zeros((number_of_frames, 4))
 
     for i in range(number_of_frames):
-        quat_extrinsics_array[i] = rvec_to_quat(rvecs[i].flatten())
+        quat_extrinsics_array[i] = qu.rvec_to_quat(rvecs[i].flatten())
 
     trans_extrinsics_array = np.reshape(tvecs, (number_of_frames, 3))
 
     q_handeye, t_handeye, q_pattern2marker, t_pattern2marker = \
-        handeye_optimisation(quat_extrinsics_array, trans_extrinsics_array,
-                             quat_model2hand_array, trans_model2hand_array)
+        _gx_handeye_optimisation(quat_extrinsics_array, trans_extrinsics_array,
+                                 quat_model2hand_array, trans_model2hand_array)
 
     handeye_matrix = np.eye(4)
-    handeye_matrix[0:3, 0:3] = quat_to_rotm(q_handeye)
+    handeye_matrix[0:3, 0:3] = qu.quat_to_rotm(q_handeye)
     handeye_matrix[0:3, 3] = t_handeye
 
     pattern2marker_matrix = np.eye(4)
-    pattern2marker_matrix[0:3, 0:3] = quat_to_rotm(q_pattern2marker)
+    pattern2marker_matrix[0:3, 0:3] = qu.quat_to_rotm(q_pattern2marker)
     pattern2marker_matrix[0:3, 3] = t_pattern2marker
 
     return handeye_matrix, pattern2marker_matrix
+
+
+def calibrate_hand_eye_using_stationary_pattern(
+        camera_rvecs: List[np.ndarray],
+        camera_tvecs: List[np.ndarray],
+        tracking_matrices: List[np.ndarray],
+        method=cv2.CALIB_HAND_EYE_TSAI,
+        invert_camera=False
+        ):
+    """
+    Hand-eye calibration using standard OpenCV methods. This method assumes
+    a single set of tracking data, so it is useful for a stationary, untracked
+    calibration pattern, and a tracked video device, e.g. laparoscope.
+
+    :param camera_rvecs: list of rvecs that we get from OpenCV camera
+    extrinsics, pattern_to_camera.
+    :param camera_tvecs: list of tvecs that we get from OpenCV camera
+    extrinsics, pattern_to_camera.
+    :param tracking_matrices: list of tracking matrices for the tracked
+    device, marker_to_tracker.
+    :param method: Choice of OpenCV Hand-Eye method.
+    :param invert_camera: if True, we invert camera matrices before
+    hand-eye calibration.
+    :return hand-eye transform as 4x4 matrix.
+    """
+    if len(camera_rvecs) != len(camera_tvecs):
+        raise ValueError("Camera rotation and translation vector "
+                         "lists must be the same length.")
+
+    if len(camera_tvecs) != len(tracking_matrices):
+        raise ValueError("The number of camera extrinsic transforms must "
+                         "equal the number of tracking matrices.")
+
+    if len(camera_rvecs) < 3:
+        raise ValueError("You must have at least 3 views, include movements "
+                         "around at least 2 different rotation axes.")
+
+    # Convert tracking matrices to rvecs/tvecs for OpenCV.
+    tracking_rvecs = []
+    tracking_tvecs = []
+    for i in range(len(camera_rvecs)):
+        rvecs, tvecs = vu.extrinsic_matrix_to_vecs(tracking_matrices[i])
+        tracking_rvecs.append(rvecs)
+        tracking_tvecs.append(tvecs)
+
+    cam_rvecs = []
+    cam_tvecs = []
+    for i in range(len(camera_rvecs)):
+        mat = vu.extrinsic_vecs_to_matrix(camera_rvecs[i], camera_tvecs[i])
+        if invert_camera:
+            mat = np.linalg.inv(mat)
+        rvecs, tvecs = vu.extrinsic_matrix_to_vecs(mat)
+        cam_rvecs.append(rvecs)
+        cam_tvecs.append(tvecs)
+
+    # OpenCV outputs eye-to-hand.
+    e2h_rmat, e2h_tvec = cv2.calibrateHandEye(tracking_rvecs,
+                                              tracking_tvecs,
+                                              cam_rvecs,
+                                              cam_tvecs,
+                                              method=method
+                                              )
+
+    e2h = mu.construct_rigid_transformation(e2h_rmat, e2h_tvec)
+    h2e = np.linalg.inv(e2h)
+
+    return h2e
+
+
+def calibrate_hand_eye_using_tracked_pattern(
+        camera_rvecs: List[np.ndarray],
+        camera_tvecs: List[np.ndarray],
+        device_tracking_matrices: List[np.ndarray],
+        pattern_tracking_matrices: List[np.ndarray],
+        method=cv2.CALIB_HAND_EYE_TSAI
+        ):
+    """
+    Hand-eye calibration using standard OpenCV methods. This method assumes
+    two sets of tracking data, so it is useful for a tracked device
+    (e.g. laparoscope) and a tracked calibration object (e.g. chessboard).
+
+    :param camera_rvecs: list of rvecs that we get from OpenCV camera
+    extrinsics, pattern_to_camera.
+    :param camera_tvecs: list of tvecs that we get from OpenCV camera
+    extrinsics, pattern_to_camera.
+    :param device_tracking_matrices: list of tracking matrices for the
+    tracked device, marker_to_tracker.
+    :param pattern_tracking_matrices: list of tracking matrices for the
+    tracked calibration object, marker_to_tracker.
+    :param method: Choice of OpenCV Hand-Eye method.
+    :return hand-eye transform as 4x4 matrix.
+    """
+    if len(device_tracking_matrices) != len(pattern_tracking_matrices):
+        raise ValueError("The number of device tracking matrices must "
+                         "equal the number of pattern tracking matrices.")
+
+    if len(device_tracking_matrices) < 3:
+        raise ValueError("You must have at least 3 tracking matrices")
+
+    for i in range(len(pattern_tracking_matrices)):
+        if pattern_tracking_matrices[i] is None:
+            raise ValueError("Pattern tracking matrix:"
+                             + str(i) + str(" is None."))
+
+    # Essentially, as we have a tracked calibration object,
+    # the calibration object becomes the reference for the tracker space.
+    tracking_matrices = []
+    for i in range(len(device_tracking_matrices)):
+        mat = np.linalg.inv(pattern_tracking_matrices[i]) \
+              @ device_tracking_matrices[i]
+        tracking_matrices.append(mat)
+
+    h2e = calibrate_hand_eye_using_stationary_pattern(camera_rvecs,
+                                                      camera_tvecs,
+                                                      tracking_matrices,
+                                                      method)
+    return h2e
+
+
+def calibrate_pattern_to_tracking_marker(camera_rvecs: List[np.ndarray],
+                                         camera_tvecs: List[np.ndarray],
+                                         tracking_matrices: List[np.ndarray],
+                                         method=cv2.CALIB_HAND_EYE_TSAI
+                                         ):
+    """
+    In some calibration problems, people use a pattern (e.g. chessboard)
+    that is tracked. If you manufacture this well, you should know the
+    pattern_2_marker transform by DESIGN. However, if you assume a STATIONARY
+    video camera, and a moving pattern, this method allows you to use standard
+    hand-eye techniques to estimate the pattern_2_marker transform from
+    at least 2 motions (3 views) around different axes of rotation.
+
+    :param camera_rvecs: list of rvecs that we get from OpenCV camera
+    extrinsics, pattern_to_camera.
+    :param camera_tvecs: list of tvecs that we get from OpenCV camera
+    extrinsics, pattern_to_camera.
+    :param tracking_matrices: list of tracking matrices for the tracked
+    calibration pattern, marker_to_tracker.
+    :param method: Choice of OpenCV Hand-Eye method.
+    :return pattern_to_marker
+    """
+    h2e = calibrate_hand_eye_using_stationary_pattern(camera_rvecs,
+                                                      camera_tvecs,
+                                                      tracking_matrices,
+                                                      method,
+                                                      invert_camera=True)
+
+    p2m = np.linalg.inv(h2e)
+
+    return p2m
+
+
+def calibrate_hand_eye_and_pattern_to_marker(
+        camera_rvecs: List[np.ndarray],
+        camera_tvecs: List[np.ndarray],
+        device_tracking_matrices: List[np.ndarray],
+        pattern_tracking_matrices: List[np.ndarray],
+        method=cv2.CALIB_ROBOT_WORLD_HAND_EYE_SHAH
+        ):
+    """
+    Hand-eye calibration using standard OpenCV methods. This method assumes
+    you are tracking both the device that needs hand-eye calibration, and
+    the calibration pattern.
+
+    :param camera_rvecs: list of rvecs that we get from OpenCV camera
+    extrinsics, pattern_to_camera.
+    :param camera_tvecs: list of tvecs that we get from OpenCV camera
+    extrinsics, pattern_to_camera.
+    :param device_tracking_matrices: list of tracking matrices for the
+    tracked device, e.g. laparoscope, marker_to_tracker.
+    :param pattern_tracking_matrices: list of tracking matrices for the
+    calibration object, marker_to_tracker
+    :param method: Choice of OpenCV RobotWorldHandEye method.
+    :return hand-eye, pattern-to-marker transforms as 4x4 matrices
+    """
+    if len(camera_rvecs) != len(camera_tvecs):
+        raise ValueError("Camera rotation and translation vector lists "
+                         "must be the same length.")
+
+    if len(camera_tvecs) != len(device_tracking_matrices):
+        raise ValueError("The number of camera extrinsic transforms must "
+                         "equal the number of device tracking matrices.")
+
+    if len(camera_tvecs) != len(pattern_tracking_matrices):
+        raise ValueError("The number of camera extrinsic transforms must "
+                         "equal the number of pattern tracking matrices.")
+
+    if len(camera_rvecs) < 3:
+        raise ValueError("You must have at least 3 views, include movements "
+                         "around at least 2 different rotation axes.")
+
+    # Convert tracking matrices to rvecs/tvecs for OpenCV.
+    # Look at OpenCV documentation for cv.calibrationRobotWorldHandEye
+    # Gripper = tracking marker on calibration pattern
+    # Robot base = tracking marker on video device, eg. laparoscope
+    # World = video camera on laparoscope, assumed to be stationary
+    # So, we move the calibration pattern, not the video device.
+
+    base2gripper_rvecs = []
+    base2gripper_tvecs = []
+    for i in range(len(camera_rvecs)):
+        b2g = np.linalg.inv(pattern_tracking_matrices[i]) \
+              @ device_tracking_matrices[i]
+        rvecs, tvecs = vu.extrinsic_matrix_to_vecs(b2g)
+        base2gripper_rvecs.append(rvecs)
+        base2gripper_tvecs.append(tvecs)
+
+    cam_rvecs = []
+    cam_tvecs = []
+    for i in range(len(camera_rvecs)):
+        mat = vu.extrinsic_vecs_to_matrix(camera_rvecs[i], camera_tvecs[i])
+        mat = np.linalg.inv(mat)
+        rvecs, tvecs = vu.extrinsic_matrix_to_vecs(mat)
+        cam_rvecs.append(rvecs)
+        cam_tvecs.append(tvecs)
+
+    b2w_rmat, b2w_t, g2c_rmat, g2c_t = \
+        cv2.calibrateRobotWorldHandEye(cam_rvecs,
+                                       cam_tvecs,
+                                       base2gripper_rvecs,
+                                       base2gripper_tvecs,
+                                       method=method)
+
+    h2e = mu.construct_rigid_transformation(b2w_rmat, b2w_t)
+    m2p = mu.construct_rigid_transformation(g2c_rmat, g2c_t)
+    p2m = np.linalg.inv(m2p)
+
+    return h2e, p2m
+
+
+def calibrate_hand_eye_and_grid_to_world(
+        camera_rvecs: List[np.ndarray],
+        camera_tvecs: List[np.ndarray],
+        device_tracking_matrices: List[np.ndarray],
+        method=cv2.CALIB_ROBOT_WORLD_HAND_EYE_SHAH
+        ):
+    """
+    Hand-eye calibration using standard OpenCV methods. This method assumes
+    you have a stationary untracked calibration pattern, and a tracked
+    device (e.g. laparoscope)
+
+    :param camera_rvecs: list of rvecs that we get from OpenCV camera
+    extrinsics, pattern_to_camera.
+    :param camera_tvecs: list of tvecs that we get from OpenCV camera
+    extrinsics, pattern_to_camera.
+    :param device_tracking_matrices: list of tracking matrices for the
+    tracked device, e.g. laparoscope, marker_to_tracker.
+    :param method: Choice of OpenCV RobotWorldHandEye method.
+    :return hand-eye, grid-to-world transforms as 4x4 matrices
+    """
+    if len(camera_rvecs) != len(camera_tvecs):
+        raise ValueError("Camera rotation and translation vector "
+                         "lists must be the same length.")
+
+    if len(camera_tvecs) != len(device_tracking_matrices):
+        raise ValueError("The number of camera extrinsic transforms "
+                         "must equal the number of device tracking matrices.")
+
+    if len(camera_rvecs) < 3:
+        raise ValueError("You must have at least 3 views, include "
+                         "movements around at least 2 different rotation axes.")
+
+    base2gripper_rvecs = []
+    base2gripper_tvecs = []
+    for i in range(len(device_tracking_matrices)):
+        b2g = np.linalg.inv(device_tracking_matrices[i])
+        rvec, tvec = vu.extrinsic_matrix_to_vecs(b2g)
+        base2gripper_rvecs.append(rvec)
+        base2gripper_tvecs.append(tvec)
+
+    b2w_rmat, b2w_t, g2c_rmat, g2c_t = \
+        cv2.calibrateRobotWorldHandEye(camera_rvecs,
+                                       camera_tvecs,
+                                       base2gripper_rvecs,
+                                       base2gripper_tvecs,
+                                       method=method)
+
+    h2e = mu.construct_rigid_transformation(g2c_rmat, g2c_t)
+    b2w = mu.construct_rigid_transformation(b2w_rmat, b2w_t)
+    w2b = np.linalg.inv(b2w)
+
+    return h2e, w2b
