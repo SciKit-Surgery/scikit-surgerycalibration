@@ -7,6 +7,7 @@
 *.pyc
 .pytest_cache/
 /tests/output
+.ipynb_checkpoints/
 
 # Mac Finder:
 .DS_Store
