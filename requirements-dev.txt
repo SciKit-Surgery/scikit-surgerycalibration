@@ -10,6 +10,7 @@ mock
 pyfakefs
 parameterized
 pylint
+pylint-exit
 sphinx
 sphinx_rtd_theme
 nbsphinx
