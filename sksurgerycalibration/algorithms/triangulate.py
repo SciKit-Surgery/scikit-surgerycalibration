@@ -132,8 +132,8 @@ def InternalIterativeTriangulatePointUsingSVD(P1,
 
     :param P1: [3x4] ndarray
     :param P2: [3x4] ndarray
-    :param u1:
-    :param u2:
+    :param u1: [3x1] ndarray
+    :param u2: [3x1] ndarray
 
     :return result:
     """
@@ -156,8 +156,8 @@ def InternalIterativeTriangulatePointUsingSVD(P1,
         X[2] = X_[2]
         X[3] = 1.0
 
-        p2x1 = np.zeros(P1[2][:] * X, dtype=np.double)[0]
-        p2x2 = np.zeros(P2[2][:] * X, dtype=np.double)[0]
+        p2x1 = (np.asmatrix(P1[2][:]).T) * (np.asmatrix(X).T)
+        p2x2 = (np.asmatrix(P2[2][:]).T) * (np.asmatrix(X).T)
 
         if (abs(w1 - p2x1) <= epsilon and abs(w2 - p2x2) <= epsilon):
             break
@@ -184,10 +184,10 @@ def InternalTriangulatePointUsingSVD(P1,
     Function for Internal Triangulate Point Using SVD
     :param P1: [3x4] ndarray
     :param P2: [3x4] ndarray
-    :param u1:
-    :param u2:
-    :param w1:
-    :param w2:
+    :param u1: [3x1] ndarray
+    :param u2: [3x1] ndarray
+    :param w1: constant value
+    :param w2: constant value
 
     :return X:
     """
