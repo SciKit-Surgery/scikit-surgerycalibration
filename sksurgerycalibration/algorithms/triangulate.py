@@ -156,8 +156,8 @@ def InternalIterativeTriangulatePointUsingSVD(P1,
         X[2] = X_[2]
         X[3] = 1.0
 
-        p2x1 = (np.asmatrix(P1[2][:]).T) * (np.asmatrix(X).T)
-        p2x2 = (np.asmatrix(P2[2][:]).T) * (np.asmatrix(X).T)
+        p2x1 = (P1[2][:].dot(X))[0]
+        p2x2 = (P2[2][:].dot(X))[0]
 
         if (abs(w1 - p2x1) <= epsilon and abs(w2 - p2x2) <= epsilon):
             break
