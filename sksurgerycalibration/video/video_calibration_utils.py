@@ -103,7 +103,7 @@ def filter_common_points_per_image(left_ids,
         raise ValueError("Not enough common points in left and right images.")
 
     common_ids = \
-        np.zeros((len(ids), 1), dtype=np.int)
+        np.zeros((len(ids), 1), dtype=np.int32)
     common_object_points = \
         np.zeros((len(ids), 1, 3), dtype=np.float32)
     common_left_image_points = \
