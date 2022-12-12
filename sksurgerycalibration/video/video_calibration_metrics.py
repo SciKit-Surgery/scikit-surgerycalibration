@@ -14,6 +14,7 @@ import cv2
 import sksurgeryopencvpython as cvpy
 import sksurgerycore.transforms.matrix as mu
 import sksurgerycalibration.video.video_calibration_utils as vu
+import sksurgerycalibration.algorithms.triangulate as opencvtriangulate
 
 LOGGER = logging.getLogger(__name__)
 
@@ -149,18 +150,6 @@ def compute_stereo_3d_error(l2r_rmat,
                                 right_camera_matrix,
                                 right_distortion, None, right_camera_matrix)
 
-        # Triangulate using OpenCV
-#        l2r_mat = mu.construct_rigid_transformation(l2r_rmat, l2r_tvec)
-#        p_l = np.zeros((3, 4))
-#        p_l[:, :-1] = left_camera_matrix
-#        p_r = np.zeros((3, 4))
-#        p_r[:, :-1] = right_camera_matrix
-#        p_l = np.matmul(p_l, np.eye(4))
-#        p_r = np.matmul(p_r, l2r_mat)
-#        triangulated_cv = cv2.triangulatePoints(p_l,
-#                                                p_r,
-#                                                left_undistorted,
-#                                                right_undistorted)
 
         # convert from Mx1x2 to Mx2
         left_undistorted = np.reshape(left_undistorted, (-1, 2))
@@ -177,6 +166,14 @@ def compute_stereo_3d_error(l2r_rmat,
             right_camera_matrix,
             l2r_rmat,
             l2r_tvec)
+
+        triangulated = opencvtriangulate.triangulate_points_using_hartley_opencv(left_undistorted,
+                                                    right_undistorted,
+                                                    left_camera_matrix,
+                                                    right_camera_matrix,
+                                                    l2r_rmat,
+                                                    l2r_tvec)
+
 
         # Triangulated points, are with respect to left camera.
         # Need to map back to model (chessboard space) for comparison.

@@ -4,6 +4,111 @@
 
 import cv2
 import numpy as np
+import sksurgerycore.transforms.matrix as mu
+
+
+def InternalTriangulatePointUsingSVD(P1,
+                                     P2,
+                                     u1,
+                                     u2,
+                                     w1,
+                                     w2):
+    """
+    Function for Internal Triangulate Point Using SVD
+    :param P1: [3x4] ndarray
+    :param P2: [3x4] ndarray
+    :param u1: [3x1] ndarray
+    :param u2: [3x1] ndarray
+    :param w1: constant value
+    :param w2: constant value
+
+    :return X:
+    """
+
+    P1 = np.zeros((3, 4, 1), dtype=np.double)
+    P2 = np.zeros((3, 4, 1), dtype=np.double)
+    u1 = np.zeros((3, 1, 1), dtype=np.double)
+    u2 = np.zeros((3, 1, 1), dtype=np.double)
+
+    # Build matrix A for homogeneous equation system Ax = 0
+    # Assume X = (x,y,z,1), for Linear-LS method
+    # Which turns it into a AX = B system, where A is 4x3, X is 3x1 and B is 4x1
+
+    A = np.zeros((4, 3, 1), dtype=np.double)
+    A[0, 0] = (u1[0] * P1[2, 0] - P1[0, 0]) / w1
+    A[0, 1] = (u1[0] * P1[2, 1] - P1[0, 1]) / w1
+    A[0, 2] = (u1[0] * P1[2, 2] - P1[0, 2]) / w1
+    A[1, 0] = (u1[1] * P1[2, 0] - P1[1, 0]) / w1
+    A[1, 1] = (u1[1] * P1[2, 1] - P1[1, 1]) / w1
+    A[1, 2] = (u1[1] * P1[2, 2] - P1[1, 2]) / w1
+    A[2, 0] = (u2[0] * P2[2, 0] - P2[0, 0]) / w2
+    A[2, 1] = (u2[0] * P2[2, 1] - P2[0, 1]) / w2
+    A[2, 2] = (u2[0] * P2[2, 2] - P2[0, 2]) / w2
+    A[3, 0] = (u2[1] * P2[2, 0] - P2[1, 0]) / w2
+    A[3, 1] = (u2[1] * P2[2, 1] - P2[1, 1]) / w2
+    A[3, 2] = (u2[1] * P2[2, 2] - P2[1, 2]) / w2
+
+    B = np.zeros((4, 1, 1), dtype=np.double)
+    B[0] = -(u1[0] * P1[2, 3] - P1[0, 3]) / w1
+    B[1] = -(u1[1] * P1[2, 3] - P1[1, 3]) / w1
+    B[2] = -(u2[0] * P2[2, 3] - P2[0, 3]) / w2
+    B[3] = -(u2[1] * P2[2, 3] - P2[1, 3]) / w2
+
+    X = np.zeros((4, 1, 1), dtype=np.double)
+    cv2.solve(A, B, X, flags=cv2.DECOMP_SVD)
+
+    return X
+
+
+def InternalIterativeTriangulatePointUsingSVD(P1,
+                                              P2,
+                                              u1,
+                                              u2):
+    """
+    Function for Iterative Triangulate Point Using SVD
+
+    :param P1: [3x4] ndarray
+    :param P2: [3x4] ndarray
+    :param u1: [3x1] ndarray
+    :param u2: [3x1] ndarray
+
+    :return result:
+    """
+
+    P1 = np.zeros((3, 4, 1), dtype=np.double)
+    P2 = np.zeros((3, 4, 1), dtype=np.double)
+    u1 = np.zeros((3, 1, 1), dtype=np.double)
+    u2 = np.zeros((3, 1, 1), dtype=np.double)
+
+    epsilon = 0.00000000001
+    w1 = 1
+    w2 = 1
+    X = np.zeros((4, 1, 1), dtype=np.double)
+
+    # Hartley suggests 10 iterations at most
+    for i in range(0, 10):
+        X_ = InternalTriangulatePointUsingSVD(P1, P2, u1, u2, w1, w2)
+        X[0] = X_[0]
+        X[1] = X_[1]
+        X[2] = X_[2]
+        X[3] = 1.0
+
+        p2x1 = (P1[2][:].dot(X))[0]
+        p2x2 = (P2[2][:].dot(X))[0]
+
+        if (abs(w1 - p2x1) <= epsilon and abs(w2 - p2x2) <= epsilon):
+            break
+
+        w1 = p2x1
+        w2 = p2x2
+
+    result = np.zeros((3, 1, 1), dtype=np.double)
+
+    result[0] = X[0]
+    result[1] = X[1]
+    result[2] = X[2]
+
+    return result
 
 
 def triangulate_points_using_hartley(inputUndistortedPoints,
@@ -20,6 +125,11 @@ def triangulate_points_using_hartley(inputUndistortedPoints,
     :param rightCameraIntrinsicParams:
     :param leftToRightRotationMatrix:
     :param leftToRightTranslationVector:
+
+    References
+    ----------
+    Hartley, Richard I., and Peter Sturm. "Triangulation." Computer vision and image understanding 68, no. 2 (1997): 146-157.
+
 
     :return outputPoints:
     """
@@ -123,105 +233,41 @@ def triangulate_points_using_hartley(inputUndistortedPoints,
     return outputPoints
 
 
-def InternalIterativeTriangulatePointUsingSVD(P1,
-                                              P2,
-                                              u1,
-                                              u2):
+def triangulate_points_using_hartley_opencv(left_undistorted,
+                                            right_undistorted,
+                                            leftCameraIntrinsicParams,
+                                            rightCameraIntrinsicParams,
+                                            leftToRightRotationMatrix,
+                                            leftToRightTranslationVector):
     """
-    Function for Iterative Triangulate Point Using SVD
+    Function to compute triangulation of points using Harley with cv2.triangulatePoints
 
-    :param P1: [3x4] ndarray
-    :param P2: [3x4] ndarray
-    :param u1: [3x1] ndarray
-    :param u2: [3x1] ndarray
+    :param inputUndistortedPoints:
+    :param leftCameraIntrinsicParams:
+    :param rightCameraIntrinsicParams:
+    :param leftToRightRotationMatrix:
+    :param leftToRightTranslationVector:
 
-    :return result:
-    """
+    p_l,p_r: Left and Right camera projection matrixes
+    left_undistorted, right_undistorted: point image positions in 2 cameras
+    
+    References
+    ----------
+    Hartley, Richard I., and Peter Sturm. "Triangulation." Computer vision and image understanding 68, no. 2 (1997): 146-157.
 
-    P1 = np.zeros((3, 4, 1), dtype=np.double)
-    P2 = np.zeros((3, 4, 1), dtype=np.double)
-    u1 = np.zeros((3, 1, 1), dtype=np.double)
-    u2 = np.zeros((3, 1, 1), dtype=np.double)
-
-    epsilon = 0.00000000001
-    w1 = 1
-    w2 = 1
-    X = np.zeros((4, 1, 1), dtype=np.double)
-
-    # Hartley suggests 10 iterations at most
-    for i in range(0, 10):
-        X_ = InternalTriangulatePointUsingSVD(P1, P2, u1, u2, w1, w2)
-        X[0] = X_[0]
-        X[1] = X_[1]
-        X[2] = X_[2]
-        X[3] = 1.0
-
-        p2x1 = (P1[2][:].dot(X))[0]
-        p2x2 = (P2[2][:].dot(X))[0]
-
-        if (abs(w1 - p2x1) <= epsilon and abs(w2 - p2x2) <= epsilon):
-            break
-
-        w1 = p2x1
-        w2 = p2x2
-
-    result = np.zeros((3, 1, 1), dtype=np.double)
-
-    result[0] = X[0]
-    result[1] = X[1]
-    result[2] = X[2]
-
-    return result
-
-
-def InternalTriangulatePointUsingSVD(P1,
-                                     P2,
-                                     u1,
-                                     u2,
-                                     w1,
-                                     w2):
-    """
-    Function for Internal Triangulate Point Using SVD
-    :param P1: [3x4] ndarray
-    :param P2: [3x4] ndarray
-    :param u1: [3x1] ndarray
-    :param u2: [3x1] ndarray
-    :param w1: constant value
-    :param w2: constant value
-
-    :return X:
+    :return triangulated_cv:
     """
 
-    P1 = np.zeros((3, 4, 1), dtype=np.double)
-    P2 = np.zeros((3, 4, 1), dtype=np.double)
-    u1 = np.zeros((3, 1, 1), dtype=np.double)
-    u2 = np.zeros((3, 1, 1), dtype=np.double)
+    l2r_mat = mu.construct_rigid_transformation(leftToRightRotationMatrix, leftToRightTranslationVector)
+    p_l = np.zeros((3, 4))
+    p_l[:, :-1] = leftCameraIntrinsicParams
+    p_r = np.zeros((3, 4))
+    p_r[:, :-1] = rightCameraIntrinsicParams
+    p_l = np.matmul(p_l, np.eye(4))
+    p_r = np.matmul(p_r, l2r_mat)
+    triangulated_cv = cv2.triangulatePoints(p_l,
+                                            p_r,
+                                            left_undistorted,
+                                            right_undistorted)
 
-    # Build matrix A for homogeneous equation system Ax = 0
-    # Assume X = (x,y,z,1), for Linear-LS method
-    # Which turns it into a AX = B system, where A is 4x3, X is 3x1 and B is 4x1
-
-    A = np.zeros((4, 3, 1), dtype=np.double)
-    A[0, 0] = (u1[0] * P1[2, 0] - P1[0, 0]) / w1
-    A[0, 1] = (u1[0] * P1[2, 1] - P1[0, 1]) / w1
-    A[0, 2] = (u1[0] * P1[2, 2] - P1[0, 2]) / w1
-    A[1, 0] = (u1[1] * P1[2, 0] - P1[1, 0]) / w1
-    A[1, 1] = (u1[1] * P1[2, 1] - P1[1, 1]) / w1
-    A[1, 2] = (u1[1] * P1[2, 2] - P1[1, 2]) / w1
-    A[2, 0] = (u2[0] * P2[2, 0] - P2[0, 0]) / w2
-    A[2, 1] = (u2[0] * P2[2, 1] - P2[0, 1]) / w2
-    A[2, 2] = (u2[0] * P2[2, 2] - P2[0, 2]) / w2
-    A[3, 0] = (u2[1] * P2[2, 0] - P2[1, 0]) / w2
-    A[3, 1] = (u2[1] * P2[2, 1] - P2[1, 1]) / w2
-    A[3, 2] = (u2[1] * P2[2, 2] - P2[1, 2]) / w2
-
-    B = np.zeros((4, 1, 1), dtype=np.double)
-    B[0] = -(u1[0] * P1[2, 3] - P1[0, 3]) / w1
-    B[1] = -(u1[1] * P1[2, 3] - P1[1, 3]) / w1
-    B[2] = -(u2[0] * P2[2, 3] - P2[0, 3]) / w2
-    B[3] = -(u2[1] * P2[2, 3] - P2[1, 3]) / w2
-
-    X = np.zeros((4, 1, 1), dtype=np.double)
-    cv2.solve(A, B, X, flags=cv2.DECOMP_SVD)
-
-    return X
+    return triangulated_cv
