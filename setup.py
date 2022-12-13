@@ -55,7 +55,7 @@ setup(
         'ipykernel',
         'nbsphinx',
         'scipy',
-        'opencv-contrib-python-headless>=4.2.0.32',
+        'opencv-contrib-python-headless<4.6',
         'scikit-surgerycore',
         'scikit-surgeryimage>=0.10.1',
         'scikit-surgeryopencvcpp',
