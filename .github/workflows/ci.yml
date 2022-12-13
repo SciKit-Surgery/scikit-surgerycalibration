@@ -3,6 +3,7 @@ on: push
 jobs:
   test:
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.experimental }}
 
     strategy:
       fail-fast: false
@@ -47,7 +48,6 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v1
         with:
-          # TODO: python version for deploy?
           python-version: 3.7
 
       - name: Install dependencies
