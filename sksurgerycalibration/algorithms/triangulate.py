@@ -4,7 +4,7 @@
 
 import cv2
 import numpy as np
-import sksurgerycore.transforms.matrix as mu
+import sksurgerycore.transforms.matrix as stm
 
 
 def InternalTriangulatePointUsingSVD(P1,
@@ -75,15 +75,15 @@ def InternalIterativeTriangulatePointUsingSVD(P1,
     :return result:
     """
 
-    P1 = np.zeros((3, 4, 1), dtype=np.double)
-    P2 = np.zeros((3, 4, 1), dtype=np.double)
-    u1 = np.zeros((3, 1, 1), dtype=np.double)
-    u2 = np.zeros((3, 1, 1), dtype=np.double)
+    P1 = np.zeros((3, 4), dtype=np.double)
+    P2 = np.zeros((3, 4), dtype=np.double)
+    u1 = np.zeros((3, 1), dtype=np.double)
+    u2 = np.zeros((3, 1), dtype=np.double)
 
     epsilon = 0.00000000001
     w1 = 1
     w2 = 1
-    X = np.zeros((4, 1, 1), dtype=np.double)
+    X = np.zeros((4, 1), dtype=np.double)
 
     # Hartley suggests 10 iterations at most
     for i in range(0, 10):
@@ -95,6 +95,7 @@ def InternalIterativeTriangulatePointUsingSVD(P1,
 
         p2x1 = (P1[2][:].dot(X))[0]
         p2x2 = (P2[2][:].dot(X))[0]
+        # p2x1 and p2x2 should not be zero to avoid RuntimeWarning: invalid value encountered in true_divide
 
         if (abs(w1 - p2x1) <= epsilon and abs(w2 - p2x2) <= epsilon):
             break
@@ -102,7 +103,7 @@ def InternalIterativeTriangulatePointUsingSVD(P1,
         w1 = p2x1
         w2 = p2x2
 
-    result = np.zeros((3, 1, 1), dtype=np.double)
+    result = np.zeros((3, 1), dtype=np.double)
 
     result[0] = X[0]
     result[1] = X[1]
@@ -133,10 +134,12 @@ def triangulate_points_using_hartley(inputUndistortedPoints,
 
     :return outputPoints:
     """
-    numberOfPoints = inputUndistortedPoints.rows
+    numberOfPoints = inputUndistortedPoints.shape[0] #>inputUndistortedPoints.rows
     outputPoints = np.zeros((numberOfPoints, 3, 1), dtype=np.double)
-    K1 = np.zeros((3, 3, 1), dtype=np.double)
-    K2 = np.zeros((3, 3, 1), dtype=np.double)
+    K1 = np.eye(3, dtype=np.double)
+    K2 = np.eye(3, dtype=np.double)
+    K1 = leftCameraIntrinsicParams
+    K2 = rightCameraIntrinsicParams
     K1Inv = np.zeros((3, 3, 1), dtype=np.double)
     K2Inv = np.zeros((3, 3, 1), dtype=np.double)
     R1 = np.eye(3, dtype=np.double)
@@ -158,8 +161,8 @@ def triangulate_points_using_hartley(inputUndistortedPoints,
     # These triangulation routines need 64 bit data.
     for r in range(0, 3):
         for c in range(0, 3):
-            K1[r, c] = leftCameraIntrinsicParams[r, c]
-            K2[r, c] = rightCameraIntrinsicParams[r, c]
+            # K1[r, c] = leftCameraIntrinsicParams[r, c] #no-need for python
+            # K2[r, c] = rightCameraIntrinsicParams[r, c] #no-need for python
             E2[r, c] = R2[r, c]
     E2[r, 3] = leftToRightTranslationVector[r, 0]
 
@@ -167,7 +170,7 @@ def triangulate_points_using_hartley(inputUndistortedPoints,
     K1Inv = np.linalg.inv(K1)
     K2Inv = np.linalg.inv(K2)
 
-    # We want output coordinates relative to left camera.
+    # # We want output coordinates relative to left camera.
     E1Inv = np.linalg.inv(E1)
     L2R = E2 * E1Inv
 
@@ -192,17 +195,19 @@ def triangulate_points_using_hartley(inputUndistortedPoints,
             P2d[i, j] = L2R[i, j]
 
     # `#pragma omp parallel` for its C++ counterpart
-    u1 = np.zeros((3, 1, 1), dtype=np.double)
-    u2 = np.zeros((3, 1, 1), dtype=np.double)
-    u1t = np.zeros((3, 1, 1), dtype=np.double)
-    u2t = np.zeros((3, 1, 1), dtype=np.double)
+    u1 = np.zeros((3, 1), dtype=np.double)
+    u2 = np.zeros((3, 1), dtype=np.double)
+    u1t = np.zeros((3, 1), dtype=np.double)
+    u2t = np.zeros((3, 1), dtype=np.double)
 
-    u1p = np.zeros((3, 1, 1),
-                   dtype=np.double)  # Normalised image coordinates. (i.e. relative to a principal point of zero, and in millimetres not pixels).
-    u2p = np.zeros((3, 1, 1), dtype=np.double)
-    reconstructedPoint = np.zeros((3, 1, 1), dtype=np.double)  # the output 3D point, in reference frame of left camera.
+    u1p = np.zeros((3, 1), dtype=np.double)
+    # Normalised image coordinates. (i.e. relative to a principal point of zero, and in millimetres not pixels).
+    u2p = np.zeros((3, 1), dtype=np.double)
+    # reconstructedPoint = np.zeros((3, 1, 1), dtype=np.double)  # the output 3D point, in reference frame of left camera.
 
-    # `pragma omp for` for its C++ counterpart
+    # print(f'\n {u1p}')
+
+    # # `pragma omp for` for its C++ counterpart
     for i in range(1, numberOfPoints):
         u1[0, 0] = inputUndistortedPoints[i, 0]
         u1[1, 0] = inputUndistortedPoints[i, 1]
@@ -258,7 +263,7 @@ def triangulate_points_using_hartley_opencv(left_undistorted,
     :return triangulated_cv:
     """
 
-    l2r_mat = mu.construct_rigid_transformation(leftToRightRotationMatrix, leftToRightTranslationVector)
+    l2r_mat = stm.construct_rigid_transformation(leftToRightRotationMatrix, leftToRightTranslationVector)
     p_l = np.zeros((3, 4))
     p_l[:, :-1] = leftCameraIntrinsicParams
     p_r = np.zeros((3, 4))
