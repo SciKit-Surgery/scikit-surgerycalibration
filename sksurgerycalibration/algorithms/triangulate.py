@@ -134,7 +134,7 @@ def triangulate_points_using_hartley(inputUndistortedPoints,
 
     :return outputPoints:
     """
-    numberOfPoints = inputUndistortedPoints.shape[0] #>inputUndistortedPoints.rows
+    numberOfPoints = inputUndistortedPoints.shape[0]  # >inputUndistortedPoints.rows
     outputPoints = np.zeros((numberOfPoints, 3, 1), dtype=np.double)
     K1 = np.eye(3, dtype=np.double)
     K2 = np.eye(3, dtype=np.double)
@@ -247,6 +247,8 @@ def triangulate_points_using_hartley_opencv(left_undistorted,
     """
     Function to compute triangulation of points using Harley with cv2.triangulatePoints
 
+    :param left_undistorted:
+    :param right_undistorted:
     :param inputUndistortedPoints:
     :param leftCameraIntrinsicParams:
     :param rightCameraIntrinsicParams:
@@ -270,9 +272,10 @@ def triangulate_points_using_hartley_opencv(left_undistorted,
     p_r[:, :-1] = rightCameraIntrinsicParams
     p_l = np.matmul(p_l, np.eye(4))
     p_r = np.matmul(p_r, l2r_mat)
+
     triangulated_cv = cv2.triangulatePoints(p_l,
                                             p_r,
-                                            left_undistorted,
-                                            right_undistorted)
+                                            left_undistorted.T,
+                                            right_undistorted.T)
 
     return triangulated_cv

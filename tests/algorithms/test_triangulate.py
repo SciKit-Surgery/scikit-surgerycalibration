@@ -1,15 +1,14 @@
 #  -*- coding: utf-8 -*-
 """Tests for sksrurgerycalibration triangulate"""
-from glob import glob
-from random import seed
+
 import numpy as np
 import pytest
 import sksurgerycalibration.algorithms.triangulate as sat
 
 
-def test_triangulate_points_with_hartley():
+def load_chessboard_arrays():
     """
-    Test triangulate points with hartley using "Chessboard Test"
+    Load array of data for "Chessboard Test"
     """
 
     points_in_2d = np.zeros((4, 4), dtype=np.double)
@@ -29,6 +28,26 @@ def test_triangulate_points_with_hartley():
     points_in_2d[3, 1] = 650.41
     points_in_2d[3, 2] = 1867.78
     points_in_2d[3, 3] = 632.59
+
+    left_undistorted = np.zeros((4, 2), dtype=np.double)
+    left_undistorted[0, 0] = points_in_2d[0, 0]
+    left_undistorted[0, 1] = points_in_2d[0, 1]
+    left_undistorted[1, 0] = points_in_2d[1, 0]
+    left_undistorted[1, 1] = points_in_2d[1, 1]
+    left_undistorted[2, 0] = points_in_2d[2, 0]
+    left_undistorted[2, 1] = points_in_2d[2, 1]
+    left_undistorted[3, 0] = points_in_2d[3, 0]
+    left_undistorted[3, 1] = points_in_2d[3, 1]
+
+    right_undistorted = np.zeros((4, 2), dtype=np.double)
+    right_undistorted[0, 0] = points_in_2d[0, 2]
+    right_undistorted[0, 1] = points_in_2d[0, 3]
+    right_undistorted[1, 0] = points_in_2d[1, 2]
+    right_undistorted[1, 1] = points_in_2d[1, 3]
+    right_undistorted[2, 0] = points_in_2d[2, 2]
+    right_undistorted[2, 1] = points_in_2d[2, 3]
+    right_undistorted[3, 0] = points_in_2d[3, 2]
+    right_undistorted[3, 1] = points_in_2d[3, 3]
 
     left_intrinsic = np.eye(3, dtype=np.double)
     left_intrinsic[0, 0] = 2012.186314
@@ -53,13 +72,46 @@ def test_triangulate_points_with_hartley():
     left_to_right_rotation[2, 1] = -0.022405
     left_to_right_rotation[2, 2] = 0.999426
 
-    left_to_right_translation = np.eye(3, dtype=np.double)
+    left_to_right_translation = np.zeros((3, 1), dtype=np.double)
     left_to_right_translation[0, 0] = -4.631472
     left_to_right_translation[1, 0] = 0.268695
     left_to_right_translation[2, 0] = 1.300256
+
+    return points_in_2d, \
+           left_undistorted, \
+           right_undistorted, \
+           left_intrinsic, \
+           right_intrinsic, \
+           left_to_right_rotation, \
+           left_to_right_translation
+
+
+def test_triangulate_points_with_hartley():
+    """
+    Test triangulate points with hartley using "Chessboard Test"
+    """
+
+    points_in_2d, left_undistorted, right_undistorted, left_intrinsic, right_intrinsic, \
+    left_to_right_rotation, left_to_right_translation = load_chessboard_arrays()
 
     pointsFromHartley = sat.triangulate_points_using_hartley(points_in_2d,
                                                              left_intrinsic,
                                                              right_intrinsic,
                                                              left_to_right_rotation,
                                                              left_to_right_translation)
+
+
+def test_triangulate_points_using_hartley_opencv():
+    """
+    Test triangulate points with hartley with cv2.triangulatePoints using "Chessboard Test"
+    """
+
+    points_in_2d, left_undistorted, right_undistorted, left_intrinsic, right_intrinsic, \
+    left_to_right_rotation, left_to_right_translation = load_chessboard_arrays()
+
+    pointsFromHartley_opencv = sat.triangulate_points_using_hartley_opencv(left_undistorted,
+                                                                           right_undistorted,
+                                                                           left_intrinsic,
+                                                                           right_intrinsic,
+                                                                           left_to_right_rotation,
+                                                                           left_to_right_translation)
