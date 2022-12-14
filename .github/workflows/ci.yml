@@ -13,7 +13,7 @@ jobs:
         experimental: [false]
         include:
           - python-ver: 3.9
-            os: ubuntu-22.04
+            os: [ubuntu-22.04, macos-latest, windows-latest]
             experimental: false
 
     steps:
