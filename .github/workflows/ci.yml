@@ -8,10 +8,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-ver: [3.7, 3.8]
+        python-ver: [3.7]
         os: [ubuntu-22.04, macos-latest, windows-latest]
         experimental: [false]
         include:
+          - python-ver: 3.8
+            os: ubuntu-22.04
+            experimental: false
+          - python-ver: 3.8
+            os: macos-latest
+            experimental: false
           - python-ver: 3.8
             os: windows-latest
             experimental: true
