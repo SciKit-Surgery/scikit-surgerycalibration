@@ -13,8 +13,33 @@ jobs:
         experimental: [false]
         include:
           - python-ver: 3.9
-            os: [ubuntu-22.04, macos-latest, windows-latest]
-            experimental: false
+            os: ubuntu-22.04
+            experimental: true
+          - python-ver: 3.9
+            os: macos-latest
+            experimental: true
+          - python-ver: 3.9
+            os: windows-latest
+            experimental: true
+          - python-ver: '3.10'
+            os: ubuntu-22.04
+            experimental: true
+          - python-ver: '3.10'
+            os: macos-latest
+            experimental: true
+          - python-ver: '3.10'
+            os: windows-latest
+            experimental: true
+          - python-ver: 3.11
+            os: ubuntu-22.04
+            experimental: true
+          - python-ver: 3.11
+            os: macos-latest
+            experimental: true
+          - python-ver: 3.11
+            os: windows-latest
+            experimental: true
+
 
     steps:
       - uses: actions/checkout@v2
