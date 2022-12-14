@@ -130,7 +130,7 @@ def test_chessboard_stereo():
 
     # Repeatedly grab data, until you have enough.
     for i, _ in enumerate(left_images):
-        number_left, number_right = calibrator.grab_data(left_images[i], right_images[i])
+        number_left, number_right = calibrator.grab_data(_, right_images[i])
         assert number_left > 0
         assert number_right > 0
     assert not calibrator.is_device_tracked()
