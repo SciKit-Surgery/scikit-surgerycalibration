@@ -12,6 +12,9 @@ jobs:
         os: [ubuntu-22.04, macos-latest, windows-latest]
         experimental: [false]
         include:
+          - python-ver: 3.8
+            os: windows-latest
+            experimental: true
           - python-ver: 3.9
             os: ubuntu-22.04
             experimental: true
