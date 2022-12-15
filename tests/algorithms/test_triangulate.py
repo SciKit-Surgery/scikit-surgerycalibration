@@ -1,6 +1,6 @@
 #  -*- coding: utf-8 -*-
 """Tests for sksrurgerycalibration triangulate"""
-
+import cv2
 import numpy as np
 import pytest
 import sksurgerycalibration.algorithms.triangulate as sat
@@ -90,7 +90,18 @@ def load_chessboard_arrays():
     model_points[3, 0] = 39
     model_points[3, 1] = 27
     model_points[3, 2] = 0
-    
+
+    left_rotation = np.zeros((3, 3), dtype=np.double)
+    left_rotation[0, 0] = 0.966285949
+    left_rotation[0, 1] = -0.1053020017
+    left_rotation[0, 2] = 0.2349530874
+    left_rotation[1, 0] = -0.005105986897
+    left_rotation[1, 1] = 0.9045241988
+    left_rotation[1, 2] = 0.4263917244
+    left_rotation[2, 0] = -0.2574206552
+    left_rotation[2, 1] = -0.4132159994
+    left_rotation[2, 2] = 0.8734913532
+
     return points_in_2d, \
            left_undistorted, \
            right_undistorted, \
@@ -98,7 +109,8 @@ def load_chessboard_arrays():
            right_intrinsic, \
            left_to_right_rotation, \
            left_to_right_translation, \
-           model_points
+           model_points, \
+           left_rotation
 
 
 def test_triangulate_points_with_hartley():
@@ -107,7 +119,14 @@ def test_triangulate_points_with_hartley():
     """
 
     points_in_2d, left_undistorted, right_undistorted, left_intrinsic, right_intrinsic, \
-    left_to_right_rotation, left_to_right_translation, model_points = load_chessboard_arrays()
+    left_to_right_rotation, left_to_right_translation, model_points, left_rotation = load_chessboard_arrays()
+
+    model_points_transposed = model_points.T
+    rotated_model_points = np.zeros((model_points_transposed.shape[0], model_points_transposed.shape[1]),
+                                    dtype=np.double)
+    empty_mat = np.array(model_points_transposed.shape[1], copy=True)  # required for gemm but unused
+    result = cv2.gemm(src1=left_rotation, src2=model_points_transposed, alpha=1.0, src3=empty_mat, babel=0.0,
+                      dts=rotated_model_points, flags=cv2.GEMM_2_T)
 
     pointsFromHartley = sat.triangulate_points_using_hartley(points_in_2d,
                                                              left_intrinsic,
@@ -122,7 +141,7 @@ def test_triangulate_points_using_hartley_opencv():
     """
 
     points_in_2d, left_undistorted, right_undistorted, left_intrinsic, right_intrinsic, \
-    left_to_right_rotation, left_to_right_translation, model_points = load_chessboard_arrays()
+    left_to_right_rotation, left_to_right_translation, model_points, left_rotation = load_chessboard_arrays()
 
     pointsFromHartley_opencv = sat.triangulate_points_using_hartley_opencv(left_undistorted,
                                                                            right_undistorted,
