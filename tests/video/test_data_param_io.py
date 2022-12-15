@@ -62,7 +62,7 @@ def test_chessboard_stereo_io():
         sc.StereoVideoCalibrationDriver(chessboard_detector, chessboard_detector, 140)
 
     for i, _ in enumerate(left_images):
-        num_left, num_right = calibrator.grab_data(left_images[i], right_images[i], np.eye(4), np.eye(3))
+        num_left, num_right = calibrator.grab_data(_, right_images[i], np.eye(4), np.eye(3))
         assert num_left > 0
         assert num_right > 0
 
