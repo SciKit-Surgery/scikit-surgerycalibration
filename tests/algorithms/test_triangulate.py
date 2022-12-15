@@ -77,13 +77,28 @@ def load_chessboard_arrays():
     left_to_right_translation[1, 0] = 0.268695
     left_to_right_translation[2, 0] = 1.300256
 
+    model_points = np.zeros((4, 3), dtype=np.double)
+    model_points[0, 0] = 0
+    model_points[0, 1] = 0
+    model_points[0, 2] = 0
+    model_points[1, 0] = 39
+    model_points[1, 1] = 0
+    model_points[1, 2] = 0
+    model_points[2, 0] = 0
+    model_points[2, 1] = 27
+    model_points[2, 2] = 0
+    model_points[3, 0] = 39
+    model_points[3, 1] = 27
+    model_points[3, 2] = 0
+    
     return points_in_2d, \
            left_undistorted, \
            right_undistorted, \
            left_intrinsic, \
            right_intrinsic, \
            left_to_right_rotation, \
-           left_to_right_translation
+           left_to_right_translation, \
+           model_points
 
 
 def test_triangulate_points_with_hartley():
@@ -92,7 +107,7 @@ def test_triangulate_points_with_hartley():
     """
 
     points_in_2d, left_undistorted, right_undistorted, left_intrinsic, right_intrinsic, \
-    left_to_right_rotation, left_to_right_translation = load_chessboard_arrays()
+    left_to_right_rotation, left_to_right_translation, model_points = load_chessboard_arrays()
 
     pointsFromHartley = sat.triangulate_points_using_hartley(points_in_2d,
                                                              left_intrinsic,
@@ -107,7 +122,7 @@ def test_triangulate_points_using_hartley_opencv():
     """
 
     points_in_2d, left_undistorted, right_undistorted, left_intrinsic, right_intrinsic, \
-    left_to_right_rotation, left_to_right_translation = load_chessboard_arrays()
+    left_to_right_rotation, left_to_right_translation, model_points = load_chessboard_arrays()
 
     pointsFromHartley_opencv = sat.triangulate_points_using_hartley_opencv(left_undistorted,
                                                                            right_undistorted,
