@@ -102,6 +102,11 @@ def load_chessboard_arrays():
     left_rotation[2, 1] = -0.4132159994
     left_rotation[2, 2] = 0.8734913532
 
+    left_translation = np.zeros((3, 1), dtype=np.double)
+    left_translation[0, 0] = 9.847672184
+    left_translation[1, 0] = -22.45992103
+    left_translation[2, 0] = 127.7836183
+
     return points_in_2d, \
            left_undistorted, \
            right_undistorted, \
@@ -110,7 +115,36 @@ def load_chessboard_arrays():
            left_to_right_rotation, \
            left_to_right_translation, \
            model_points, \
-           left_rotation
+           left_rotation, \
+           left_translation
+
+
+def compute_rms_between_corresponding_points(a, b):
+    """
+    Compute Root Mean Squater between_corresponding_points a, b.
+    """
+    rms = 0
+    diff = 0
+    squared_diff = 0
+
+    if (a.shape[0] != b.shape[0]):
+        print(f' a has {a.shape[0]} rows but b has {b.shape[0]} rows')
+
+    if (a.shape[1] != 3):
+        print(f'a does not have 3 columns but {a.shape[1]} columns')
+
+    if (b.shape[1] != 3):
+        print(f'b does not have 3 columns but {b.shape[1]} columns')
+
+    for r in range(a.shape[0]):
+        for c in range(a.shape[1]):
+            diff = b[r, c] - a[r, c]
+            squared_diff = diff * diff
+            rms += squared_diff
+
+    rms /= a.shape[0]
+    rms = np.sqrt(rms)
+    return rms
 
 
 def test_triangulate_points_with_hartley():
@@ -119,20 +153,28 @@ def test_triangulate_points_with_hartley():
     """
 
     points_in_2d, left_undistorted, right_undistorted, left_intrinsic, right_intrinsic, \
-    left_to_right_rotation, left_to_right_translation, model_points, left_rotation = load_chessboard_arrays()
+    left_to_right_rotation, left_to_right_translation, model_points, left_rotation, left_translation = load_chessboard_arrays()
 
     model_points_transposed = model_points.T
     rotated_model_points = np.zeros((model_points_transposed.shape[0], model_points_transposed.shape[1]),
                                     dtype=np.double)
-    empty_mat = np.array(model_points_transposed.shape[1], copy=True)  # required for gemm but unused
-    result = cv2.gemm(src1=left_rotation, src2=model_points_transposed, alpha=1.0, src3=empty_mat, babel=0.0,
-                      dts=rotated_model_points, flags=cv2.GEMM_2_T)
+    rotated_model_points = cv2.gemm(src1=left_rotation, src2=model_points_transposed, alpha=1.0, src3=None,
+                                    beta=0.0)  # flags=cv2.GEMM_2_T?
+    model_points_rotated_and_transposed = rotated_model_points.T
+    transformed_model_points = np.zeros(
+        (model_points_rotated_and_transposed.shape[0], model_points_rotated_and_transposed.shape[1]), dtype=np.double)
 
-    pointsFromHartley = sat.triangulate_points_using_hartley(points_in_2d,
-                                                             left_intrinsic,
-                                                             right_intrinsic,
-                                                             left_to_right_rotation,
-                                                             left_to_right_translation)
+    for r in range(model_points_rotated_and_transposed.shape[0]):
+        for c in range(model_points_rotated_and_transposed.shape[1]):
+            transformed_model_points[r, c] = model_points_rotated_and_transposed[r, c] + left_translation[c, 0]
+
+    points_from_hartley = sat.triangulate_points_using_hartley(points_in_2d,
+                                                               left_intrinsic,
+                                                               right_intrinsic,
+                                                               left_to_right_rotation,
+                                                               left_to_right_translation)
+
+    rms_hartley = compute_rms_between_corresponding_points(transformed_model_points, points_from_hartley)
 
 
 def test_triangulate_points_using_hartley_opencv():
@@ -141,7 +183,7 @@ def test_triangulate_points_using_hartley_opencv():
     """
 
     points_in_2d, left_undistorted, right_undistorted, left_intrinsic, right_intrinsic, \
-    left_to_right_rotation, left_to_right_translation, model_points, left_rotation = load_chessboard_arrays()
+    left_to_right_rotation, left_to_right_translation, model_points, left_rotation, left_translation = load_chessboard_arrays()
 
     pointsFromHartley_opencv = sat.triangulate_points_using_hartley_opencv(left_undistorted,
                                                                            right_undistorted,
