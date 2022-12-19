@@ -176,8 +176,8 @@ def test_triangulate_points_hartley():
                                                          left_to_right_rotation,
                                                          left_to_right_translation)
 
-    _rms_hartley = rms_between_points(transformed_model_points, points_from_hartley)
-
+    rms_hartley = rms_between_points(transformed_model_points, points_from_hartley)
+    assert rms_hartley < 1.5
 
 def test_triangulate_points_opencv():
     """
