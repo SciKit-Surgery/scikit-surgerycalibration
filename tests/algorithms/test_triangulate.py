@@ -2,7 +2,7 @@
 """Tests for sksrurgerycalibration triangulate"""
 import cv2
 import numpy as np
-import pytest
+import pytest # pylint: disable=unused-import
 import sksurgerycalibration.algorithms.triangulate as sat
 
 
@@ -119,7 +119,7 @@ def load_chessboard_arrays():
            left_translation
 
 
-def compute_rms_between_corresponding_points(a, b):
+def rms_between_points(a_array, b_array):
     """
     Compute Root Mean Squater between_corresponding_points a, b.
     """
@@ -127,32 +127,32 @@ def compute_rms_between_corresponding_points(a, b):
     diff = 0
     squared_diff = 0
 
-    if (a.shape[0] != b.shape[0]):
-        print(f' a has {a.shape[0]} rows but b has {b.shape[0]} rows')
+    if a_array.shape[0] != b_array.shape[0]:
+        print(f' a has {a_array.shape[0]} rows but b has {b_array.shape[0]} rows')
 
-    if (a.shape[1] != 3):
-        print(f'a does not have 3 columns but {a.shape[1]} columns')
+    if a_array.shape[1] != 3:
+        print(f'a does not have 3 columns but {a_array.shape[1]} columns')
 
-    if (b.shape[1] != 3):
-        print(f'b does not have 3 columns but {b.shape[1]} columns')
+    if b_array.shape[1] != 3:
+        print(f'b does not have 3 columns but {b_array.shape[1]} columns')
 
-    for r in range(a.shape[0]):
-        for c in range(a.shape[1]):
-            diff = b[r, c] - a[r, c]
+    for dummy_row_index in range(a_array.shape[0]):
+        for dummy_col_index in range(a_array.shape[1]):
+            diff = b_array[dummy_row_index, dummy_col_index] - a_array[dummy_row_index, dummy_col_index]
             squared_diff = diff * diff
             rms += squared_diff
 
-    rms /= a.shape[0]
+    rms /= a_array.shape[0]
     rms = np.sqrt(rms)
     return rms
 
 
-def test_triangulate_points_with_hartley():
+def test_triangulate_points_hartley():
     """
     Test triangulate points with hartley using "Chessboard Test"
     """
 
-    points_in_2d, left_undistorted, right_undistorted, left_intrinsic, right_intrinsic, \
+    points_in_2d, _left_undistorted, _right_undistorted, left_intrinsic, right_intrinsic, \
     left_to_right_rotation, left_to_right_translation, model_points, left_rotation, left_translation = load_chessboard_arrays()
 
     model_points_transposed = model_points.T
@@ -160,34 +160,36 @@ def test_triangulate_points_with_hartley():
                                     dtype=np.double)
     rotated_model_points = cv2.gemm(src1=left_rotation, src2=model_points_transposed, alpha=1.0, src3=None,
                                     beta=0.0)  # flags=cv2.GEMM_2_T?
-    model_points_rotated_and_transposed = rotated_model_points.T
+    model_points_rotated_transposed = rotated_model_points.T
     transformed_model_points = np.zeros(
-        (model_points_rotated_and_transposed.shape[0], model_points_rotated_and_transposed.shape[1]), dtype=np.double)
+        (model_points_rotated_transposed.shape[0], model_points_rotated_transposed.shape[1]), dtype=np.double)
 
-    for r in range(model_points_rotated_and_transposed.shape[0]):
-        for c in range(model_points_rotated_and_transposed.shape[1]):
-            transformed_model_points[r, c] = model_points_rotated_and_transposed[r, c] + left_translation[c, 0]
+    for dummy_row_index in range(model_points_rotated_transposed.shape[0]):
+        for dummy_col_index in range(model_points_rotated_transposed.shape[1]):
+            transformed_model_points[dummy_row_index, dummy_col_index] = model_points_rotated_transposed[
+                                                                             dummy_row_index, dummy_col_index] + \
+                                                                         left_translation[dummy_col_index, 0]
 
-    points_from_hartley = sat.triangulate_points_using_hartley(points_in_2d,
-                                                               left_intrinsic,
-                                                               right_intrinsic,
-                                                               left_to_right_rotation,
-                                                               left_to_right_translation)
+    points_from_hartley = sat.triangulate_points_hartley(points_in_2d,
+                                                         left_intrinsic,
+                                                         right_intrinsic,
+                                                         left_to_right_rotation,
+                                                         left_to_right_translation)
 
-    rms_hartley = compute_rms_between_corresponding_points(transformed_model_points, points_from_hartley)
+    _rms_hartley = rms_between_points(transformed_model_points, points_from_hartley)
 
 
-def test_triangulate_points_using_hartley_opencv():
+def test_triangulate_points_opencv():
     """
     Test triangulate points with hartley with cv2.triangulatePoints using "Chessboard Test"
     """
 
-    points_in_2d, left_undistorted, right_undistorted, left_intrinsic, right_intrinsic, \
-    left_to_right_rotation, left_to_right_translation, model_points, left_rotation, left_translation = load_chessboard_arrays()
+    _points_in_2d, left_undistorted, right_undistorted, left_intrinsic, right_intrinsic, \
+    left_to_right_rotation, left_to_right_translation, _model_points, _left_rotation, _left_translation = load_chessboard_arrays()
 
-    pointsFromHartley_opencv = sat.triangulate_points_using_hartley_opencv(left_undistorted,
-                                                                           right_undistorted,
-                                                                           left_intrinsic,
-                                                                           right_intrinsic,
-                                                                           left_to_right_rotation,
-                                                                           left_to_right_translation)
+    _points_from_hartley_opencv = sat.triangulate_points_opencv(left_undistorted,
+                                                             right_undistorted,
+                                                             left_intrinsic,
+                                                             right_intrinsic,
+                                                             left_to_right_rotation,
+                                                             left_to_right_translation)
