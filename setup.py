@@ -56,9 +56,9 @@ setup(
         'nbsphinx',
         'scipy',
         'opencv-contrib-python-headless<4.6',
-        'scikit-surgerycore>=0.6.1',
+        'scikit-surgerycore',
         'scikit-surgeryimage>=0.10.1',
-        'scikit-surgeryopencvcpp>=0.0.13',
+        'scikit-surgeryopencvcpp',
     ],
 
     entry_points={
