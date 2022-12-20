@@ -25,16 +25,16 @@ def _triangulate_point_using_svd(p1_array,
     :return X:
     """
 
-    p1_array = np.zeros((3, 4, 1), dtype=np.double)
-    p2_array = np.zeros((3, 4, 1), dtype=np.double)
-    u1_array = np.zeros((3, 1, 1), dtype=np.double)
-    u2_array = np.zeros((3, 1, 1), dtype=np.double)
+    p1_array = np.zeros((3, 4), dtype=np.double)
+    p2_array = np.zeros((3, 4), dtype=np.double)
+    u1_array = np.zeros((3, 1), dtype=np.double)
+    u2_array = np.zeros((3, 1), dtype=np.double)
 
     # Build matrix A for homogeneous equation system Ax = 0
     # Assume X = (x,y,z,1), for Linear-LS method
     # Which turns it into a AX = B system, where A is 4x3, X is 3x1 and B is 4x1
 
-    a_array = np.zeros((4, 3, 1), dtype=np.double)
+    a_array = np.zeros((4, 3), dtype=np.double)
     a_array[0, 0] = (u1_array[0] * p1_array[2, 0] - p1_array[0, 0]) / w1_const
     a_array[0, 1] = (u1_array[0] * p1_array[2, 1] - p1_array[0, 1]) / w1_const
     a_array[0, 2] = (u1_array[0] * p1_array[2, 2] - p1_array[0, 2]) / w1_const
@@ -48,22 +48,22 @@ def _triangulate_point_using_svd(p1_array,
     a_array[3, 1] = (u2_array[1] * p2_array[2, 1] - p2_array[1, 1]) / w2_const
     a_array[3, 2] = (u2_array[1] * p2_array[2, 2] - p2_array[1, 2]) / w2_const
 
-    b_array = np.zeros((4, 1, 1), dtype=np.double)
+    b_array = np.zeros((4, 1), dtype=np.double)
     b_array[0] = -(u1_array[0] * p1_array[2, 3] - p1_array[0, 3]) / w1_const
     b_array[1] = -(u1_array[1] * p1_array[2, 3] - p1_array[1, 3]) / w1_const
     b_array[2] = -(u2_array[0] * p2_array[2, 3] - p2_array[0, 3]) / w2_const
     b_array[3] = -(u2_array[1] * p2_array[2, 3] - p2_array[1, 3]) / w2_const
 
-    x_array = np.zeros((4, 1, 1), dtype=np.double)
+    x_array = np.zeros((4, 1), dtype=np.double)
     cv2.solve(a_array, b_array, x_array, flags=cv2.DECOMP_SVD)
 
     return x_array
 
 
 def _iter_triangulate_point_w_svd(p1_array,
-                                           p2_array,
-                                           u1_array,
-                                           u2_array):
+                                  p2_array,
+                                  u1_array,
+                                  u2_array):
     """
     Function for Iterative Triangulate Point Using SVD
 
@@ -84,6 +84,7 @@ def _iter_triangulate_point_w_svd(p1_array,
     w1_const = 1
     w2_const = 1
     x_array = np.zeros((4, 1), dtype=np.double)
+    result = np.zeros((3, 1), dtype=np.double)
 
     # Hartley suggests 10 iterations at most
     for dummy_index in range(0, 10):
@@ -103,8 +104,6 @@ def _iter_triangulate_point_w_svd(p1_array,
         w1_const = p2x1
         w2_const = p2x2
 
-    result = np.zeros((3, 1), dtype=np.double)
-
     result[0] = x_array[0]
     result[1] = x_array[1]
     result[2] = x_array[2]
@@ -113,11 +112,11 @@ def _iter_triangulate_point_w_svd(p1_array,
 
 
 def triangulate_points_hartley(input_undistorted_points,
-                                     left_camera_intrinsic_params,
-                                     right_camera_intrinsic_params,
-                                     left_to_right_rotation_matrix,
-                                     left_to_right_trans_vector
-                                     ):
+                               left_camera_intrinsic_params,
+                               right_camera_intrinsic_params,
+                               left_to_right_rotation_matrix,
+                               left_to_right_trans_vector
+                               ):
     """
     Function to compute triangulation of points using Harley
 
@@ -136,20 +135,20 @@ def triangulate_points_hartley(input_undistorted_points,
     """
     number_of_points = input_undistorted_points.shape[0]  # >input_undistorted_points.rows
     output_points = np.zeros((number_of_points, 3, 1), dtype=np.double)
-    k1_array = np.eye(3, dtype=np.double)
-    k2_array = np.eye(3, dtype=np.double)
+    #k1_array = np.eye(3, dtype=np.double)
+    #k2_array = np.eye(3, dtype=np.double)
     k1_array = left_camera_intrinsic_params
     k2_array = right_camera_intrinsic_params
-    k1inv = np.zeros((3, 3, 1), dtype=np.double)
-    k2inv = np.zeros((3, 3, 1), dtype=np.double)
-    #r1_array = np.eye(3, dtype=np.double) #(unused-variable)
+    k1inv = np.zeros((3, 3), dtype=np.double)
+    k2inv = np.zeros((3, 3), dtype=np.double)
+    _r1_array = np.eye(3, dtype=np.double) #(unused-variable)
     r2_array = left_to_right_rotation_matrix
     e1_array = np.eye(4, dtype=np.double)
     e1inv = np.eye(4, dtype=np.double)
     e2_array = np.eye(4, dtype=np.double)
-    l2r = np.zeros((4, 4, 1), dtype=np.double)
-    p1d = np.zeros((3, 4, 1), dtype=np.double)  # cv::Matx34d P1d, P2d;?
-    p2d = np.zeros((3, 4, 1), dtype=np.double)
+    l2r = np.zeros((4, 4), dtype=np.double)
+    p1d = np.zeros((3, 4), dtype=np.double)  # cv::Matx34d P1d, P2d;?
+    p2d = np.zeros((3, 4), dtype=np.double)
 
     # Construct:
     # E1 = Object to Left Camera = Left Camera Extrinsics.
@@ -190,9 +189,10 @@ def triangulate_points_hartley(input_undistorted_points,
     p1d[2, 2] = 1
     p1d[2, 3] = 0
 
-    for i in range(0, 3):
-        for j in range(0, 4):
-            p2d[i, j] = l2r[i, j]
+    for dummy_row_index in range(0, 3):
+        for dummy_col_index in range(0, 4):
+            p2d[dummy_row_index, dummy_col_index] = l2r[dummy_row_index, dummy_col_index]
+
 
     # `#pragma omp parallel` for its C++ counterpart
     u1_array = np.zeros((3, 1), dtype=np.double)
@@ -200,21 +200,24 @@ def triangulate_points_hartley(input_undistorted_points,
     u1t = np.zeros((3, 1), dtype=np.double)
     u2t = np.zeros((3, 1), dtype=np.double)
 
+
     u1p = np.zeros((3, 1), dtype=np.double)
-    # Normalised image coordinates. (i.e. relative to a principal point of zero, and in millimetres not pixels).
     u2p = np.zeros((3, 1), dtype=np.double)
-    # reconstructed_point = np.zeros((3, 1, 1), dtype=np.double)  # the output 3D point, in reference frame of left camera.
+    # Normalised image coordinates. (i.e. relative to a principal point of zero, and in millimetres not pixels).
+
+    reconstructed_point = np.zeros((3, 1), dtype=np.double)
+    # the output 3D point, in reference frame of left camera.
 
     # print(f'\n {u1p}')
 
     # # `pragma omp for` for its C++ counterpart
-    for i in range(1, number_of_points):
-        u1_array[0, 0] = input_undistorted_points[i, 0]
-        u1_array[1, 0] = input_undistorted_points[i, 1]
+    for dummy_index in range(1, number_of_points):
+        u1_array[0, 0] = input_undistorted_points[dummy_index, 0]
+        u1_array[1, 0] = input_undistorted_points[dummy_index, 1]
         u1_array[2, 0] = 1
 
-        u2_array[0, 0] = input_undistorted_points[i, 2]
-        u2_array[1, 0] = input_undistorted_points[i, 3]
+        u2_array[0, 0] = input_undistorted_points[dummy_index, 2]
+        u2_array[1, 0] = input_undistorted_points[dummy_index, 3]
         u2_array[2, 0] = 1
 
         # Converting to normalised image points
@@ -231,18 +234,19 @@ def triangulate_points_hartley(input_undistorted_points,
 
         reconstructed_point = _iter_triangulate_point_w_svd(p1d, p2d, u1p, u2p)
 
-        output_points[i, 0] = reconstructed_point[0]
-        output_points[i, 1] = reconstructed_point[1]
-        output_points[i, 2] = reconstructed_point[2]
+        output_points[dummy_index, 0] = reconstructed_point[0]
+        output_points[dummy_index, 1] = reconstructed_point[1]
+        output_points[dummy_index, 2] = reconstructed_point[2]
 
     return output_points
 
+
 def triangulate_points_opencv(left_undistorted,
-                                            right_undistorted,
-                                            left_camera_intrinsic_params,
-                                            right_camera_intrinsic_params,
-                                            left_to_right_rotation_matrix,
-                                            left_to_right_trans_vector):
+                              right_undistorted,
+                              left_camera_intrinsic_params,
+                              right_camera_intrinsic_params,
+                              left_to_right_rotation_matrix,
+                              left_to_right_trans_vector):
     """
     Function to compute triangulation of points using Harley with cv2.triangulatePoints
     :param left_undistorted:
