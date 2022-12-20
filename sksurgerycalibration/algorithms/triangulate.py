@@ -15,6 +15,10 @@ def _triangulate_point_using_svd(p1_array,
                                  w2_const):
     """
     Function for Internal Triangulate Point Using SVD
+
+    (u1_array, p1_array) is the reference pair containing normalized image coordinates (x, y) and the corresponding camera matrix.
+    (u2_array, p2_array) is the second pair.
+
     :param p1_array: [3x4] ndarray
     :param p2_array: [3x4] ndarray
     :param u1_array: [3x1] ndarray
@@ -22,7 +26,7 @@ def _triangulate_point_using_svd(p1_array,
     :param w1_const: constant value
     :param w2_const: constant value
 
-    :return X:
+    :return x_array:  [4x1] ndarray
     """
 
     p1_array = np.zeros((3, 4), dtype=np.double)
@@ -67,6 +71,9 @@ def _iter_triangulate_point_w_svd(p1_array,
     """
     Function for Iterative Triangulate Point Using SVD
 
+    (u1_array, p1_array) is the reference pair containing normalized image coordinates (x, y) and the corresponding camera matrix.
+    (u2_array, p2_array) is the second pair.
+
     :param p1_array: [3x4] ndarray
     :param p2_array: [3x4] ndarray
     :param u1_array: [3x1] ndarray
@@ -87,17 +94,16 @@ def _iter_triangulate_point_w_svd(p1_array,
     result = np.zeros((3, 1), dtype=np.double)
 
     # Hartley suggests 10 iterations at most
-    for dummy_index in range(0, 10):
+    for dummy_idx in range(10):
         x_array_ = _triangulate_point_using_svd(p1_array, p2_array, u1_array, u2_array, w1_const, w2_const)
         x_array[0] = x_array_[0]
         x_array[1] = x_array_[1]
         x_array[2] = x_array_[2]
         x_array[3] = 1.0
 
-        p2x1 = (p1_array[2][:].dot(x_array))[0]
-        p2x2 = (p2_array[2][:].dot(x_array))[0]
+        p2x1 = p1_array[2, :].dot(x_array)
+        p2x2 = p2_array[2, :].dot(x_array)
         # p2x1 and p2x2 should not be zero to avoid RuntimeWarning: invalid value encountered in true_divide
-
         if (abs(w1_const - p2x1) <= epsilon and abs(w2_const - p2x2) <= epsilon):
             break
 
@@ -135,13 +141,13 @@ def triangulate_points_hartley(input_undistorted_points,
     """
     number_of_points = input_undistorted_points.shape[0]  # >input_undistorted_points.rows
     output_points = np.zeros((number_of_points, 3, 1), dtype=np.double)
-    #k1_array = np.eye(3, dtype=np.double)
-    #k2_array = np.eye(3, dtype=np.double)
+    # k1_array = np.eye(3, dtype=np.double)
+    # k2_array = np.eye(3, dtype=np.double)
     k1_array = left_camera_intrinsic_params
     k2_array = right_camera_intrinsic_params
     k1inv = np.zeros((3, 3), dtype=np.double)
     k2inv = np.zeros((3, 3), dtype=np.double)
-    _r1_array = np.eye(3, dtype=np.double) #(unused-variable)
+    _r1_array = np.eye(3, dtype=np.double)  # (unused-variable)
     r2_array = left_to_right_rotation_matrix
     e1_array = np.eye(4, dtype=np.double)
     e1inv = np.eye(4, dtype=np.double)
@@ -193,13 +199,11 @@ def triangulate_points_hartley(input_undistorted_points,
         for dummy_col_index in range(0, 4):
             p2d[dummy_row_index, dummy_col_index] = l2r[dummy_row_index, dummy_col_index]
 
-
     # `#pragma omp parallel` for its C++ counterpart
     u1_array = np.zeros((3, 1), dtype=np.double)
     u2_array = np.zeros((3, 1), dtype=np.double)
     u1t = np.zeros((3, 1), dtype=np.double)
     u2t = np.zeros((3, 1), dtype=np.double)
-
 
     u1p = np.zeros((3, 1), dtype=np.double)
     u2p = np.zeros((3, 1), dtype=np.double)
@@ -207,8 +211,6 @@ def triangulate_points_hartley(input_undistorted_points,
 
     reconstructed_point = np.zeros((3, 1), dtype=np.double)
     # the output 3D point, in reference frame of left camera.
-
-    # print(f'\n {u1p}')
 
     # # `pragma omp for` for its C++ counterpart
     for dummy_index in range(1, number_of_points):

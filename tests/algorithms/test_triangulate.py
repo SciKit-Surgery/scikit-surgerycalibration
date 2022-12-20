@@ -1,8 +1,8 @@
 #  -*- coding: utf-8 -*-
 """Tests for sksrurgerycalibration triangulate"""
-import cv2
+# import cv2 # pylint: disable=unused-import
 import numpy as np
-import pytest # pylint: disable=unused-import
+# import pytest # pylint: disable=unused-import
 import sksurgerycalibration.algorithms.triangulate as sat
 
 
@@ -158,8 +158,10 @@ def test_triangulate_points_hartley():
     model_points_transposed = model_points.T
     rotated_model_points = np.zeros((model_points_transposed.shape[0], model_points_transposed.shape[1]),
                                     dtype=np.double)
-    rotated_model_points = cv2.gemm(src1=left_rotation, src2=model_points_transposed, alpha=1.0, src3=None,
-                                    beta=0.0)  # flags=cv2.GEMM_2_T?
+    #rotated_model_points = cv2.gemm(src1=left_rotation, src2=model_points_transposed, alpha=1.0, src3=None,
+    #                                beta=0.0)  # flags=cv2.GEMM_2_T?
+    rotated_model_points = left_rotation.dot(model_points_transposed)
+
     model_points_rotated_transposed = rotated_model_points.T
     transformed_model_points = np.zeros(
         (model_points_rotated_transposed.shape[0], model_points_rotated_transposed.shape[1]), dtype=np.double)
