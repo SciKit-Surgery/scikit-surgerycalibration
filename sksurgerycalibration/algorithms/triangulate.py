@@ -29,10 +29,6 @@ def _triangulate_point_using_svd(p1_array,
     :return x_array:  [4x1] ndarray
     """
 
-    p1_array = np.zeros((3, 4), dtype=np.double)
-    p2_array = np.zeros((3, 4), dtype=np.double)
-    u1_array = np.zeros((3, 1), dtype=np.double)
-    u2_array = np.zeros((3, 1), dtype=np.double)
 
     # Build matrix A for homogeneous equation system Ax = 0
     # Assume X = (x,y,z,1), for Linear-LS method
@@ -58,8 +54,9 @@ def _triangulate_point_using_svd(p1_array,
     b_array[2] = -(u2_array[0] * p2_array[2, 3] - p2_array[0, 3]) / w2_const
     b_array[3] = -(u2_array[1] * p2_array[2, 3] - p2_array[1, 3]) / w2_const
 
-    x_array = np.zeros((4, 1), dtype=np.double)
-    cv2.solve(a_array, b_array, x_array, flags=cv2.DECOMP_SVD)
+    # x_array = np.zeros((4, 1), dtype=np.double)
+    # cv2.solve(a_array, b_array, x_array, flags=cv2.DECOMP_SVD)
+    x_array, _, _, _ = np.linalg.lstsq(a_array, b_array, rcond=-1)
 
     return x_array
 
@@ -82,10 +79,6 @@ def _iter_triangulate_point_w_svd(p1_array,
     :return result:
     """
 
-    p1_array = np.zeros((3, 4), dtype=np.double)
-    p2_array = np.zeros((3, 4), dtype=np.double)
-    u1_array = np.zeros((3, 1), dtype=np.double)
-    u2_array = np.zeros((3, 1), dtype=np.double)
 
     epsilon = 0.00000000001
     w1_const = 1
@@ -177,7 +170,7 @@ def triangulate_points_hartley(input_undistorted_points,
 
     # # We want output coordinates relative to left camera.
     e1inv = np.linalg.inv(e1_array)
-    l2r = e2_array * e1inv
+    l2r = np.matmul(e2_array, e1inv)
 
     # Reading Prince 2012 Computer Vision, the projection matrix, is just the extrinsic parameters,
     # as our coordinates will be in a normalised camera space. P1 should be identity, so that
@@ -213,7 +206,7 @@ def triangulate_points_hartley(input_undistorted_points,
     # the output 3D point, in reference frame of left camera.
 
     # # `pragma omp for` for its C++ counterpart
-    for dummy_index in range(1, number_of_points):
+    for dummy_index in range(0, number_of_points):
         u1_array[0, 0] = input_undistorted_points[dummy_index, 0]
         u1_array[1, 0] = input_undistorted_points[dummy_index, 1]
         u1_array[2, 0] = 1
@@ -223,8 +216,8 @@ def triangulate_points_hartley(input_undistorted_points,
         u2_array[2, 0] = 1
 
         # Converting to normalised image points
-        u1t = k1inv * u1_array
-        u2t = k2inv * u2_array
+        u1t = np.matmul(k1inv, u1_array)
+        u2t = np.matmul(k2inv, u2_array)
 
         u1p[0] = u1t[0, 0]
         u1p[1] = u1t[1, 0]

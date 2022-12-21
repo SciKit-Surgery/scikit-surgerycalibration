@@ -158,10 +158,9 @@ def test_triangulate_points_hartley():
     model_points_transposed = model_points.T
     rotated_model_points = np.zeros((model_points_transposed.shape[0], model_points_transposed.shape[1]),
                                     dtype=np.double)
-    #rotated_model_points = cv2.gemm(src1=left_rotation, src2=model_points_transposed, alpha=1.0, src3=None,
+    # rotated_model_points = cv2.gemm(src1=left_rotation, src2=model_points_transposed, alpha=1.0, src3=None,
     #                                beta=0.0)  # flags=cv2.GEMM_2_T?
     rotated_model_points = left_rotation.dot(model_points_transposed)
-
     model_points_rotated_transposed = rotated_model_points.T
     transformed_model_points = np.zeros(
         (model_points_rotated_transposed.shape[0], model_points_rotated_transposed.shape[1]), dtype=np.double)
@@ -181,6 +180,7 @@ def test_triangulate_points_hartley():
     rms_hartley = rms_between_points(transformed_model_points, points_from_hartley)
     assert rms_hartley < 1.5
 
+
 def test_triangulate_points_opencv():
     """
     Test triangulate points with hartley with cv2.triangulatePoints using "Chessboard Test"
@@ -190,8 +190,8 @@ def test_triangulate_points_opencv():
     left_to_right_rotation, left_to_right_translation, _model_points, _left_rotation, _left_translation = load_chessboard_arrays()
 
     _points_from_hartley_opencv = sat.triangulate_points_opencv(left_undistorted,
-                                                             right_undistorted,
-                                                             left_intrinsic,
-                                                             right_intrinsic,
-                                                             left_to_right_rotation,
-                                                             left_to_right_translation)
+                                                                right_undistorted,
+                                                                left_intrinsic,
+                                                                right_intrinsic,
+                                                                left_to_right_rotation,
+                                                                left_to_right_translation)
