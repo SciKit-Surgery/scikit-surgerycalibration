@@ -29,7 +29,6 @@ def _triangulate_point_using_svd(p1_array,
     :return x_array:  [4x1] ndarray
     """
 
-
     # Build matrix A for homogeneous equation system Ax = 0
     # Assume X = (x,y,z,1), for Linear-LS method
     # Which turns it into a AX = B system, where A is 4x3, X is 3x1 and B is 4x1
@@ -78,7 +77,6 @@ def _iter_triangulate_point_w_svd(p1_array,
 
     :return result:
     """
-
 
     epsilon = 0.00000000001
     w1_const = 1
@@ -158,8 +156,8 @@ def triangulate_points_hartley(input_undistorted_points,
 
     References
     ----------
-    Hartley, Richard I., and Peter Sturm. "Triangulation." Computer vision and image understanding 68, no. 2 (1997): 146-157.
-
+    * Hartley, Richard I., and Peter Sturm. "Triangulation." Computer vision and image understanding 68, no. 2 (1997): 146-157.
+    * Prince, Simon JD. Computer vision: models, learning, and inference. Cambridge University Press, 2012.
 
     :return outputPoints:
     """
@@ -176,12 +174,18 @@ def triangulate_points_hartley(input_undistorted_points,
 
     e2_array = new_e2_array(e2_array, r2_array, left_to_right_trans_vector)
 
+    # Inverting intrinsic params to convert from pixels to normalised image coordinates.
     k1inv = np.linalg.inv(k1_array)
     k2inv = np.linalg.inv(k2_array)
 
+    # Computing coordinates relative to left camera.
     e1inv = np.linalg.inv(e1_array)
     l2r = np.matmul(e2_array, e1inv)
 
+    # The projection matrix, is just the extrinsic parameters, as our coordinates will be in a normalised camera space.
+    # P1 should be identity, so that reconstructed coordinates are in Left Camera Space, to P2 should reflect
+    # a right to left transform.
+    # Prince, Simon JD. Computer vision: models, learning, and inference. Cambridge University Press, 2012.
     p1d[0, 0] = 1
     p1d[0, 1] = 0
     p1d[0, 2] = 0
@@ -212,6 +216,7 @@ def triangulate_points_hartley(input_undistorted_points,
         u2_array[1, 0] = input_undistorted_points[dummy_index, 3]
         u2_array[2, 0] = 1
 
+        # Converting to normalised image points
         u1t = np.matmul(k1inv, u1_array)
         u2t = np.matmul(k2inv, u2_array)
 
