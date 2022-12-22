@@ -134,16 +134,11 @@ def triangulate_points_hartley(input_undistorted_points,
     """
     number_of_points = input_undistorted_points.shape[0]
     output_points = np.zeros((number_of_points, 3, 1), dtype=np.double)
-    # k1_array = np.eye(3, dtype=np.double)
-    # k2_array = np.eye(3, dtype=np.double)
     k1_array = left_camera_intrinsic_params
     k2_array = right_camera_intrinsic_params
-    k1inv = np.zeros((3, 3), dtype=np.double)
-    k2inv = np.zeros((3, 3), dtype=np.double)
     _r1_array = np.eye(3, dtype=np.double)  # (unused-variable)
     r2_array = left_to_right_rotation_matrix
     e1_array = np.eye(4, dtype=np.double)
-    e1inv = np.eye(4, dtype=np.double)
     e2_array = np.eye(4, dtype=np.double)
     l2r = np.zeros((4, 4), dtype=np.double)
     p1d = np.zeros((3, 4), dtype=np.double)
@@ -151,8 +146,6 @@ def triangulate_points_hartley(input_undistorted_points,
 
     for row_idx in range(0, 3):
         for col_idx in range(0, 3):
-            # K1[r, c] = left_camera_intrinsic_params[r, c] #no-need for python
-            # K2[r, c] = right_camera_intrinsic_params[r, c] #no-need for python
             e2_array[row_idx, col_idx] = r2_array[row_idx, col_idx]
         e2_array[row_idx, 3] = left_to_right_trans_vector[row_idx, 0]
 
@@ -181,13 +174,9 @@ def triangulate_points_hartley(input_undistorted_points,
 
     u1_array = np.zeros((3, 1), dtype=np.double)
     u2_array = np.zeros((3, 1), dtype=np.double)
-    u1t = np.zeros((3, 1), dtype=np.double)
-    u2t = np.zeros((3, 1), dtype=np.double)
 
     u1p = np.zeros((3, 1), dtype=np.double)
     u2p = np.zeros((3, 1), dtype=np.double)
-
-    reconstructed_point = np.zeros((3, 1), dtype=np.double)
 
     for dummy_index in range(0, number_of_points):
         u1_array[0, 0] = input_undistorted_points[dummy_index, 0]
