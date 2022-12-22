@@ -162,7 +162,7 @@ def triangulate_points_hartley(input_undistorted_points,
     :return outputPoints:
     """
     number_of_points = input_undistorted_points.shape[0]
-    output_points = np.zeros((number_of_points, 3, 1), dtype=np.double)
+    output_points = np.zeros((number_of_points, 3), dtype=np.double)
     k1_array = left_camera_intrinsic_params
     k2_array = right_camera_intrinsic_params
     _r1_array = np.eye(3, dtype=np.double)  # (unused-variable)
