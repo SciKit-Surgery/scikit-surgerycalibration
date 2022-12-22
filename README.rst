@@ -30,11 +30,11 @@ scikit-surgerycalibration
    :alt: Follow scikit_surgery on twitter
 
 
-Author: Stephen Thompson
+Author(s): Stephen Thompson; Contributor(s): Matt Clarkson, Thomas Dowrick and Miguel Xochicale
 
 scikit-surgerycalibration is part of the `SciKit-Surgery`_ software project, developed at the `Wellcome EPSRC Centre for Interventional and Surgical Sciences`_, part of `University College London (UCL)`_.
 
-scikit-surgerycalibration is tested on Python 3.6-8.
+scikit-surgerycalibration is tested on Python 3.7.
 
 scikit-surgerycalibration contains algorithms to perform calibrations useful during surgery, for example pointer calibration, ultrasound calibration, and camera calibration. 
 
@@ -53,6 +53,39 @@ Features
 Developing
 ----------
 
+Virtual environments
+^^^^^^^
+Virtualenv, venv, conda or pyenv can be used to create virtual environments to manage python packages.
+You can use conda env by installing conda for your OS (`conda_installation`_) and use the following yml file with all dependencies.
+::
+    ## Some useful commands to manage your conda env:
+    ## LIST CONDA ENVS: conda list -n *VE # show list of installed packages
+    ## UPDATE CONDA: conda update -n base -c defaults conda
+    ## INSTALL CONDA EV: conda env create -f *VE.yml
+    ## UPDATE CONDA ENV: conda env update -f *VE.yml --prune
+    ## ACTIVATE CONDA ENV: conda activate *VE
+    ## REMOVE CONDA ENV: conda remove -n *VE --all
+
+    name: scikit-surgerycalibrationVE
+    channels:
+      - defaults
+      - conda-forge
+      - anaconda
+    dependencies:
+      - python=3.7
+      - pip>=22.2.2
+      - pip:
+         - scikit-surgerycore
+         - scikit-surgeryimage>=0.10.1
+         - opencv-contrib-python-headless<4.6
+         - tox>=3.26.0
+         - pytest>=7.2.0
+         - pylint>=2.15.9
+         - jupyter
+         - numpy>=1.21.6
+         - scipy>=1.7.3
+         - matplotlib
+
 Cloning
 ^^^^^^^
 
@@ -68,7 +101,6 @@ Running tests
 Pytest is used for running unit tests:
 ::
 
-    pip install pytest
     python -m pytest
 
 
@@ -79,7 +111,6 @@ This code conforms to the PEP8 standard. Pylint can be used to analyse the code:
 
 ::
 
-    pip install pylint
     pylint --rcfile=tests/pylintrc sksurgerycalibration
 
 
@@ -129,4 +160,5 @@ Supported by `Wellcome`_ and `EPSRC`_.
 .. _`EPSRC`: https://www.epsrc.ac.uk/
 .. _`contributing guidelines`: https://github.com/SciKit-Surgery/scikit-surgerycalibration /blob/master/CONTRIBUTING.rst
 .. _`license file`: https://github.com/SciKit-Surgery/scikit-surgerycalibration /blob/master/LICENSE
+.. _`conda_installation` : https://conda.io/projects/conda/en/latest/user-guide/install/index.html
 
