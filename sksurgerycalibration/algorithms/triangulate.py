@@ -110,6 +110,37 @@ def _iter_triangulate_point_w_svd(p1_array,
     return result
 
 
+def new_e2_array(e2_array, r2_array, left_to_right_trans_vector):
+    """
+    # E1 = Object to Left Camera = Left Camera Extrinsics.
+    # E2 = Object to Right Camera = Right Camera Extrinsics.
+    # K1 = Copy of Left Camera intrinsics.
+    # K2 = Copy of Right Camera intrinsics.
+    # Copy data into cv::Mat data types.
+    # Camera calibration routines are 32 bit, as some drawing functions require 32 bit data.
+    # These triangulation routines need 64 bit data.
+    """
+    for row_idx in range(0, 3):
+        for col_idx in range(0, 3):
+            e2_array[row_idx, col_idx] = r2_array[row_idx, col_idx]
+        e2_array[row_idx, 3] = left_to_right_trans_vector[row_idx, 0]
+
+    return e2_array
+
+
+def l2r_to_p2d(p2d, l2r):
+    """
+
+    Conversion of l2r_to_p2d
+    """
+
+    for dummy_row_index in range(0, 3):
+        for dummy_col_index in range(0, 4):
+            p2d[dummy_row_index, dummy_col_index] = l2r[dummy_row_index, dummy_col_index]
+
+    return p2d
+
+
 def triangulate_points_hartley(input_undistorted_points,
                                left_camera_intrinsic_params,
                                right_camera_intrinsic_params,
@@ -140,14 +171,10 @@ def triangulate_points_hartley(input_undistorted_points,
     r2_array = left_to_right_rotation_matrix
     e1_array = np.eye(4, dtype=np.double)
     e2_array = np.eye(4, dtype=np.double)
-    l2r = np.zeros((4, 4), dtype=np.double)
     p1d = np.zeros((3, 4), dtype=np.double)
     p2d = np.zeros((3, 4), dtype=np.double)
 
-    for row_idx in range(0, 3):
-        for col_idx in range(0, 3):
-            e2_array[row_idx, col_idx] = r2_array[row_idx, col_idx]
-        e2_array[row_idx, 3] = left_to_right_trans_vector[row_idx, 0]
+    e2_array = new_e2_array(e2_array, r2_array, left_to_right_trans_vector)
 
     k1inv = np.linalg.inv(k1_array)
     k2inv = np.linalg.inv(k2_array)
@@ -168,9 +195,7 @@ def triangulate_points_hartley(input_undistorted_points,
     p1d[2, 2] = 1
     p1d[2, 3] = 0
 
-    for dummy_row_index in range(0, 3):
-        for dummy_col_index in range(0, 4):
-            p2d[dummy_row_index, dummy_col_index] = l2r[dummy_row_index, dummy_col_index]
+    p2d = l2r_to_p2d(p2d, l2r)
 
     u1_array = np.zeros((3, 1), dtype=np.double)
     u2_array = np.zeros((3, 1), dtype=np.double)
