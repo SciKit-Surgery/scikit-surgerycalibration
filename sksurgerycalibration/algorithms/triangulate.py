@@ -108,24 +108,6 @@ def _iter_triangulate_point_w_svd(p1_array,
     return result
 
 
-def new_e2_array(e2_array, r2_array, left_to_right_trans_vector):
-    """
-    # E1 = Object to Left Camera = Left Camera Extrinsics.
-    # E2 = Object to Right Camera = Right Camera Extrinsics.
-    # K1 = Copy of Left Camera intrinsics.
-    # K2 = Copy of Right Camera intrinsics.
-    # Copy data into cv::Mat data types.
-    # Camera calibration routines are 32 bit, as some drawing functions require 32 bit data.
-    # These triangulation routines need 64 bit data.
-    """
-    for row_idx in range(0, 3):
-        for col_idx in range(0, 3):
-            e2_array[row_idx, col_idx] = r2_array[row_idx, col_idx]
-        e2_array[row_idx, 3] = left_to_right_trans_vector[row_idx, 0]
-
-    return e2_array
-
-
 def l2r_to_p2d(p2d, l2r):
     """
 
@@ -172,7 +154,10 @@ def triangulate_points_hartley(input_undistorted_points,
     p1d = np.zeros((3, 4), dtype=np.double)
     p2d = np.zeros((3, 4), dtype=np.double)
 
-    e2_array = new_e2_array(e2_array, r2_array, left_to_right_trans_vector)
+    for row_idx in range(0, 3):
+        for col_idx in range(0, 3):
+            e2_array[row_idx, col_idx] = r2_array[row_idx, col_idx]
+        e2_array[row_idx, 3] = left_to_right_trans_vector[row_idx, 0]
 
     # Inverting intrinsic params to convert from pixels to normalised image coordinates.
     k1inv = np.linalg.inv(k1_array)
