@@ -4,18 +4,20 @@
 
 # pylint:disable=too-many-lines
 
-import logging
 import copy
+import logging
 from typing import List
-import numpy as np
+
 import cv2
+import numpy as np
+import sksurgerycore.transforms.matrix as skcm
 from scipy.optimize import least_squares
 from scipy.optimize import minimize
-import sksurgerycore.transforms.matrix as skcm
-import sksurgerycalibration.video.video_calibration_utils as vu
-import sksurgerycalibration.video.video_calibration_metrics as vm
-import sksurgerycalibration.video.video_calibration_hand_eye as he
+
 import sksurgerycalibration.video.video_calibration_cost_functions as vcf
+import sksurgerycalibration.video.video_calibration_hand_eye as he
+import sksurgerycalibration.video.video_calibration_metrics as vm
+import sksurgerycalibration.video.video_calibration_utils as vu
 
 LOGGER = logging.getLogger(__name__)
 

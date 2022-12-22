@@ -9,10 +9,12 @@ and as measures of error generally.
 
 import logging
 from typing import List
-import numpy as np
+
 import cv2
-import sksurgerycalibration.algorithms.triangulate as at
+import numpy as np
 import sksurgerycore.transforms.matrix as mu
+
+import sksurgerycalibration.algorithms.triangulate as at
 import sksurgerycalibration.video.video_calibration_utils as vu
 
 LOGGER = logging.getLogger(__name__)

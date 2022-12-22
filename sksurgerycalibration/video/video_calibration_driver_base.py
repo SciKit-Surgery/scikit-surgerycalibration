@@ -4,6 +4,7 @@
 
 import copy
 import logging
+
 import sksurgerycalibration.video.video_calibration_data as vcd
 import sksurgerycalibration.video.video_calibration_params as vcp
 import sksurgerycalibration.video.video_calibration_utils as vcu

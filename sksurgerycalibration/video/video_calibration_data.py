@@ -2,10 +2,12 @@
 
 """ Containers for video calibration data. """
 
-import os
 import copy
+import os
+
 import cv2
 import numpy as np
+
 import sksurgerycalibration.video.video_calibration_io as sksio
 
 

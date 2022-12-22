@@ -5,8 +5,9 @@
 # pylint:disable=invalid-name
 
 import numpy as np
-import sksurgerycalibration.video.video_calibration_utils as vu
+
 import sksurgerycalibration.video.video_calibration_metrics as vm
+import sksurgerycalibration.video.video_calibration_utils as vu
 
 
 def stereo_2d_error_for_extrinsics(x_0,

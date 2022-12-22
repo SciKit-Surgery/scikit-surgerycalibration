@@ -6,8 +6,9 @@
 
 import collections
 import logging
-import numpy as np
+
 import cv2
+import numpy as np
 import sksurgerycore.transforms.matrix as skcm
 
 LOGGER = logging.getLogger(__name__)
