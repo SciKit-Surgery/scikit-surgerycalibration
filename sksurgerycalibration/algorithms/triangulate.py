@@ -132,7 +132,7 @@ def triangulate_points_hartley(input_undistorted_points,
 
     :return outputPoints:
     """
-    number_of_points = input_undistorted_points.shape[0]  # >input_undistorted_points.rows
+    number_of_points = input_undistorted_points.shape[0]
     output_points = np.zeros((number_of_points, 3, 1), dtype=np.double)
     # k1_array = np.eye(3, dtype=np.double)
     # k2_array = np.eye(3, dtype=np.double)
@@ -146,17 +146,9 @@ def triangulate_points_hartley(input_undistorted_points,
     e1inv = np.eye(4, dtype=np.double)
     e2_array = np.eye(4, dtype=np.double)
     l2r = np.zeros((4, 4), dtype=np.double)
-    p1d = np.zeros((3, 4), dtype=np.double)  # cv::Matx34d P1d, P2d;?
+    p1d = np.zeros((3, 4), dtype=np.double)
     p2d = np.zeros((3, 4), dtype=np.double)
 
-    # Construct:
-    # E1 = Object to Left Camera = Left Camera Extrinsics.
-    # E2 = Object to Right Camera = Right Camera Extrinsics.
-    # K1 = Copy of Left Camera intrinsics.
-    # K2 = Copy of Right Camera intrinsics.
-    # Copy data into cv::Mat data types.
-    # Camera calibration routines are 32 bit, as some drawing functions require 32 bit data.
-    # These triangulation routines need 64 bit data.
     for row_idx in range(0, 3):
         for col_idx in range(0, 3):
             # K1[r, c] = left_camera_intrinsic_params[r, c] #no-need for python
@@ -164,17 +156,12 @@ def triangulate_points_hartley(input_undistorted_points,
             e2_array[row_idx, col_idx] = r2_array[row_idx, col_idx]
         e2_array[row_idx, 3] = left_to_right_trans_vector[row_idx, 0]
 
-    # We invert the intrinsic params, so we can convert from pixels to normalised image coordinates.
     k1inv = np.linalg.inv(k1_array)
     k2inv = np.linalg.inv(k2_array)
 
-    # # We want output coordinates relative to left camera.
     e1inv = np.linalg.inv(e1_array)
     l2r = np.matmul(e2_array, e1inv)
 
-    # Reading Prince 2012 Computer Vision, the projection matrix, is just the extrinsic parameters,
-    # as our coordinates will be in a normalised camera space. P1 should be identity, so that
-    # reconstructed coordinates are in Left Camera Space, to P2 should reflect a right to left transform.
     p1d[0, 0] = 1
     p1d[0, 1] = 0
     p1d[0, 2] = 0
@@ -192,7 +179,6 @@ def triangulate_points_hartley(input_undistorted_points,
         for dummy_col_index in range(0, 4):
             p2d[dummy_row_index, dummy_col_index] = l2r[dummy_row_index, dummy_col_index]
 
-    # `#pragma omp parallel` for its C++ counterpart
     u1_array = np.zeros((3, 1), dtype=np.double)
     u2_array = np.zeros((3, 1), dtype=np.double)
     u1t = np.zeros((3, 1), dtype=np.double)
@@ -200,12 +186,9 @@ def triangulate_points_hartley(input_undistorted_points,
 
     u1p = np.zeros((3, 1), dtype=np.double)
     u2p = np.zeros((3, 1), dtype=np.double)
-    # Normalised image coordinates. (i.e. relative to a principal point of zero, and in millimetres not pixels).
 
     reconstructed_point = np.zeros((3, 1), dtype=np.double)
-    # the output 3D point, in reference frame of left camera.
 
-    # # `pragma omp for` for its C++ counterpart
     for dummy_index in range(0, number_of_points):
         u1_array[0, 0] = input_undistorted_points[dummy_index, 0]
         u1_array[1, 0] = input_undistorted_points[dummy_index, 1]
@@ -215,7 +198,6 @@ def triangulate_points_hartley(input_undistorted_points,
         u2_array[1, 0] = input_undistorted_points[dummy_index, 3]
         u2_array[2, 0] = 1
 
-        # Converting to normalised image points
         u1t = np.matmul(k1inv, u1_array)
         u2t = np.matmul(k2inv, u2_array)
 
