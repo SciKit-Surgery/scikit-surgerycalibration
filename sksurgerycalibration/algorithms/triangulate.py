@@ -53,11 +53,10 @@ def _triangulate_point_using_svd(p1_array,
     b_array[2] = -(u2_array[0] * p2_array[2, 3] - p2_array[0, 3]) / w2_const
     b_array[3] = -(u2_array[1] * p2_array[2, 3] - p2_array[1, 3]) / w2_const
 
-    # x_array = np.zeros((4, 1), dtype=np.double)
-    # cv2.solve(a_array, b_array, x_array, flags=cv2.DECOMP_SVD)
-    x_array, _, _, _ = np.linalg.lstsq(a_array, b_array, rcond=-1)
+    x_array = cv2.solve(a_array, b_array, flags=cv2.DECOMP_SVD)
+    # x_array, _, _, _ = np.linalg.lstsq(a_array, b_array, rcond=-1) #Alternatively
 
-    return x_array
+    return x_array[1]
 
 
 def _iter_triangulate_point_w_svd(p1_array,

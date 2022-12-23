@@ -177,6 +177,7 @@ def test_triangulate_points_hartley():
                                                          left_to_right_translation)
 
     rms_hartley = rms_between_points(transformed_model_points, points_from_hartley)
+    print(f'\nrms_hartley: {rms_hartley}')
     assert rms_hartley < 1.5
 
 
