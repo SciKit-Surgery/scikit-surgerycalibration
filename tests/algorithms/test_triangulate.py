@@ -171,10 +171,10 @@ def test_triangulate_points_hartley():
                                                                          left_translation[dummy_col_index, 0]
 
     points_from_hartley = at.triangulate_points_hartley(points_in_2d,
-                                                         left_intrinsic,
-                                                         right_intrinsic,
-                                                         left_to_right_rotation,
-                                                         left_to_right_translation)
+                                                        left_intrinsic,
+                                                        right_intrinsic,
+                                                        left_to_right_rotation,
+                                                        left_to_right_translation)
 
     rms_hartley = rms_between_points(transformed_model_points, points_from_hartley)
     print(f'\nrms_hartley: {rms_hartley}')
@@ -190,8 +190,8 @@ def test_triangulate_points_opencv():
     left_to_right_rotation, left_to_right_translation, _model_points, _left_rotation, _left_translation = load_chessboard_arrays()
 
     _points_from_hartley_opencv = at.triangulate_points_opencv(left_undistorted,
-                                                                right_undistorted,
-                                                                left_intrinsic,
-                                                                right_intrinsic,
-                                                                left_to_right_rotation,
-                                                                left_to_right_translation)
+                                                              right_undistorted,
+                                                              left_intrinsic,
+                                                              right_intrinsic,
+                                                              left_to_right_rotation,
+                                                              left_to_right_translation)
