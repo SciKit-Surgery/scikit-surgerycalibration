@@ -56,7 +56,7 @@ Developing
 Virtual environments
 ^^^^^^^
 Virtualenv, venv, conda or pyenv can be used to create virtual environments to manage python packages.
-You can use conda env by installing conda for your OS (`conda_installation`_) and use the following yml file with all dependencies.
+You can use conda env by installing conda for your OS (`conda_installation`_) and the following yml file for its dependencies.
 ::
     ## Some useful commands to manage your conda env:
     ## LIST CONDA ENVS: conda list -n *VE # show list of installed packages
@@ -88,12 +88,26 @@ You can use conda env by installing conda for your OS (`conda_installation`_) an
 
 Cloning
 ^^^^^^^
-
 You can clone the repository using the following command:
-
 ::
 
-    git clone https://github.com/SciKit-Surgery/scikit-surgerycalibration 
+    git clone https://github.com/SciKit-Surgery/scikit-surgerycalibration
+    git clone git@github.com:SciKit-Surgery/scikit-surgerycalibration.git # Alternatively, use password-protected SSH key.
+
+Launching virtual env
+^^^^^^^^^^^^^
+Conda virtual environment is used to reproduce same python dependencies
+::
+
+    conda activate scikit-surgerycalibrationVE
+
+
+Running tox
+^^^^^^^^^^^^^
+Tox is used to check package builds, docs, requirements and installs correctly under different environments.
+::
+
+    tox
 
 
 Running tests
@@ -102,13 +116,12 @@ Pytest is used for running unit tests:
 ::
 
     python -m pytest
+    pytest -v -s tests/algorithms/test_triangulate.py #for individual tests
 
 
 Linting
 ^^^^^^^
-
 This code conforms to the PEP8 standard. Pylint can be used to analyse the code:
-
 ::
 
     pylint --rcfile=tests/pylintrc sksurgerycalibration
@@ -116,9 +129,7 @@ This code conforms to the PEP8 standard. Pylint can be used to analyse the code:
 
 Installing
 ----------
-
 You can pip install directly from the repository as follows:
-
 ::
 
     pip install git+https://github.com/SciKit-Surgery/scikit-surgerycalibration 
@@ -127,27 +138,22 @@ You can pip install directly from the repository as follows:
 
 Contributing
 ^^^^^^^^^^^^
-
 Please see the `contributing guidelines`_.
-
 
 Useful links
 ^^^^^^^^^^^^
-
 * `Source code repository`_
 * `Documentation`_
 
 
 Licensing and copyright
 -----------------------
-
 Copyright 2020 University College London.
 scikit-surgerycalibration is released under the BSD-3 license. Please see the `license file`_ for details.
 
 
 Acknowledgements
 ----------------
-
 Supported by `Wellcome`_ and `EPSRC`_.
 
 
@@ -161,4 +167,3 @@ Supported by `Wellcome`_ and `EPSRC`_.
 .. _`contributing guidelines`: https://github.com/SciKit-Surgery/scikit-surgerycalibration /blob/master/CONTRIBUTING.rst
 .. _`license file`: https://github.com/SciKit-Surgery/scikit-surgerycalibration /blob/master/LICENSE
 .. _`conda_installation` : https://conda.io/projects/conda/en/latest/user-guide/install/index.html
-
