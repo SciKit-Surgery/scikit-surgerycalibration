@@ -193,5 +193,5 @@ def test_triangulate_points_hartley():
     rms_hartley_opencv = rms_between_points(transformed_model_points, points_from_hartley_opencv)
 
     print(f'\nrms_hartley: \n {rms_hartley}')
-    print(f'\nrms_hartley: \n {rms_hartley_opencv}')
+    print(f'\nrms_hartley_opencv: \n {rms_hartley_opencv}')
     assert rms_hartley < 1.5 and rms_hartley_opencv < 1.5
