@@ -159,7 +159,7 @@ def compute_stereo_3d_error(l2r_rmat,
         image_points[:, 0:2] = left_undistorted
         image_points[:, 2:4] = right_undistorted
 
-        triangulated = at.triangulate_points_opencv(
+        triangulated = at.triangulate_points_hartley(
             image_points,
             left_camera_matrix,
             right_camera_matrix,
