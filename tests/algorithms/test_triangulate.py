@@ -179,7 +179,7 @@ def test_triangulate_points_hartley():
                                                         right_intrinsic,
                                                         left_to_right_rotation,
                                                         left_to_right_translation)
-    print(f'\n {(time.time_ns() - start) / 1e6} millisecs for (at.triangulate_points_hartley)')
+    print(f'\n Elapsed time for at.triangulate_points_hartley(): {(time.time_ns() - start) / 1e6} millisecs ')
 
     start = time.time_ns()
     points_from_hartley_opencv = at.triangulate_points_opencv(points_in_2d,
@@ -187,11 +187,11 @@ def test_triangulate_points_hartley():
                                                               right_intrinsic,
                                                               left_to_right_rotation,
                                                               left_to_right_translation)
-    print(f'\n {(time.time_ns() - start) / 1e6} millisecs for (at.triangulate_points_opencv)')
+    print(f'\n Elapsed time for at.triangulate_points_opencv(): {(time.time_ns() - start) / 1e6} millisecs')
 
     rms_hartley = rms_between_points(transformed_model_points, points_from_hartley)
     rms_hartley_opencv = rms_between_points(transformed_model_points, points_from_hartley_opencv)
 
-    print(f'\nrms_hartley: \n {rms_hartley}')
-    print(f'\nrms_hartley_opencv: \n {rms_hartley_opencv}')
+    print(f'\n rms_hartley: {rms_hartley} and test (rms_hartley < 1.5)')
+    print(f'\n rms_hartley_opencv:  {rms_hartley_opencv} and test (rms_hartley < 1.5) \n')
     assert rms_hartley < 1.5 and rms_hartley_opencv < 1.5
