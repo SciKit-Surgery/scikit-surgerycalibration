@@ -1,8 +1,10 @@
 #  -*- coding: utf-8 -*-
 """Tests for sksrurgerycalibration triangulate"""
 
-import numpy as np
 import time
+
+import numpy as np
+
 import sksurgerycalibration.algorithms.triangulate as at
 
 
