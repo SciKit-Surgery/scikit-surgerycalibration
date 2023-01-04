@@ -2,6 +2,7 @@
 """Tests for sksrurgerycalibration triangulate"""
 
 import numpy as np
+import time
 import sksurgerycalibration.algorithms.triangulate as at
 
 
@@ -170,28 +171,25 @@ def test_triangulate_points_hartley():
                                                                              dummy_row_index, dummy_col_index] + \
                                                                          left_translation[dummy_col_index, 0]
 
+    start = time.time_ns()
     points_from_hartley = at.triangulate_points_hartley(points_in_2d,
                                                         left_intrinsic,
                                                         right_intrinsic,
                                                         left_to_right_rotation,
                                                         left_to_right_translation)
+    print(f'\n {(time.time_ns() - start) / 1e6} millisecs for (at.triangulate_points_hartley)')
 
-    rms_hartley = rms_between_points(transformed_model_points, points_from_hartley)
-    print(f'\nrms_hartley: {rms_hartley}')
-    assert rms_hartley < 1.5
-
-
-def test_triangulate_points_opencv():
-    """
-    Test triangulate points with hartley with cv2.triangulatePoints using "Chessboard Test"
-    """
-
-    _points_in_2d, left_undistorted, right_undistorted, left_intrinsic, right_intrinsic, \
-    left_to_right_rotation, left_to_right_translation, _model_points, _left_rotation, _left_translation = load_chessboard_arrays()
-
-    _points_from_hartley_opencv = at.triangulate_points_opencv(left_undistorted,
-                                                              right_undistorted,
+    start = time.time_ns()
+    points_from_hartley_opencv = at.triangulate_points_opencv(points_in_2d,
                                                               left_intrinsic,
                                                               right_intrinsic,
                                                               left_to_right_rotation,
                                                               left_to_right_translation)
+    print(f'\n {(time.time_ns() - start) / 1e6} millisecs for (at.triangulate_points_opencv)')
+
+    rms_hartley = rms_between_points(transformed_model_points, points_from_hartley)
+    rms_hartley_opencv = rms_between_points(transformed_model_points, points_from_hartley_opencv)
+
+    print(f'\nrms_hartley: \n {rms_hartley}')
+    print(f'\nrms_hartley: \n {rms_hartley_opencv}')
+    assert rms_hartley < 1.5 and rms_hartley_opencv < 1.5
