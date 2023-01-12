@@ -112,13 +112,15 @@ def _iter_triangulate_point_w_svd(p1_array,
 
 def new_e2_array(e2_array, r2_array, left_to_right_trans_vector):
     """
-    # E1 = Object to Left Camera = Left Camera Extrinsics.
-    # E2 = Object to Right Camera = Right Camera Extrinsics.
-    # K1 = Copy of Left Camera intrinsics.
-    # K2 = Copy of Right Camera intrinsics.
-    # Copy data into cv::Mat data types.
-    # Camera calibration routines are 32 bit, as some drawing functions require 32 bit data.
-    # These triangulation routines need 64 bit data.
+
+    Function to create a new_e2_array which concatenate left_to_right_trans_vector into the last column of e2_array.
+    Notes. new_e2_array() is used in triangulate_points_hartley() to avoid too many variables in one method (see R0914)
+
+    :param e2_array: [4x4] narray
+    :param r2_array: = left_to_right_rotation_matrix: [3x3] narray
+    :param left_to_right_trans_vector: [3x1] narray
+
+    :return e2_array: [4x4] narray
     """
     for row_idx in range(0, 3):
         for col_idx in range(0, 3):
@@ -131,7 +133,13 @@ def new_e2_array(e2_array, r2_array, left_to_right_trans_vector):
 def l2r_to_p2d(p2d, l2r):
     """
 
-    Conversion of l2r_to_p2d
+    Function to convert l2r array to p2d array, which removes last row of l2r to create p2d.
+    Notes. l2r_to_p2d() is used in triangulate_points_hartley() to avoid too many variables in one method (see R0914).
+
+    :param p2d: [3x4] narray
+    :param l2r: [4x4] narray
+
+    :return p2d: [3x4] narray
     """
 
     for dummy_row_index in range(0, 3):
@@ -177,7 +185,6 @@ def triangulate_points_hartley(input_undistorted_points,
     p2d = np.zeros((3, 4), dtype=np.double)
 
     e2_array = new_e2_array(e2_array, r2_array, left_to_right_trans_vector)
-
     # Inverting intrinsic params to convert from pixels to normalised image coordinates.
     k1inv = np.linalg.inv(k1_array)
     k2inv = np.linalg.inv(k2_array)

@@ -116,7 +116,7 @@ Pytest is used for running unit tests:
 ::
 
     python -m pytest
-    pytest -v -s tests/algorithms/test_triangulate.py #for individual tests
+    pytest -v -s tests/algorithms/test_triangulate.py #example for individual tests
 
 
 Linting
