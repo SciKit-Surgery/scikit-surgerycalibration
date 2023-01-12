@@ -4,13 +4,15 @@
 
 import copy
 import logging
+
 import cv2
 import sksurgeryimage.calibration.point_detector as pd
-import sksurgerycalibration.video.video_calibration_driver_base as vdb
+
 import sksurgerycalibration.video.video_calibration_data as cd
+import sksurgerycalibration.video.video_calibration_driver_base as vdb
 import sksurgerycalibration.video.video_calibration_params as cp
 import sksurgerycalibration.video.video_calibration_utils as cu
-import sksurgerycalibration.video.video_calibration_wrapper as vc
+import sksurgerycalibration.video.video_calibration_wrapper as vw
 
 LOGGER = logging.getLogger(__name__)
 
@@ -145,7 +147,7 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
             r_c, r_d, r_rvecs, r_tvecs, \
             l2r_r, l2r_t, \
             essential, fundamental \
-            = vc.stereo_video_calibration(
+            = vw.stereo_video_calibration(
                 self.video_data.left_data.ids_arrays,
                 self.video_data.left_data.object_points_arrays,
                 self.video_data.left_data.image_points_arrays,
@@ -256,7 +258,7 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
 
         proj_err, recon_err, l_handeye, l_pattern2marker, \
             r_handeye, r_pattern2marker = \
-                vc.stereo_handeye_calibration(
+                vw.stereo_handeye_calibration(
                     self.calibration_params.l2r_rmat,
                     self.calibration_params.l2r_tvec,
                     self.video_data.left_data.ids_arrays,

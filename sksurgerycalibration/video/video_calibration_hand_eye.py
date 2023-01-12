@@ -6,13 +6,14 @@
 
 import logging
 from typing import List, Tuple
-import numpy as np
-import cv2
-from scipy.optimize import least_squares
-import sksurgerycore.transforms.matrix as mu
-import sksurgerycalibration.video.video_calibration_utils as vu
-import sksurgerycalibration.video.quaternion_utils as qu
 
+import cv2
+import numpy as np
+import sksurgerycore.transforms.matrix as mu
+from scipy.optimize import least_squares
+
+import sksurgerycalibration.video.quaternion_utils as qu
+import sksurgerycalibration.video.video_calibration_utils as vu
 
 LOGGER = logging.getLogger(__name__)
 

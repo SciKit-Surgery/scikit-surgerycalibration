@@ -2,8 +2,9 @@
 
 """ Various functions to help with IO. Not intended for 3rd party clients. """
 
-import os
 import glob
+import os
+
 
 # pylint: disable=missing-function-docstring, invalid-name
 

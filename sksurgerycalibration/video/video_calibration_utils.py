@@ -6,8 +6,9 @@
 
 import collections
 import logging
-import numpy as np
+
 import cv2
+import numpy as np
 import sksurgerycore.transforms.matrix as skcm
 
 LOGGER = logging.getLogger(__name__)
@@ -103,7 +104,7 @@ def filter_common_points_per_image(left_ids,
         raise ValueError("Not enough common points in left and right images.")
 
     common_ids = \
-        np.zeros((len(ids), 1), dtype=np.int)
+        np.zeros((len(ids), 1), dtype=np.int32)
     common_object_points = \
         np.zeros((len(ids), 1, 3), dtype=np.float32)
     common_left_image_points = \
