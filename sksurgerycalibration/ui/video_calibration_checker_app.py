@@ -87,6 +87,8 @@ def run_video_calibration_checker(configuration = None,
         if key in [ord('c'), ord('m'), ord('t'), ord('a')]:
             _, object_points, image_points = \
                 detector.get_points(undistorted)
+            if image_points.shape[0] == 0:
+                print("Failed to detect points")
 
         pnp_ok = False
         img = None
@@ -128,9 +130,6 @@ def run_video_calibration_checker(configuration = None,
 
         if not pnp_ok and image_points.shape[0] > 0:
             print("Failed to solve PnP")
-
-        if image_points.shape[0] == 0:
-            print("Failed to detect points")
 
     cap.release()
     cv2.destroyAllWindows()
