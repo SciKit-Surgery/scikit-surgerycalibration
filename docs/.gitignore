@@ -1,5 +1,4 @@
-/sksurgerycalibration.rst
-/sksurgerycalibration.*.rst
+/sks*.rst
 /modules.rst
 /versioneer.rst
 /build
