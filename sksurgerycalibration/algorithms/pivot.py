@@ -287,7 +287,7 @@ def _residual_error_direct(a_values, b_values, x_values):
     :params x_values: nx6 array, pointer_offset and pivot_point
     :returns: TRhe RMS residual error
     """
-    residual_matrix = (np.dot(a_values, x_values) - b_values)
+    residual_matrix = np.dot(a_values, x_values) - b_values
     residual_error = np.mean(residual_matrix * residual_matrix)
     residual_error = np.sqrt(residual_error)
     return residual_error
