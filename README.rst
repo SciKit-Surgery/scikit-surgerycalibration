@@ -72,6 +72,7 @@ All library dependencies are specified via ``requirements-dev.txt`` which refers
 
 So, assuming either `anaconda`_ or `miniconda`_ is installed, and your current working directory is the root directory of this project:
 ::
+
     conda create --name scikit-surgery python=3.7
     conda activate scikit-surgery
     pip install tox
@@ -82,10 +83,12 @@ As the `tox`_ command runs, it will install all dependencies in a sub-directory 
 
 To run commands inside the same environment as `tox`_, you should:
 ::
+
     source .tox/py37/bin/activate
 
 on Linux/Mac, or if you are Windows user:
 ::
+
     .tox\py37\Scripts\activate
 
 Then you can run pytest, linting, or directly run python scripts, and
@@ -97,6 +100,7 @@ Generating documentation
 
 The simplest way is again using `tox`_.
 ::
+
     tox -e docs
 
 then open ``docs/build/html/index.html`` in your browser.
@@ -168,4 +172,3 @@ Supported by `Wellcome`_ and `EPSRC`_.
 .. _`actions`: https://github.com/SciKit-Surgery/scikit-surgerycalibration/actions
 .. _`contributing guidelines`: https://github.com/SciKit-Surgery/scikit-surgerycalibration /blob/master/CONTRIBUTING.rst
 .. _`license file`: https://github.com/SciKit-Surgery/scikit-surgerycalibration /blob/master/LICENSE
-.. _`conda_installation` : https://conda.io/projects/conda/en/latest/user-guide/install/index.html
