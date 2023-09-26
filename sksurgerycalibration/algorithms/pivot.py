@@ -154,7 +154,7 @@ def pivot_calibration_with_ransac(tracking_matrices,
         sample = tracking_matrices[indexes]
 
         try:
-            pointer_offset, pivot_location, _ = pivot_calibration(sample)
+            pointer_offset, pivot_location, _ = pivot_calibration_aos(sample)
         except ValueError:
             print("RANSAC, iteration " + str(iter_counter) + ", failed.")
             continue
