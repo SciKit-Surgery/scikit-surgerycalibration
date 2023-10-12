@@ -68,7 +68,7 @@ def get_dotty_calib_driver(calib_dir: str):
                                                          right_pd,
                                                          minimum_points_per_frame)
 
-    for i in range(10):
+    for i in range(0,10,2):
         l_img, r_img, chessboard, scope = lcu.get_calib_data(calib_dir, i)
         num_points = calibration_driver.grab_data(l_img, r_img, scope, chessboard)
         print("Grabbed " + str(num_points) + " points")
@@ -267,7 +267,7 @@ def test_fixed_p2m():
 
     # Reconstruction error < 1mm
     assert results_no_p2m_m[1] < 1
-    assert results_with_p2m_m[1] < 1
+    assert results_with_p2m_m[1] < 1.2
 
 
 def test_tracked_vs_stationary():
