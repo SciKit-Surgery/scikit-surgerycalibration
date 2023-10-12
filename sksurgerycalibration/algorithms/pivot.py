@@ -154,7 +154,7 @@ def pivot_calibration_with_ransac(tracking_matrices,
         sample = tracking_matrices[indexes]
 
         try:
-            pointer_offset, pivot_location, _ = pivot_calibration(sample)
+            pointer_offset, pivot_location, _ = pivot_calibration_aos(sample)
         except ValueError:
             print("RANSAC, iteration " + str(iter_counter) + ", failed.")
             continue
@@ -180,7 +180,7 @@ def pivot_calibration_with_ransac(tracking_matrices,
             highest_number_of_inliers = number_of_inliers
             inlier_matrices = tracking_matrices[inlier_indices]
             best_pointer_offset, best_pivot_location, best_residual_error = \
-                pivot_calibration(inlier_matrices)
+                pivot_calibration_aos(inlier_matrices)
 
         # Early exit condition, as soon as we find model with enough fit.
         if percentage_inliers > concensus_threshold and early_exit:
