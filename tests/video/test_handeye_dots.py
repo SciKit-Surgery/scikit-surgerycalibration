@@ -68,7 +68,7 @@ def get_dotty_calib_driver(calib_dir: str):
                                                          right_pd,
                                                          minimum_points_per_frame)
 
-    for i in range(0,10,2):
+    for i in range(0,10,2): #issue 59, reduced number of frames used for test
         l_img, r_img, chessboard, scope = lcu.get_calib_data(calib_dir, i)
         num_points = calibration_driver.grab_data(l_img, r_img, scope, chessboard)
         print("Grabbed " + str(num_points) + " points")
