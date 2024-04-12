@@ -77,14 +77,14 @@ def mono_proj_err_h2e(x_0,
     assert len(x_0) == 6
 
     rvec = np.zeros((3, 1))
-    rvec[0] = x_0[0]
-    rvec[1] = x_0[1]
-    rvec[2] = x_0[2]
+    rvec[0][0] = x_0[0]
+    rvec[1][0] = x_0[1]
+    rvec[2][0] = x_0[2]
 
     tvec = np.zeros((3, 1))
-    tvec[0] = x_0[3]
-    tvec[1] = x_0[4]
-    tvec[2] = x_0[5]
+    tvec[0][0] = x_0[3]
+    tvec[1][0] = x_0[4]
+    tvec[2][0] = x_0[5]
 
     h2e = vu.extrinsic_vecs_to_matrix(rvec, tvec)
 
@@ -131,24 +131,24 @@ def mono_proj_err_p2m_h2e(x_0,
     assert len(x_0) == 12
 
     rvec = np.zeros((3, 1))
-    rvec[0] = x_0[0]
-    rvec[1] = x_0[1]
-    rvec[2] = x_0[2]
+    rvec[0][0] = x_0[0]
+    rvec[1][0] = x_0[1]
+    rvec[2][0] = x_0[2]
 
     tvec = np.zeros((3, 1))
-    tvec[0] = x_0[3]
-    tvec[1] = x_0[4]
-    tvec[2] = x_0[5]
+    tvec[0][0] = x_0[3]
+    tvec[1][0] = x_0[4]
+    tvec[2][0] = x_0[5]
 
     p2m = vu.extrinsic_vecs_to_matrix(rvec, tvec)
 
-    rvec[0] = x_0[6]
-    rvec[1] = x_0[7]
-    rvec[2] = x_0[8]
+    rvec[0][0] = x_0[6]
+    rvec[1][0] = x_0[7]
+    rvec[2][0] = x_0[8]
 
-    tvec[0] = x_0[9]
-    tvec[1] = x_0[10]
-    tvec[2] = x_0[11]
+    tvec[0][0] = x_0[9]
+    tvec[1][0] = x_0[10]
+    tvec[2][0] = x_0[11]
 
     h2e = vu.extrinsic_vecs_to_matrix(rvec, tvec)
 
@@ -194,24 +194,24 @@ def mono_proj_err_h2e_g2w(x_0,
     assert len(x_0) == 12
 
     rvec = np.zeros((3, 1))
-    rvec[0] = x_0[0]
-    rvec[1] = x_0[1]
-    rvec[2] = x_0[2]
+    rvec[0][0] = x_0[0]
+    rvec[1][0] = x_0[1]
+    rvec[2][0] = x_0[2]
 
     tvec = np.zeros((3, 1))
-    tvec[0] = x_0[3]
-    tvec[1] = x_0[4]
-    tvec[2] = x_0[5]
+    tvec[0][0] = x_0[3]
+    tvec[1][0] = x_0[4]
+    tvec[2][0] = x_0[5]
 
     h2e = vu.extrinsic_vecs_to_matrix(rvec, tvec)
 
-    rvec[0] = x_0[6]
-    rvec[1] = x_0[7]
-    rvec[2] = x_0[8]
+    rvec[0][0] = x_0[6]
+    rvec[1][0] = x_0[7]
+    rvec[2][0] = x_0[8]
 
-    tvec[0] = x_0[9]
-    tvec[1] = x_0[10]
-    tvec[2] = x_0[11]
+    tvec[0][0] = x_0[9]
+    tvec[1][0] = x_0[10]
+    tvec[2][0] = x_0[11]
 
     g2w = vu.extrinsic_vecs_to_matrix(rvec, tvec)
 
@@ -256,14 +256,14 @@ def mono_proj_err_h2e_int_dist(x_0,
     assert len(x_0) == 15
 
     rvec = np.zeros((3, 1))
-    rvec[0] = x_0[0]
-    rvec[1] = x_0[1]
-    rvec[2] = x_0[2]
+    rvec[0][0] = x_0[0]
+    rvec[1][0] = x_0[1]
+    rvec[2][0] = x_0[2]
 
     tvec = np.zeros((3, 1))
-    tvec[0] = x_0[3]
-    tvec[1] = x_0[4]
-    tvec[2] = x_0[5]
+    tvec[0][0] = x_0[3]
+    tvec[1][0] = x_0[4]
+    tvec[2][0] = x_0[5]
 
     h2e = vu.extrinsic_vecs_to_matrix(rvec, tvec)
 

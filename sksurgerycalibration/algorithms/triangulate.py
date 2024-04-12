@@ -33,26 +33,25 @@ def _triangulate_point_using_svd(p1_array,
     # Build matrix A for homogeneous equation system Ax = 0
     # Assume X = (x,y,z,1), for Linear-LS method
     # Which turns it into a AX = B system, where A is 4x3, X is 3x1 and B is 4x1
-
     a_array = np.zeros((4, 3), dtype=np.double)
-    a_array[0, 0] = (u1_array[0] * p1_array[2, 0] - p1_array[0, 0]) / w1_const
-    a_array[0, 1] = (u1_array[0] * p1_array[2, 1] - p1_array[0, 1]) / w1_const
-    a_array[0, 2] = (u1_array[0] * p1_array[2, 2] - p1_array[0, 2]) / w1_const
-    a_array[1, 0] = (u1_array[1] * p1_array[2, 0] - p1_array[1, 0]) / w1_const
-    a_array[1, 1] = (u1_array[1] * p1_array[2, 1] - p1_array[1, 1]) / w1_const
-    a_array[1, 2] = (u1_array[1] * p1_array[2, 2] - p1_array[1, 2]) / w1_const
-    a_array[2, 0] = (u2_array[0] * p2_array[2, 0] - p2_array[0, 0]) / w2_const
-    a_array[2, 1] = (u2_array[0] * p2_array[2, 1] - p2_array[0, 1]) / w2_const
-    a_array[2, 2] = (u2_array[0] * p2_array[2, 2] - p2_array[0, 2]) / w2_const
-    a_array[3, 0] = (u2_array[1] * p2_array[2, 0] - p2_array[1, 0]) / w2_const
-    a_array[3, 1] = (u2_array[1] * p2_array[2, 1] - p2_array[1, 1]) / w2_const
-    a_array[3, 2] = (u2_array[1] * p2_array[2, 2] - p2_array[1, 2]) / w2_const
+    a_array[0, 0] = (u1_array[0][0] * p1_array[2, 0] - p1_array[0, 0]) / w1_const
+    a_array[0, 1] = (u1_array[0][0] * p1_array[2, 1] - p1_array[0, 1]) / w1_const
+    a_array[0, 2] = (u1_array[0][0] * p1_array[2, 2] - p1_array[0, 2]) / w1_const
+    a_array[1, 0] = (u1_array[1][0] * p1_array[2, 0] - p1_array[1, 0]) / w1_const
+    a_array[1, 1] = (u1_array[1][0] * p1_array[2, 1] - p1_array[1, 1]) / w1_const
+    a_array[1, 2] = (u1_array[1][0] * p1_array[2, 2] - p1_array[1, 2]) / w1_const
+    a_array[2, 0] = (u2_array[0][0] * p2_array[2, 0] - p2_array[0, 0]) / w2_const
+    a_array[2, 1] = (u2_array[0][0] * p2_array[2, 1] - p2_array[0, 1]) / w2_const
+    a_array[2, 2] = (u2_array[0][0] * p2_array[2, 2] - p2_array[0, 2]) / w2_const
+    a_array[3, 0] = (u2_array[1][0] * p2_array[2, 0] - p2_array[1, 0]) / w2_const
+    a_array[3, 1] = (u2_array[1][0] * p2_array[2, 1] - p2_array[1, 1]) / w2_const
+    a_array[3, 2] = (u2_array[1][0] * p2_array[2, 2] - p2_array[1, 2]) / w2_const
 
     b_array = np.zeros((4, 1), dtype=np.double)
-    b_array[0] = -(u1_array[0] * p1_array[2, 3] - p1_array[0, 3]) / w1_const
-    b_array[1] = -(u1_array[1] * p1_array[2, 3] - p1_array[1, 3]) / w1_const
-    b_array[2] = -(u2_array[0] * p2_array[2, 3] - p2_array[0, 3]) / w2_const
-    b_array[3] = -(u2_array[1] * p2_array[2, 3] - p2_array[1, 3]) / w2_const
+    b_array[0][0] = -(u1_array[0][0] * p1_array[2, 3] - p1_array[0, 3]) / w1_const
+    b_array[1][0] = -(u1_array[1][0] * p1_array[2, 3] - p1_array[1, 3]) / w1_const
+    b_array[2][0] = -(u2_array[0][0] * p2_array[2, 3] - p2_array[0, 3]) / w2_const
+    b_array[3][0] = -(u2_array[1][0] * p2_array[2, 3] - p2_array[1, 3]) / w2_const
 
     # start = time.time_ns()
     x_array = cv2.solve(a_array, b_array, flags=cv2.DECOMP_SVD)
@@ -89,10 +88,10 @@ def _iter_triangulate_point_w_svd(p1_array,
     # Hartley suggests 10 iterations at most
     for dummy_idx in range(10):
         x_array_ = _triangulate_point_using_svd(p1_array, p2_array, u1_array, u2_array, w1_const, w2_const)
-        x_array[0] = x_array_[0]
-        x_array[1] = x_array_[1]
-        x_array[2] = x_array_[2]
-        x_array[3] = 1.0
+        x_array[0][0] = x_array_[0][0]
+        x_array[1][0] = x_array_[1][0]
+        x_array[2][0] = x_array_[2][0]
+        x_array[3][0] = 1.0
 
         p2x1 = p1_array[2, :].dot(x_array)
         p2x2 = p2_array[2, :].dot(x_array)
@@ -100,12 +99,12 @@ def _iter_triangulate_point_w_svd(p1_array,
         if (abs(w1_const - p2x1) <= epsilon and abs(w2_const - p2x2) <= epsilon):
             break
 
-        w1_const = p2x1
-        w2_const = p2x2
+        w1_const = p2x1[0]
+        w2_const = p2x2[0]
 
-    result[0] = x_array[0]
-    result[1] = x_array[1]
-    result[2] = x_array[2]
+    result[0][0] = x_array[0][0]
+    result[1][0] = x_array[1][0]
+    result[2][0] = x_array[2][0]
 
     return result
 
@@ -122,10 +121,15 @@ def new_e2_array(e2_array, r2_array, left_to_right_trans_vector):
 
     :return e2_array: [4x4] narray
     """
+    # While the specification is [3x1] which implies ndarray, the users
+    # may also pass in array (3,), ndarray (3, 1) or ndarray (1, 3).
+    # So, this will flatten all of them to the same array-like shape.
+    l_r = np.ravel(left_to_right_trans_vector)
+
     for row_idx in range(0, 3):
         for col_idx in range(0, 3):
             e2_array[row_idx, col_idx] = r2_array[row_idx, col_idx]
-        e2_array[row_idx, 3] = left_to_right_trans_vector[row_idx]
+        e2_array[row_idx, 3] = l_r[row_idx]
 
     return e2_array
 
@@ -231,9 +235,9 @@ def triangulate_points_hartley(input_undistorted_points,
         # array shapes for input args _iter_triangulate_point_w_svd( [3, 4]; [3, 4]; [3, 1]; [3, 1] )
         reconstructed_point = _iter_triangulate_point_w_svd(p1d, p2d, u1t, u2t)
 
-        output_points[dummy_index, 0] = reconstructed_point[0]
-        output_points[dummy_index, 1] = reconstructed_point[1]
-        output_points[dummy_index, 2] = reconstructed_point[2]
+        output_points[dummy_index, 0] = reconstructed_point[0][0]
+        output_points[dummy_index, 1] = reconstructed_point[1][0]
+        output_points[dummy_index, 2] = reconstructed_point[2][0]
 
     return output_points
 
@@ -301,10 +305,10 @@ def triangulate_points_opencv(input_undistorted_points,
 
         # array shapes for input args cv2.triangulatePoints( [3, 4]; [3, 4]; [2, 1]; [2, 1] )
         reconstructed_point = cv2.triangulatePoints(p1mat, p2mat, u1t[:2], u2t[:2])
-        reconstructed_point /= reconstructed_point[3]  # Homogenize
+        reconstructed_point /= reconstructed_point[3][0]  # Homogenize
 
-        output_points[dummy_index, 0] = reconstructed_point[0]
-        output_points[dummy_index, 1] = reconstructed_point[1]
-        output_points[dummy_index, 2] = reconstructed_point[2]
+        output_points[dummy_index, 0] = reconstructed_point[0][0]
+        output_points[dummy_index, 1] = reconstructed_point[1][0]
+        output_points[dummy_index, 2] = reconstructed_point[2][0]
 
     return output_points

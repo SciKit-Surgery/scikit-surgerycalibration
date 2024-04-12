@@ -159,20 +159,20 @@ def mono_handeye_calibration(object_points: List,
             # Now optimise p2m and h2e
             x_0 = np.zeros(12)
             rvec, tvec = vu.extrinsic_matrix_to_vecs(pattern2marker_matrix)
-            x_0[0] = rvec[0]
-            x_0[1] = rvec[1]
-            x_0[2] = rvec[2]
-            x_0[3] = tvec[0]
-            x_0[4] = tvec[1]
-            x_0[5] = tvec[2]
+            x_0[0] = rvec[0][0]
+            x_0[1] = rvec[1][0]
+            x_0[2] = rvec[2][0]
+            x_0[3] = tvec[0][0]
+            x_0[4] = tvec[1][0]
+            x_0[5] = tvec[2][0]
 
             rvec, tvec = vu.extrinsic_matrix_to_vecs(handeye_matrix)
-            x_0[6] = rvec[0]
-            x_0[7] = rvec[1]
-            x_0[8] = rvec[2]
-            x_0[9] = tvec[0]
-            x_0[10] = tvec[1]
-            x_0[11] = tvec[2]
+            x_0[6] = rvec[0][0]
+            x_0[7] = rvec[1][0]
+            x_0[8] = rvec[2][0]
+            x_0[9] = tvec[0][0]
+            x_0[10] = tvec[1][0]
+            x_0[11] = tvec[2][0]
 
             res = minimize(vcf.mono_proj_err_p2m_h2e, x_0,
                            args=(object_points,
@@ -186,20 +186,20 @@ def mono_handeye_calibration(object_points: List,
                            )
 
             x_1 = res.x
-            rvec[0] = x_1[0]
-            rvec[1] = x_1[1]
-            rvec[2] = x_1[2]
-            tvec[0] = x_1[3]
-            tvec[1] = x_1[4]
-            tvec[2] = x_1[5]
+            rvec[0][0] = x_1[0]
+            rvec[1][0] = x_1[1]
+            rvec[2][0] = x_1[2]
+            tvec[0][0] = x_1[3]
+            tvec[1][0] = x_1[4]
+            tvec[2][0] = x_1[5]
             pattern2marker_matrix = vu.extrinsic_vecs_to_matrix(rvec, tvec)
 
-            rvec[0] = x_1[6]
-            rvec[1] = x_1[7]
-            rvec[2] = x_1[8]
-            tvec[0] = x_1[9]
-            tvec[1] = x_1[10]
-            tvec[2] = x_1[11]
+            rvec[0][0] = x_1[6]
+            rvec[1][0] = x_1[7]
+            rvec[2][0] = x_1[8]
+            tvec[0][0] = x_1[9]
+            tvec[1][0] = x_1[10]
+            tvec[2][0] = x_1[11]
             handeye_matrix = vu.extrinsic_vecs_to_matrix(rvec, tvec)
 
         elif pattern2marker_matrix is not None \
@@ -218,12 +218,12 @@ def mono_handeye_calibration(object_points: List,
             # Now optimise just the h2e
             x_0 = np.zeros(6)
             rvec, tvec = vu.extrinsic_matrix_to_vecs(handeye_matrix)
-            x_0[0] = rvec[0]
-            x_0[1] = rvec[1]
-            x_0[2] = rvec[2]
-            x_0[3] = tvec[0]
-            x_0[4] = tvec[1]
-            x_0[5] = tvec[2]
+            x_0[0] = rvec[0][0]
+            x_0[1] = rvec[1][0]
+            x_0[2] = rvec[2][0]
+            x_0[3] = tvec[0][0]
+            x_0[4] = tvec[1][0]
+            x_0[5] = tvec[2][0]
 
             res = minimize(vcf.mono_proj_err_h2e, x_0,
                            args=(object_points,
@@ -238,12 +238,12 @@ def mono_handeye_calibration(object_points: List,
                            )
 
             x_1 = res.x
-            rvec[0] = x_1[0]
-            rvec[1] = x_1[1]
-            rvec[2] = x_1[2]
-            tvec[0] = x_1[3]
-            tvec[1] = x_1[4]
-            tvec[2] = x_1[5]
+            rvec[0][0] = x_1[0]
+            rvec[1][0] = x_1[1]
+            rvec[2][0] = x_1[2]
+            tvec[0][0] = x_1[3]
+            tvec[1][0] = x_1[4]
+            tvec[2][0] = x_1[5]
             handeye_matrix = vu.extrinsic_vecs_to_matrix(rvec, tvec)
 
         else:
@@ -262,12 +262,12 @@ def mono_handeye_calibration(object_points: List,
         # Now optimise h2e, intrinsics, distortion
         x_0 = np.zeros(15)
         rvec, tvec = vu.extrinsic_matrix_to_vecs(handeye_matrix)
-        x_0[0] = rvec[0]
-        x_0[1] = rvec[1]
-        x_0[2] = rvec[2]
-        x_0[3] = tvec[0]
-        x_0[4] = tvec[1]
-        x_0[5] = tvec[2]
+        x_0[0] = rvec[0][0]
+        x_0[1] = rvec[1][0]
+        x_0[2] = rvec[2][0]
+        x_0[3] = tvec[0][0]
+        x_0[4] = tvec[1][0]
+        x_0[5] = tvec[2][0]
         x_0[6] = camera_matrix[0][0]
         x_0[7] = camera_matrix[1][1]
         x_0[8] = camera_matrix[0][2]
@@ -288,12 +288,12 @@ def mono_handeye_calibration(object_points: List,
                        method='Powell',
                        )
         x_1 = res.x
-        rvec[0] = x_1[0]
-        rvec[1] = x_1[1]
-        rvec[2] = x_1[2]
-        tvec[0] = x_1[3]
-        tvec[1] = x_1[4]
-        tvec[2] = x_1[5]
+        rvec[0][0] = x_1[0]
+        rvec[1][0] = x_1[1]
+        rvec[2][0] = x_1[2]
+        tvec[0][0] = x_1[3]
+        tvec[1][0] = x_1[4]
+        tvec[2][0] = x_1[5]
         handeye_matrix = vu.extrinsic_vecs_to_matrix(rvec, tvec)
 
         camera_matrix[0][0] = x_1[6]
@@ -703,20 +703,20 @@ def stereo_handeye_calibration(l2r_rmat: np.ndarray,
             x_0 = np.zeros(12)
 
             rvec, tvec = vu.extrinsic_matrix_to_vecs(left_handeye_matrix)
-            x_0[0] = rvec[0]
-            x_0[1] = rvec[1]
-            x_0[2] = rvec[2]
-            x_0[3] = tvec[0]
-            x_0[4] = tvec[1]
-            x_0[5] = tvec[2]
+            x_0[0] = rvec[0][0]
+            x_0[1] = rvec[1][0]
+            x_0[2] = rvec[2][0]
+            x_0[3] = tvec[0][0]
+            x_0[4] = tvec[1][0]
+            x_0[5] = tvec[2][0]
 
             rvec, tvec = vu.extrinsic_matrix_to_vecs(left_pattern2marker_matrix)
-            x_0[6] = rvec[0]
-            x_0[7] = rvec[1]
-            x_0[8] = rvec[2]
-            x_0[9] = tvec[0]
-            x_0[10] = tvec[1]
-            x_0[11] = tvec[2]
+            x_0[6] = rvec[0][0]
+            x_0[7] = rvec[1][0]
+            x_0[8] = rvec[2][0]
+            x_0[9] = tvec[0][0]
+            x_0[10] = tvec[1][0]
+            x_0[11] = tvec[2][0]
 
             res = minimize(vcf.stereo_proj_err_h2e, x_0,
                            args=(common_object_pts,
@@ -743,20 +743,20 @@ def stereo_handeye_calibration(l2r_rmat: np.ndarray,
 
             x_1 = res.x
 
-            rvec[0] = x_1[0]
-            rvec[1] = x_1[1]
-            rvec[2] = x_1[2]
-            tvec[0] = x_1[3]
-            tvec[1] = x_1[4]
-            tvec[2] = x_1[5]
+            rvec[0][0] = x_1[0]
+            rvec[1][0] = x_1[1]
+            rvec[2][0] = x_1[2]
+            tvec[0][0] = x_1[3]
+            tvec[1][0] = x_1[4]
+            tvec[2][0] = x_1[5]
             left_handeye_matrix = vu.extrinsic_vecs_to_matrix(rvec, tvec)
 
-            rvec[0] = x_1[6]
-            rvec[1] = x_1[7]
-            rvec[2] = x_1[8]
-            tvec[0] = x_1[9]
-            tvec[1] = x_1[10]
-            tvec[2] = x_1[11]
+            rvec[0][0] = x_1[6]
+            rvec[1][0] = x_1[7]
+            rvec[2][0] = x_1[8]
+            tvec[0][0] = x_1[9]
+            tvec[1][0] = x_1[10]
+            tvec[2][0] = x_1[11]
             left_pattern2marker_matrix = vu.extrinsic_vecs_to_matrix(rvec, tvec)
 
         elif override_pattern2marker is not None \
@@ -766,12 +766,12 @@ def stereo_handeye_calibration(l2r_rmat: np.ndarray,
             # Now optimise just the h2e
             x_0 = np.zeros(6)
             rvec, tvec = vu.extrinsic_matrix_to_vecs(left_handeye_matrix)
-            x_0[0] = rvec[0]
-            x_0[1] = rvec[1]
-            x_0[2] = rvec[2]
-            x_0[3] = tvec[0]
-            x_0[4] = tvec[1]
-            x_0[5] = tvec[2]
+            x_0[0] = rvec[0][0]
+            x_0[1] = rvec[1][0]
+            x_0[2] = rvec[2][0]
+            x_0[3] = tvec[0][0]
+            x_0[4] = tvec[1][0]
+            x_0[5] = tvec[2][0]
 
             res = minimize(vcf.stereo_proj_err_h2e, x_0,
                            args=(common_object_pts,
@@ -797,12 +797,12 @@ def stereo_handeye_calibration(l2r_rmat: np.ndarray,
                         str(res.message))
 
             x_1 = res.x
-            rvec[0] = x_1[0]
-            rvec[1] = x_1[1]
-            rvec[2] = x_1[2]
-            tvec[0] = x_1[3]
-            tvec[1] = x_1[4]
-            tvec[2] = x_1[5]
+            rvec[0][0] = x_1[0]
+            rvec[1][0] = x_1[1]
+            rvec[2][0] = x_1[2]
+            tvec[0][0] = x_1[3]
+            tvec[1][0] = x_1[4]
+            tvec[2][0] = x_1[5]
             left_handeye_matrix = vu.extrinsic_vecs_to_matrix(rvec, tvec)
 
         # Now, final case, optimise handeye and stereo camera parameters.
@@ -813,21 +813,21 @@ def stereo_handeye_calibration(l2r_rmat: np.ndarray,
         x_0 = np.zeros(30)
 
         rvec, tvec = vu.extrinsic_matrix_to_vecs(left_handeye_matrix)
-        x_0[0] = rvec[0]
-        x_0[1] = rvec[1]
-        x_0[2] = rvec[2]
-        x_0[3] = tvec[0]
-        x_0[4] = tvec[1]
-        x_0[5] = tvec[2]
+        x_0[0] = rvec[0][0]
+        x_0[1] = rvec[1][0]
+        x_0[2] = rvec[2][0]
+        x_0[3] = tvec[0][0]
+        x_0[4] = tvec[1][0]
+        x_0[5] = tvec[2][0]
 
         l2r = skcm.construct_rigid_transformation(l2r_rmat, l2r_tvec)
         rvec, tvec = vu.extrinsic_matrix_to_vecs(l2r)
-        x_0[6] = rvec[0]
-        x_0[7] = rvec[1]
-        x_0[8] = rvec[2]
-        x_0[9] = tvec[0]
-        x_0[10] = tvec[1]
-        x_0[11] = tvec[2]
+        x_0[6] = rvec[0][0]
+        x_0[7] = rvec[1][0]
+        x_0[8] = rvec[2][0]
+        x_0[9] = tvec[0][0]
+        x_0[10] = tvec[1][0]
+        x_0[11] = tvec[2][0]
 
         x_0[12] = left_camera_matrix[0][0]
         x_0[13] = left_camera_matrix[1][1]
@@ -867,20 +867,20 @@ def stereo_handeye_calibration(l2r_rmat: np.ndarray,
                     str(res.message))
 
         x_1 = res.x
-        rvec[0] = x_1[0]
-        rvec[1] = x_1[1]
-        rvec[2] = x_1[2]
-        tvec[0] = x_1[3]
-        tvec[1] = x_1[4]
-        tvec[2] = x_1[5]
+        rvec[0][0] = x_1[0]
+        rvec[1][0] = x_1[1]
+        rvec[2][0] = x_1[2]
+        tvec[0][0] = x_1[3]
+        tvec[1][0] = x_1[4]
+        tvec[2][0] = x_1[5]
         left_handeye_matrix = vu.extrinsic_vecs_to_matrix(rvec, tvec)
 
-        rvec[0] = x_1[6]
-        rvec[1] = x_1[7]
-        rvec[2] = x_1[8]
-        tvec[0] = x_1[9]
-        tvec[1] = x_1[10]
-        tvec[2] = x_1[11]
+        rvec[0][0] = x_1[6]
+        rvec[1][0] = x_1[7]
+        rvec[2][0] = x_1[8]
+        tvec[0][0] = x_1[9]
+        tvec[1][0] = x_1[10]
+        tvec[2][0] = x_1[11]
         l2r = vu.extrinsic_vecs_to_matrix(rvec, tvec)
         l2r_rmat = l2r[0:3, 0:3]
         l2r_tvec = l2r[0:3, 3]
@@ -1008,12 +1008,12 @@ def stereo_calibration_extrinsics(common_object_points,
     number_of_parameters = 6 * number_of_frames
     x_0 = np.zeros(number_of_parameters)
     for i in range(0, number_of_frames):
-        x_0[i * 6 + 0] = l_rvecs[i][0]
-        x_0[i * 6 + 1] = l_rvecs[i][1]
-        x_0[i * 6 + 2] = l_rvecs[i][2]
-        x_0[i * 6 + 3] = l_tvecs[i][0]
-        x_0[i * 6 + 4] = l_tvecs[i][1]
-        x_0[i * 6 + 5] = l_tvecs[i][2]
+        x_0[i * 6 + 0] = l_rvecs[i][0][0]
+        x_0[i * 6 + 1] = l_rvecs[i][1][0]
+        x_0[i * 6 + 2] = l_rvecs[i][2][0]
+        x_0[i * 6 + 3] = l_tvecs[i][0][0]
+        x_0[i * 6 + 4] = l_tvecs[i][1][0]
+        x_0[i * 6 + 5] = l_tvecs[i][2][0]
 
     res = least_squares(vcf.stereo_2d_error_for_extrinsics, x_0,
                         args=(common_object_points,
@@ -1035,11 +1035,11 @@ def stereo_calibration_extrinsics(common_object_points,
 
     x_1 = res.x
     for i in range(0, number_of_frames):
-        l_rvecs[i][0] = x_1[i * 6 + 0]
-        l_rvecs[i][1] = x_1[i * 6 + 1]
-        l_rvecs[i][2] = x_1[i * 6 + 2]
-        l_tvecs[i][0] = x_1[i * 6 + 3]
-        l_tvecs[i][1] = x_1[i * 6 + 4]
-        l_tvecs[i][2] = x_1[i * 6 + 5]
+        l_rvecs[i][0][0] = x_1[i * 6 + 0]
+        l_rvecs[i][1][0] = x_1[i * 6 + 1]
+        l_rvecs[i][2][0] = x_1[i * 6 + 2]
+        l_tvecs[i][0][0] = x_1[i * 6 + 3]
+        l_tvecs[i][1][0] = x_1[i * 6 + 4]
+        l_tvecs[i][2][0] = x_1[i * 6 + 5]
 
     return res.fun, l_rvecs, l_tvecs
