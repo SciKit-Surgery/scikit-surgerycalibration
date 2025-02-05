@@ -51,7 +51,7 @@ setup(
     ),
 
     install_requires=[
-        'numpy',
+        'numpy<2.0.0',
         'ipykernel',
         'nbsphinx',
         'scipy',
