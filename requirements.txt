@@ -2,7 +2,7 @@
 # It is used by pip to manage software dependencies. It is not to be
 # confused with the software requirements, which are listed in
 # doc/requirements.rst
-
+#
 # Numpy went to version 2 on June 16th 2024.
 # OpenCV released 4.10.0.84 on June 17th 2024.
 # However, this package needs opencv-contrib-python-headless<4.6 due to Issue #48.
