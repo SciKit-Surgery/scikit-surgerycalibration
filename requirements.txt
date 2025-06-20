@@ -2,10 +2,17 @@
 # It is used by pip to manage software dependencies. It is not to be
 # confused with the software requirements, which are listed in
 # doc/requirements.rst
-numpy
+#
+# Numpy went to version 2 on June 16th 2024.
+# OpenCV released 4.10.0.84 on June 17th 2024.
+# However, this package needs opencv-contrib-python-headless<4.6 due to Issue #48.
+# If you google, you find lots of changes of opencv between 4.6 and 4.10, e.g. ArUco changes that affect our calibration.
+# So, for now, until scikit-surgerycalibration Issue #48 is fixed, and we have tested that we can upgrade to
+# opencv-contrib-python-headless >= 4.10.0.84 and beyond, numpy must be restricted to <2.0.
+numpy<2.0.0
 ipykernel
 nbsphinx
 scipy
 opencv-contrib-python-headless<4.6
 scikit-surgerycore
-scikit-surgeryimage>=0.10.1
+scikit-surgeryimage>=0.10.2

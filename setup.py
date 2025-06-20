@@ -51,13 +51,13 @@ setup(
     ),
 
     install_requires=[
-        'numpy',
+        'numpy<2.0.0',
         'ipykernel',
         'nbsphinx',
         'scipy',
         'opencv-contrib-python-headless<4.6',
         'scikit-surgerycore',
-        'scikit-surgeryimage>=0.10.1',
+        'scikit-surgeryimage>=0.10.2',
     ],
 
     entry_points={
