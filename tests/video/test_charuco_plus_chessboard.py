@@ -8,6 +8,7 @@ import numpy as np
 import cv2
 import sksurgeryimage.calibration.charuco as ch
 import sksurgeryimage.calibration.charuco_plus_chessboard_point_detector as pd
+import sksurgerycalibration.video.video_calibration_utils as vcu
 import sksurgerycalibration.video.video_calibration_driver_stereo as sc
 
 
@@ -31,11 +32,18 @@ def test_stereo_davinci():
         right_images.append(image)
     assert (len(right_images) == 59)
 
-    ref_img = cv2.imread('tests/data/2020_01_20_storz/pattern_4x4_19x26_5_4_with_inset_9x14.png')
+    ref_img = cv2.imread('tests/data/2020_01_20_storz/pattern_4x4_26x19_5_4_with_inset_14x9.png')
 
     minimum_number_of_points_per_image = 50
-    detector = pd.CharucoPlusChessboardPointDetector(ref_img,
-                                                     error_if_no_chessboard=False) # Try to accept as many as possible.
+    detector = pd.CharucoPlusChessboardPointDetector(dictionary=cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_250),
+                                                     use_chessboard_inset=True,
+                                                     error_if_no_chessboard=False,
+                                                     legacy_pattern=True)
+
+    ids, obj_pts, img_pts = detector.get_points(ref_img)
+    annotated_image = vcu.get_annotated_image(ref_img, ids, img_pts, colour=(0, 255, 0))
+    cv2.imwrite('tests/output/test_stereo_davinci_annotated_reference_image.png', annotated_image)
+
     calibrator = sc.StereoVideoCalibrationDriver(detector, detector, minimum_number_of_points_per_image)
     for i, _ in enumerate(left_images):
         try:
@@ -50,21 +58,30 @@ def test_stereo_davinci():
             print("Image pair:" + str(i) + ", FAILED, due to:" + str(te))
 
     reproj_err, recon_err, params = calibrator.calibrate()
+
+    # Now try to dump out annotated images for debugging
+    calibrator.video_data.save_annotated_images('tests/output/test_stereo_davinci', '')
+
     print("Reproj:" + str(reproj_err))
     print("Recon:" + str(recon_err))
-    assert reproj_err < 1.1
-    assert recon_err < 6.4
+    assert reproj_err < 1.3
+    assert recon_err < 7.4
 
     # Now try iterative.
     reference_image = ch.make_charuco_with_chessboard()
     reference_ids, object_pts, reference_pts = detector.get_points(reference_image)
+    annotated_image = vcu.get_annotated_image(reference_image, reference_ids, reference_pts, colour=(0, 255, 0))
+    cv2.imwrite('tests/output/test_stereo_davinci_annotated_reference_image_iterative.png', annotated_image)
+
+    # Force this a bit lower to avoid dropping frames.
+    calibrator.minimum_points_per_frame = 5
     reproj_err, recon_err, params = calibrator.iterative_calibration(2,
                                                                      reference_ids,
                                                                      reference_pts,
                                                                      (reference_image.shape[1], reference_image.shape[0]))
     print("Reproj:" + str(reproj_err))
     print("Recon:" + str(recon_err))
-    assert reproj_err < 0.9
-    assert recon_err < 2.78
+    assert reproj_err < 1.0
+    assert recon_err < 3.0
     calibrator.save_params('tests/output/ChAruco_LR_frames_Steve_Axis_Tests/params', '')
     calibrator.save_data('tests/output/ChAruco_LR_frames_Steve_Axis_Tests/data', '')

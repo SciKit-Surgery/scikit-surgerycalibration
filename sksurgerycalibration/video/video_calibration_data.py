@@ -8,6 +8,7 @@ import os
 import cv2
 import numpy as np
 
+import sksurgerycalibration.video.video_calibration_utils as vu
 import sksurgerycalibration.video.video_calibration_io as sksio
 
 
@@ -290,28 +291,18 @@ class MonoVideoData(BaseVideoCalibrationData):
         if not os.path.isdir(dir_name):
             os.makedirs(dir_name)
 
-        font = cv2.FONT_HERSHEY_SIMPLEX
+        for index, _ in enumerate(self.images_array):
 
-        for i in enumerate(self.images_array):
-
-            image_copy = copy.deepcopy(self.images_array[i])
-            points = self.image_points_arrays[i]
-            ids = self.ids_arrays[i]
-
-            for counter in range(ids.shape[0]):
-
-                cv2.putText(image_copy,
-                            str(ids[counter]),
-                            (int(points[counter][0][0]),
-                             int(points[counter][0][1])),
-                            font, 0.5, (0, 255, 0), 2, cv2.LINE_AA)
-
+            image = self.images_array[index]
+            points = self.image_points_arrays[index]
+            ids = self.ids_arrays[index]
+            annotated_image = vu.get_annotated_image(image, ids, points, colour=(0, 255, 0))
             annotated_image_file_name = \
                 sksio.get_annotated_images_file_name(dir_name,
                                                      file_prefix,
-                                                     i)
+                                                     index)
 
-            cv2.imwrite(annotated_image_file_name, image_copy)
+            cv2.imwrite(annotated_image_file_name, annotated_image)
 
 
 class StereoVideoData(BaseVideoCalibrationData):
@@ -338,6 +329,7 @@ class StereoVideoData(BaseVideoCalibrationData):
         self.left_data.pop()
         self.right_data.pop()
 
+    # pylint: disable=too-many-positional-arguments
     def push(self,
              left_image, left_ids, left_object_points, left_image_points,
              right_image, right_ids, right_object_points, right_image_points):

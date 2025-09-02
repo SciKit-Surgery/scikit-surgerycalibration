@@ -3,11 +3,11 @@
 """ Functions for Triangulation using Harley method """
 
 import cv2
-# import time
 import numpy as np
 import sksurgerycore.transforms.matrix as stm
 
 
+# pylint:disable=too-many-positional-arguments
 def _triangulate_point_using_svd(p1_array,
                                  p2_array,
                                  u1_array,

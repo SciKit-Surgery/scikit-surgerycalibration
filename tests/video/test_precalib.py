@@ -10,23 +10,19 @@ import tests.video.test_load_calib_utils as lcu
 
 def get_calib_driver(calib_dir: str):
     """ Create left/right charuco point detectors and load calibration images from directory. """
-    reference_image = cv2.imread("tests/data/2020_01_20_storz/pattern_4x4_19x26_5_4_with_inset_9x14.png")
     minimum_points = 50
-
     number_of_squares = [19, 26]
     square_tag_sizes = [5, 4]
-    filter_markers = True
     number_of_chessboard_squares = [9, 14]
     chessboard_square_size = 3
     chessboard_id_offset = 500
 
     left_pd = \
         charuco_pd.CharucoPlusChessboardPointDetector(
-            reference_image,
+            dictionary=cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_250),
             minimum_number_of_points=minimum_points,
             number_of_charuco_squares=number_of_squares,
             size_of_charuco_squares=square_tag_sizes,
-            charuco_filtering=filter_markers,
             number_of_chessboard_squares=number_of_chessboard_squares,
             chessboard_square_size=chessboard_square_size,
             chessboard_id_offset=chessboard_id_offset
@@ -34,11 +30,10 @@ def get_calib_driver(calib_dir: str):
 
     right_pd = \
         charuco_pd.CharucoPlusChessboardPointDetector(
-            reference_image,
+            dictionary=cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_250),
             minimum_number_of_points=minimum_points,
             number_of_charuco_squares=number_of_squares,
             size_of_charuco_squares=square_tag_sizes,
-            charuco_filtering=filter_markers,
             number_of_chessboard_squares=number_of_chessboard_squares,
             chessboard_square_size=chessboard_square_size,
             chessboard_id_offset=chessboard_id_offset
@@ -55,10 +50,6 @@ def get_calib_driver(calib_dir: str):
     return calibration_driver
 
 
-# Two datasets, A and B.
-# Independently calibrating them gives Stereo reprojection error < 1
-# But if we pass the intrinsics from A as precalibration for B, then
-# error is ~4, so potentially something fishy going on.
 def test_charuco_dataset_A():
 
     calib_dir = 'tests/data/precalib/precalib_base_data'
@@ -68,13 +59,13 @@ def test_charuco_dataset_A():
         calib_driver.calibrate()
 
     tracked_reproj_err, tracked_recon_err, _ = \
-        calib_driver.handeye_calibration()
+        calib_driver.handeye_calibration(use_opencv=False)
 
     print(stereo_reproj_err, stereo_recon_err, tracked_reproj_err, tracked_recon_err)
-    assert stereo_reproj_err < 1
-    assert stereo_recon_err < 4
-    assert tracked_reproj_err < 3
-    assert tracked_recon_err < 4
+    assert stereo_reproj_err < 0.5
+    assert stereo_recon_err < 1.5
+    assert tracked_reproj_err < 0.5
+    assert tracked_recon_err < 1.5
 
 
 def test_charuco_dataset_B():
@@ -86,13 +77,13 @@ def test_charuco_dataset_B():
         calib_driver.calibrate()
 
     tracked_reproj_err, tracked_recon_err, _ = \
-        calib_driver.handeye_calibration()
+        calib_driver.handeye_calibration(use_opencv=False)
 
     print(stereo_reproj_err, stereo_recon_err, tracked_reproj_err, tracked_recon_err)
-    assert stereo_reproj_err < 1
-    assert stereo_recon_err < 3
-    assert tracked_reproj_err < 4
-    assert tracked_recon_err < 3
+    assert stereo_reproj_err < 0.5
+    assert stereo_recon_err < 2.0
+    assert tracked_reproj_err < 0.5
+    assert tracked_recon_err < 1.0
 
 
 def test_precalbration():
@@ -118,10 +109,10 @@ def test_precalbration():
             override_l2r_tvec=l2r_tvec)
 
     tracked_reproj_err, tracked_recon_err, _ = \
-        calib_driver.handeye_calibration()
+        calib_driver.handeye_calibration(use_opencv=False)
 
     print(stereo_reproj_err, stereo_recon_err, tracked_reproj_err, tracked_recon_err)
     assert stereo_reproj_err < 4.5
-    assert stereo_recon_err < 4.5
-    assert tracked_reproj_err < 5.4
-    assert tracked_recon_err < 6.4
+    assert stereo_recon_err < 5.0
+    assert tracked_reproj_err < 4.5
+    assert tracked_recon_err < 6.5

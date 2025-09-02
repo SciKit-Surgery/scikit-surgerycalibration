@@ -52,18 +52,15 @@ def test_handeye_calibration_mono():
     obj_tracking = load_tracking_from_glob(
         'tests/data/2020_01_20_storz/12_50_30/calib.calib_obj_tracking.*.txt')
 
-    ref_img = cv2.imread(
-        'tests/data/2020_01_20_storz/pattern_4x4_19x26_5_4_with_inset_9x14.png')
-
     assert len(images) == 10
-
     assert len(device_tracking) == 10
     assert len(obj_tracking) == 10
 
     min_number_of_points_per_image = 50
     detector = \
-        chpd.CharucoPlusChessboardPointDetector(ref_img,
-                                                error_if_no_chessboard=False)
+        chpd.CharucoPlusChessboardPointDetector(dictionary=cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_250),
+                                                error_if_no_chessboard=False,
+                                                legacy_pattern=True)
 
     calibrator = \
         mcd.MonoVideoCalibrationDriver(detector, min_number_of_points_per_image)
@@ -105,9 +102,6 @@ def test_handeye_calibration_stereo():
     obj_tracking = load_tracking_from_glob(
         'tests/data/2020_01_20_storz/12_50_30/calib.calib_obj_tracking.*.txt')
 
-    ref_img = cv2.imread(
-        'tests/data/2020_01_20_storz/pattern_4x4_19x26_5_4_with_inset_9x14.png')
-
     assert len(left_images) == 10
     assert len(right_images) == 10
     assert len(device_tracking) == 10
@@ -115,8 +109,7 @@ def test_handeye_calibration_stereo():
 
     min_number_of_points_per_image = 50
     detector = \
-        chpd.CharucoPlusChessboardPointDetector(ref_img,
-                                                charuco_filtering=True,
+        chpd.CharucoPlusChessboardPointDetector(dictionary=cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_250),
                                                 error_if_no_chessboard=False)
 
     calibrator = \
@@ -137,8 +130,8 @@ def test_handeye_calibration_stereo():
 
     reproj_err_1, recon_err_1, _ = calibrator.calibrate()
 
-    assert reproj_err_1 == pytest.approx(0.6, rel=0.2)
-    assert recon_err_1 == pytest.approx(1., rel=0.2)
+    assert reproj_err_1 == pytest.approx(0.8, rel=0.2)
+    assert recon_err_1 == pytest.approx(1.3, rel=0.2)
 
     proj_err, recon_err, _ = \
         calibrator.handeye_calibration(use_opencv=True, do_bundle_adjust=True)

@@ -2,7 +2,7 @@
 
 """ Cost functions for video calibration, used with scipy. """
 
-# pylint:disable=invalid-name
+# pylint:disable=invalid-name, too-many-positional-arguments
 
 import numpy as np
 

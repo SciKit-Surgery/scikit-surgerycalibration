@@ -2,7 +2,7 @@
 
 """ Video Calibration functions, that wrap OpenCV functions mainly. """
 
-# pylint:disable=too-many-lines
+# pylint:disable=too-many-lines, too-many-positional-arguments
 
 import copy
 import logging
@@ -377,6 +377,11 @@ def stereo_video_calibration(left_ids,
     # We only do override if all override params are specified.
     # pylint:disable=too-many-boolean-expressions
     do_override = False
+    l_c = None
+    l_d = None
+    r_c = None
+    r_d = None
+
     if override_left_intrinsics is not None \
         and override_left_distortion is not None \
         and override_right_intrinsics is not None \
@@ -440,6 +445,9 @@ def stereo_video_calibration(left_ids,
                                              left_image_points,
                                              right_ids,
                                              right_image_points, 10)
+
+    # This needs resetting, as the common points may be fewer.
+    number_of_frames = len(common_object_points)
 
     if do_override:
 
