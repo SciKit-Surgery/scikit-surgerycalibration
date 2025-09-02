@@ -10,9 +10,7 @@ import tests.video.test_load_calib_utils as lcu
 
 def get_calib_driver(calib_dir: str):
     """ Create left/right charuco point detectors and load calibration images from directory. """
-    reference_image = cv2.imread("tests/data/2020_01_20_storz/pattern_4x4_19x26_5_4_with_inset_9x14.png")
     minimum_points = 50
-
     number_of_squares = [19, 26]
     square_tag_sizes = [5, 4]
     number_of_chessboard_squares = [9, 14]
@@ -21,7 +19,7 @@ def get_calib_driver(calib_dir: str):
 
     left_pd = \
         charuco_pd.CharucoPlusChessboardPointDetector(
-            reference_image,
+            dictionary=cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_250),
             minimum_number_of_points=minimum_points,
             number_of_charuco_squares=number_of_squares,
             size_of_charuco_squares=square_tag_sizes,
@@ -32,7 +30,7 @@ def get_calib_driver(calib_dir: str):
 
     right_pd = \
         charuco_pd.CharucoPlusChessboardPointDetector(
-            reference_image,
+            dictionary=cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_250),
             minimum_number_of_points=minimum_points,
             number_of_charuco_squares=number_of_squares,
             size_of_charuco_squares=square_tag_sizes,

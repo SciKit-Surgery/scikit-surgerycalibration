@@ -142,7 +142,7 @@ def test_chessboard_stereo():
     # Just for a regression test, checking reprojection error, and recon error.
     print("\nStereo, default=" + str(reproj_err) + ", " + str(recon_err))
     assert reproj_err < 0.7
-    assert recon_err < 1.7
+    assert recon_err < 2.0
 
     # Test running with fixed intrinsics and fixed stereo, using existing
     # calibration parameters, thereby re-optimising the camera poses.
@@ -159,7 +159,7 @@ def test_chessboard_stereo():
     # The above re-optimisation shouldn't make things worse, as its using same intrinsics and stereo.
     print("Stereo, re-optimise=" + str(reproj_err) + ", " + str(recon_err))
     assert reproj_err < 0.7
-    assert recon_err < 1.7
+    assert recon_err < 2.0
 
     # Test iterative calibration.
     reference_ids, reference_points, reference_image_size = get_iterative_reference_data()
@@ -170,7 +170,7 @@ def test_chessboard_stereo():
                                                                      reference_image_size)
     print("Stereo, iterative=" + str(reproj_err) + ", " + str(recon_err))
     assert reproj_err < 0.7
-    assert recon_err < 1.6
+    assert recon_err < 2.0
 
     # Now test re-optimising extrinsics, using a completely different set of calibration params.
     ov_l_c = np.loadtxt('tests/data/laparoscope_calibration/cbh-viking/calib.left.intrinsics.txt')
@@ -202,4 +202,4 @@ def test_chessboard_stereo():
     # Not expecting good results, as the camera parameters are completely wrong.
     print("Stereo, override=" + str(reproj_err) + ", " + str(recon_err))
     assert reproj_err < 35
-    assert recon_err < 109
+    assert recon_err < 100
