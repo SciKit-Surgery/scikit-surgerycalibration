@@ -6,7 +6,7 @@
 
 import collections
 import logging
-
+import copy
 import cv2
 import numpy as np
 import sksurgerycore.transforms.matrix as skcm
@@ -101,7 +101,8 @@ def filter_common_points_per_image(left_ids,
     ids = np.sort(ids)
 
     if len(ids) < minimum_points:
-        raise ValueError("Not enough common points in left and right images.")
+        raise ValueError(f"Number of points common to left and "
+                         f"right images ({len(ids)}), is lower than the required minimum {minimum_points}.")
 
     common_ids = \
         np.zeros((len(ids), 1), dtype=np.int32)
@@ -129,7 +130,7 @@ def filter_common_points_per_image(left_ids,
     number_of_right = len(common_right_image_points)
 
     if number_of_left != number_of_right:
-        raise ValueError("Unequal number of common points in left and right.")
+        raise ValueError("Unequal number of common points in left {number_of_left} and right {number_of_right} images.")
 
     return common_ids, common_object_points, common_left_image_points, \
         common_right_image_points
@@ -154,19 +155,22 @@ def filter_common_points_all_images(left_ids,
 
     # pylint:disable=consider-using-enumerate
     for counter in range(len(left_ids)):
-        c_i, c_o, c_l, c_r = \
-            filter_common_points_per_image(left_ids[counter],
-                                           left_object_points[counter],
-                                           left_image_points[counter],
-                                           right_ids[counter],
-                                           right_image_points[counter],
-                                           minimum_points
-                                           )
-        common_ids.append(c_i)
-        common_object_points.append(c_o)
-        common_left_image_points.append(c_l)
-        common_right_image_points.append(c_r)
-
+        try:
+            c_i, c_o, c_l, c_r = \
+                filter_common_points_per_image(left_ids[counter],
+                                               left_object_points[counter],
+                                               left_image_points[counter],
+                                               right_ids[counter],
+                                               right_image_points[counter],
+                                               minimum_points
+                                               )
+            common_ids.append(c_i)
+            common_object_points.append(c_o)
+            common_left_image_points.append(c_l)
+            common_right_image_points.append(c_r)
+        except ValueError as ve:
+            msg = f"filter_common_points_all_images: skipping image {counter}/{len(left_ids)} due to: {str(ve)}"
+            LOGGER.warning(msg)
     return common_ids, common_object_points, common_left_image_points, \
         common_right_image_points
 
@@ -525,3 +529,28 @@ def detect_points_in_stereo_canonical_space(left_point_detector,
             else:
                 LOGGER.debug("Skipping frame " + str(j)
                              + ", as not enough points.")
+
+
+def get_annotated_image(image: np.ndarray,
+                        ids: np.ndarray,
+                        points: np.ndarray,
+                        colour: tuple):
+    """
+    Annotates an image, with each point's id, at the point location.
+    """
+    image_copy = copy.deepcopy(image)
+    squeezed_ids = np.squeeze(ids)
+    squeezed_points = np.squeeze(points)
+    for counter in range(ids.shape[0]):
+        point_id = squeezed_ids[counter]
+        px, py = squeezed_points[counter]
+        location = (int(px), int(py))
+        cv2.putText(image_copy, str(point_id), location,
+                    fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                    fontScale=0.5,
+                    color=colour,
+                    thickness=1,
+                    lineType=cv2.LINE_AA)
+
+    return image_copy
+

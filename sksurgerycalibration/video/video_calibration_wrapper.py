@@ -441,6 +441,9 @@ def stereo_video_calibration(left_ids,
                                              right_ids,
                                              right_image_points, 10)
 
+    # This needs resetting, as the common points may be fewer.
+    number_of_frames = len(common_object_points)
+
     if do_override:
 
         # Do OpenCV stereo calibration, using override intrinsics,
