@@ -15,7 +15,6 @@ def get_calib_driver(calib_dir: str):
 
     number_of_squares = [19, 26]
     square_tag_sizes = [5, 4]
-    filter_markers = True
     number_of_chessboard_squares = [9, 14]
     chessboard_square_size = 3
     chessboard_id_offset = 500
@@ -26,7 +25,6 @@ def get_calib_driver(calib_dir: str):
             minimum_number_of_points=minimum_points,
             number_of_charuco_squares=number_of_squares,
             size_of_charuco_squares=square_tag_sizes,
-            charuco_filtering=filter_markers,
             number_of_chessboard_squares=number_of_chessboard_squares,
             chessboard_square_size=chessboard_square_size,
             chessboard_id_offset=chessboard_id_offset
@@ -38,7 +36,6 @@ def get_calib_driver(calib_dir: str):
             minimum_number_of_points=minimum_points,
             number_of_charuco_squares=number_of_squares,
             size_of_charuco_squares=square_tag_sizes,
-            charuco_filtering=filter_markers,
             number_of_chessboard_squares=number_of_chessboard_squares,
             chessboard_square_size=chessboard_square_size,
             chessboard_id_offset=chessboard_id_offset

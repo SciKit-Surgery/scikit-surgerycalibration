@@ -63,7 +63,8 @@ def test_handeye_calibration_mono():
     min_number_of_points_per_image = 50
     detector = \
         chpd.CharucoPlusChessboardPointDetector(ref_img,
-                                                error_if_no_chessboard=False)
+                                                error_if_no_chessboard=False,
+                                                legacy_pattern=True)
 
     calibrator = \
         mcd.MonoVideoCalibrationDriver(detector, min_number_of_points_per_image)
@@ -116,7 +117,6 @@ def test_handeye_calibration_stereo():
     min_number_of_points_per_image = 50
     detector = \
         chpd.CharucoPlusChessboardPointDetector(ref_img,
-                                                charuco_filtering=True,
                                                 error_if_no_chessboard=False)
 
     calibrator = \
