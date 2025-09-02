@@ -43,7 +43,6 @@ def test_stereo_davinci():
     ids, obj_pts, img_pts = detector.get_points(ref_img)
     annotated_image = vcu.get_annotated_image(ref_img, ids, img_pts, colour=(0, 255, 0))
     cv2.imwrite('tests/output/test_stereo_davinci_annotated_reference_image.png', annotated_image)
-    np.savetxt('tests/output/test_stereo_davinci_annotated_reference_image_pts.txt', obj_pts, fmt='%1.3f', delimiter=',')
 
     calibrator = sc.StereoVideoCalibrationDriver(detector, detector, minimum_number_of_points_per_image)
     for i, _ in enumerate(left_images):
