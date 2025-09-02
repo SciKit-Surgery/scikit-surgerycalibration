@@ -291,7 +291,7 @@ class MonoVideoData(BaseVideoCalibrationData):
         if not os.path.isdir(dir_name):
             os.makedirs(dir_name)
 
-        for index, item in enumerate(self.images_array):
+        for index, _ in enumerate(self.images_array):
 
             image = self.images_array[index]
             points = self.image_points_arrays[index]
@@ -329,6 +329,7 @@ class StereoVideoData(BaseVideoCalibrationData):
         self.left_data.pop()
         self.right_data.pop()
 
+    # pylint: disable=too-many-positional-arguments
     def push(self,
              left_image, left_ids, left_object_points, left_image_points,
              right_image, right_ids, right_object_points, right_image_points):

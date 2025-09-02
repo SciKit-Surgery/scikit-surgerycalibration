@@ -2,7 +2,7 @@
 
 """ Various utilities, converters etc., to help video calibration. """
 
-# pylint:disable=invalid-name,logging-not-lazy
+# pylint:disable=invalid-name,logging-not-lazy, too-many-positional-arguments
 
 import collections
 import logging
@@ -553,4 +553,3 @@ def get_annotated_image(image: np.ndarray,
                     lineType=cv2.LINE_AA)
 
     return image_copy
-

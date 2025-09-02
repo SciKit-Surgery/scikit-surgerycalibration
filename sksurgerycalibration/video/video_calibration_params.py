@@ -189,7 +189,7 @@ class StereoCalibrationParams(BaseCalibrationParams):
         self.essential = np.eye(3)
         self.fundamental = np.eye(3)
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments, too-many-positional-arguments
     def set_data(self,
                  left_cam_matrix, left_dist_coeffs, left_rvecs, left_tvecs,
                  right_cam_matrix, right_dist_coeffs, right_rvecs, right_tvecs,

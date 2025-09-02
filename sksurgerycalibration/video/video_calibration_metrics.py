@@ -5,7 +5,7 @@ Video calibration metrics, used in cost functions for optimisation,
 and as measures of error generally.
 """
 
-# pylint: disable=too-many-arguments
+# pylint: disable=too-many-arguments, too-many-positional-arguments
 
 import logging
 from typing import List

@@ -105,6 +105,7 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         LOGGER.info("Mono calibration: rms_proj_err=%s.", str(rms_proj_err))
         return rms_proj_err, copy.deepcopy(self.calibration_params)
 
+    # pylint: disable=too-many-positional-arguments
     def iterative_calibration(self,
                               number_of_iterations: int,
                               reference_ids,

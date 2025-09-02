@@ -116,6 +116,7 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
 
         return number_left, number_right
 
+    # pylint:disable=too-many-positional-arguments
     def calibrate(self,
                   flags=cv2.CALIB_USE_INTRINSIC_GUESS,
                   override_left_intrinsics=None,
@@ -173,7 +174,7 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                     str(s_reproj), str(s_recon))
         return s_reproj, s_recon, copy.deepcopy(self.calibration_params)
 
-    # pylint:disable=too-many-arguments
+    # pylint:disable=too-many-arguments, too-many-positional-arguments
     def iterative_calibration(self,
                               number_of_iterations: int,
                               reference_ids,
