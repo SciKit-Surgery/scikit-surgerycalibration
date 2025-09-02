@@ -57,7 +57,7 @@ setup(
         'scipy',
         'opencv-contrib-python-headless>=4.10.0.84',
         'scikit-surgerycore',
-        'scikit-surgeryimage>=0.11.0',
+        'scikit-surgeryimage>=1.0.0',
     ],
 
     entry_points={
