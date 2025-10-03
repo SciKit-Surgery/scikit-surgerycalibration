@@ -225,9 +225,17 @@ def guofang_xiao_handeye_calibration(rvecs: List[np.ndarray],
     as well as the transformation from the pattern to the tracking markers
     on the calibration object.
 
+    This solves rotation and then translation in two steps, using least-squares
+    optimisation. It uses quaternions to represent rotations.
+
     This method, developed for the SmartLiver project, assumes both
-    device (laparoscope), and the calibration object are tracked. We also, keep
-    the device (laparoscope) stationary while moving the calibration object.
+    device (laparoscope), and the calibration object are tracked. While
+    both calibration object and laparoscope are tracked,
+    so you could move things freely, we also developed a calibration
+    rig. So, in general, the laparoscope is stationary on the rig and the calibration
+    object is moved. This is mostly to reduce image blur and jitter
+    caused by hand movements. See Dowrick  et al., 2023,
+    https://doi.org/10.1002/mp.16310.
 
     :param rvecs: Array of rotation vectors, from OpenCV, camera extrinsics
     (pattern to camera transform)
@@ -280,6 +288,16 @@ def calibrate_hand_eye_using_stationary_pattern(
     Hand-eye calibration using standard OpenCV methods. This method assumes
     a single set of tracking data, so it is useful for a stationary, untracked
     calibration pattern, and a tracked video device, e.g. laparoscope.
+
+    Please do read Ali et al., 2019, https://doi.org/10.3390/s19122837.
+
+    OpenCV implements Tsai, Horaud and Park methods, which compute
+    rotation then translation, as well as Andref and Daniilidis methods.
+    See cv.calibrateHandEye and enum cv::HandEyeCalibrationMethod.
+    Internally this method calls cv.calibrateHandEye.
+
+    On average, in Ali's evaluation, Horaud might be a good default,
+    but I've left it with Tsai's as the most well known (perhaps?).
 
     :param camera_rvecs: list of rvecs that we get from OpenCV camera
     extrinsics, pattern_to_camera.
@@ -336,28 +354,30 @@ def calibrate_hand_eye_using_stationary_pattern(
     return h2e
 
 
+# pylint:disable=too-many-positional-arguments
 def calibrate_hand_eye_using_tracked_pattern(
         camera_rvecs: List[np.ndarray],
         camera_tvecs: List[np.ndarray],
         device_tracking_matrices: List[np.ndarray],
         pattern_tracking_matrices: List[np.ndarray],
-        method=cv2.CALIB_HAND_EYE_TSAI
+        method=cv2.CALIB_HAND_EYE_TSAI,
+        invert_camera=False
         ):
     """
-    Hand-eye calibration using standard OpenCV methods. This method assumes
-    two sets of tracking data, so it is useful for a tracked device
-    (e.g. laparoscope) and a tracked calibration object (e.g. chessboard).
+    See comments for calibrate_hand_eye_using_stationary_pattern.
 
-    :param camera_rvecs: list of rvecs that we get from OpenCV camera
-    extrinsics, pattern_to_camera.
-    :param camera_tvecs: list of tvecs that we get from OpenCV camera
-    extrinsics, pattern_to_camera.
-    :param device_tracking_matrices: list of tracking matrices for the
-    tracked device, marker_to_tracker.
-    :param pattern_tracking_matrices: list of tracking matrices for the
-    tracked calibration object, marker_to_tracker.
-    :param method: Choice of OpenCV Hand-Eye method.
-    :return hand-eye transform as 4x4 matrix.
+    Here, we also have pattern_tracking_matrices. So, device_tracking_matrices
+    and pattern_tracking_matrices are combined to give marker-to-hand
+    transformation, and then calibrate_hand_eye_using_stationary_pattern called.
+
+    You will notice, this method is NOT calculating pattern_to_marker. (i.e.
+    the transformation between a calibration pattern, and the tracking marker
+    attached to it). So, essentially, this method is simply treating the
+    calibration pattern as the reference for the tracker space.
+    This means you can hold the calibration pattern, and laparoscope,
+    and move both of them around independently, but the maths is solved
+    by assuming the calibration pattern is stationary, and the laparoscope
+    is moving around the calibration pattern.
     """
     if len(device_tracking_matrices) != len(pattern_tracking_matrices):
         raise ValueError("The number of device tracking matrices must "
@@ -382,7 +402,8 @@ def calibrate_hand_eye_using_tracked_pattern(
     h2e = calibrate_hand_eye_using_stationary_pattern(camera_rvecs,
                                                       camera_tvecs,
                                                       tracking_matrices,
-                                                      method)
+                                                      method,
+                                                      invert_camera)
     return h2e
 
 
@@ -392,18 +413,17 @@ def calibrate_pattern_to_tracking_marker(camera_rvecs: List[np.ndarray],
                                          method=cv2.CALIB_HAND_EYE_TSAI
                                          ):
     """
-    In some calibration problems, people use a pattern (e.g. chessboard)
-    that is tracked. If you manufacture this well, you should know the
-    pattern_2_marker transform by DESIGN. However, if you assume a STATIONARY
-    video camera, and a moving pattern, this method allows you to use standard
-    hand-eye techniques to estimate the pattern_2_marker transform from
-    at least 2 motions (3 views) around different axes of rotation.
+    This is really a convenience method that is analagous to
+    calibrate_hand_eye_using_stationary_pattern. i.e. you have a stationary
+    camera but a moving calibration pattern.
+
+    So, here, you are JUST calculating pattern_to_marker transformation.
 
     :param camera_rvecs: list of rvecs that we get from OpenCV camera
     extrinsics, pattern_to_camera.
     :param camera_tvecs: list of tvecs that we get from OpenCV camera
     extrinsics, pattern_to_camera.
-    :param tracking_matrices: list of tracking matrices for the tracked
+    :param tracking_matrices: list of pattern tracking matrices for the tracked
     calibration pattern, marker_to_tracker.
     :param method: Choice of OpenCV Hand-Eye method.
     :return pattern_to_marker
@@ -429,7 +449,11 @@ def calibrate_hand_eye_and_pattern_to_marker(
     """
     Hand-eye calibration using standard OpenCV methods. This method assumes
     you are tracking both the device that needs hand-eye calibration, and
-    the calibration pattern.
+    the calibration pattern, and internally calls cv.calibrateRobotWorldHandEye.
+
+    Again, please do read Ali et al., 2019, https://doi.org/10.3390/s19122837.
+
+    OpenCV already implements Shah and Li's methods. See cv.calibrateRobotWorldHandEye.
 
     :param camera_rvecs: list of rvecs that we get from OpenCV camera
     extrinsics, pattern_to_camera.
@@ -504,9 +528,9 @@ def calibrate_hand_eye_and_grid_to_world(
         method=cv2.CALIB_ROBOT_WORLD_HAND_EYE_SHAH
         ):
     """
-    Hand-eye calibration using standard OpenCV methods. This method assumes
-    you have a stationary untracked calibration pattern, and a tracked
-    device (e.g. laparoscope)
+    Similar to calibrate_hand_eye_and_pattern_to_marker, except
+    here, the calibration pattern is untracked, and assumed to be
+    stationary.
 
     :param camera_rvecs: list of rvecs that we get from OpenCV camera
     extrinsics, pattern_to_camera.

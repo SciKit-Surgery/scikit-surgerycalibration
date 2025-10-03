@@ -22,9 +22,16 @@ def stereo_2d_error_for_extrinsics(x_0,
                                    l2r_tvec
                                    ):
     """
+    Used with scipy.least_squares for Levenberg-Marquardt optimisation for example.
+
+    Cost function to be used when you are only optimising
+    the left camera extrinsic parameters over multiple views,
+    and leaving intrinsics, distortion, and left-to-right constant.
+    So x_0 should be of length 6 * number_of_frames, corresponding
+    to 3 rvec (OpenCV Rodrigues rotation vector) and 3 tvec parameters per frame.
+
     Computes a vector of residuals between projected image points
-    and actual image points, for left and right image. x_0 should
-    contain left camera extrinsic parameters.
+    and actual image points, for left and right image.
     """
     rvecs = []
     tvecs = []
@@ -58,252 +65,6 @@ def stereo_2d_error_for_extrinsics(x_0,
     return residual
 
 
-def mono_proj_err_h2e(x_0,
-                      object_points,
-                      image_points,
-                      intrinsics,
-                      distortion,
-                      pattern_tracking,
-                      device_tracking,
-                      pattern2marker_matrix
-                      ):
-    """
-    Computes the SSE of projected
-    image points and actual image points, for a single camera,
-    where we have a tracked calibration pattern, and assume the
-    pattern2marker transform should remain fixed. Therefore we
-    only optimise hand-eye. So, x_0 should be of length 6.
-    """
-    assert len(x_0) == 6
-
-    rvec = np.zeros((3, 1))
-    rvec[0][0] = x_0[0]
-    rvec[1][0] = x_0[1]
-    rvec[2][0] = x_0[2]
-
-    tvec = np.zeros((3, 1))
-    tvec[0][0] = x_0[3]
-    tvec[1][0] = x_0[4]
-    tvec[2][0] = x_0[5]
-
-    h2e = vu.extrinsic_vecs_to_matrix(rvec, tvec)
-
-    number_of_frames = len(object_points)
-    rvecs = []
-    tvecs = []
-
-    # Computes pattern2camera for each pose
-    for i in range(0, number_of_frames):
-
-        p2c = h2e @ np.linalg.inv(device_tracking[i]) @ \
-              pattern_tracking[i] @ pattern2marker_matrix
-
-        rvec, tvec = vu.extrinsic_matrix_to_vecs(p2c)
-
-        rvecs.append(rvec)
-        tvecs.append(tvec)
-
-    proj, _ = vm.compute_mono_2d_err(object_points,
-                                     image_points,
-                                     rvecs,
-                                     tvecs,
-                                     intrinsics,
-                                     distortion,
-                                     return_residuals=False)
-    return proj
-
-
-def mono_proj_err_p2m_h2e(x_0,
-                          object_points,
-                          image_points,
-                          intrinsics,
-                          distortion,
-                          pattern_tracking,
-                          device_tracking
-                          ):
-    """
-    Computes the SSE between projected
-    image points to actual image points, for a single camera,
-    where we have a tracked pattern. Both the
-    pattern2marker and hand2eye are optimised.
-    So, x_0 should be of length 12.
-    """
-    assert len(x_0) == 12
-
-    rvec = np.zeros((3, 1))
-    rvec[0][0] = x_0[0]
-    rvec[1][0] = x_0[1]
-    rvec[2][0] = x_0[2]
-
-    tvec = np.zeros((3, 1))
-    tvec[0][0] = x_0[3]
-    tvec[1][0] = x_0[4]
-    tvec[2][0] = x_0[5]
-
-    p2m = vu.extrinsic_vecs_to_matrix(rvec, tvec)
-
-    rvec[0][0] = x_0[6]
-    rvec[1][0] = x_0[7]
-    rvec[2][0] = x_0[8]
-
-    tvec[0][0] = x_0[9]
-    tvec[1][0] = x_0[10]
-    tvec[2][0] = x_0[11]
-
-    h2e = vu.extrinsic_vecs_to_matrix(rvec, tvec)
-
-    number_of_frames = len(object_points)
-    rvecs = []
-    tvecs = []
-
-    # Computes pattern2camera for each pose
-    for i in range(0, number_of_frames):
-
-        p2c = h2e @ np.linalg.inv(device_tracking[i])\
-              @ pattern_tracking[i] @ p2m
-
-        rvec, tvec = vu.extrinsic_matrix_to_vecs(p2c)
-
-        rvecs.append(rvec)
-        tvecs.append(tvec)
-
-    proj, _ = vm.compute_mono_2d_err(object_points,
-                                     image_points,
-                                     rvecs,
-                                     tvecs,
-                                     intrinsics,
-                                     distortion,
-                                     return_residuals=False)
-    return proj
-
-
-def mono_proj_err_h2e_g2w(x_0,
-                          object_points,
-                          image_points,
-                          intrinsics,
-                          distortion,
-                          device_tracking
-                          ):
-    """
-    Method to the SSE of projected
-    image points to actual image points, for a single camera,
-    where we have an untracked pattern. Both the
-    hand2eye and grid2world are optimised.
-    So, x_0 should be of length 12.
-    """
-    assert len(x_0) == 12
-
-    rvec = np.zeros((3, 1))
-    rvec[0][0] = x_0[0]
-    rvec[1][0] = x_0[1]
-    rvec[2][0] = x_0[2]
-
-    tvec = np.zeros((3, 1))
-    tvec[0][0] = x_0[3]
-    tvec[1][0] = x_0[4]
-    tvec[2][0] = x_0[5]
-
-    h2e = vu.extrinsic_vecs_to_matrix(rvec, tvec)
-
-    rvec[0][0] = x_0[6]
-    rvec[1][0] = x_0[7]
-    rvec[2][0] = x_0[8]
-
-    tvec[0][0] = x_0[9]
-    tvec[1][0] = x_0[10]
-    tvec[2][0] = x_0[11]
-
-    g2w = vu.extrinsic_vecs_to_matrix(rvec, tvec)
-
-    number_of_frames = len(object_points)
-    rvecs = []
-    tvecs = []
-
-    # Computes pattern2camera for each pose
-    for i in range(0, number_of_frames):
-
-        p2c = h2e @ np.linalg.inv(device_tracking[i]) @ g2w
-
-        rvec, tvec = vu.extrinsic_matrix_to_vecs(p2c)
-
-        rvecs.append(rvec)
-        tvecs.append(tvec)
-
-    proj, _ = vm.compute_mono_2d_err(object_points,
-                                     image_points,
-                                     rvecs,
-                                     tvecs,
-                                     intrinsics,
-                                     distortion,
-                                     return_residuals=False)
-    return proj
-
-
-def mono_proj_err_h2e_int_dist(x_0,
-                               object_points,
-                               image_points,
-                               device_tracking,
-                               pattern_tracking,
-                               pattern2marker_matrix
-                               ):
-    """
-    Computes the SSE between projected
-    image points to actual image points, for a single camera,
-    where we have a tracked pattern. The handeye, intrinsics and
-    distortion parameters are optimised.
-    So, x_0 should be of length 6+4+5 = 15.
-    """
-    assert len(x_0) == 15
-
-    rvec = np.zeros((3, 1))
-    rvec[0][0] = x_0[0]
-    rvec[1][0] = x_0[1]
-    rvec[2][0] = x_0[2]
-
-    tvec = np.zeros((3, 1))
-    tvec[0][0] = x_0[3]
-    tvec[1][0] = x_0[4]
-    tvec[2][0] = x_0[5]
-
-    h2e = vu.extrinsic_vecs_to_matrix(rvec, tvec)
-
-    intrinsics = np.zeros((3, 3))
-    intrinsics[0][0] = x_0[6]
-    intrinsics[1][1] = x_0[7]
-    intrinsics[0][2] = x_0[8]
-    intrinsics[1][2] = x_0[9]
-
-    distortion = np.zeros((1, 5))
-    distortion[0][0] = x_0[10]
-    distortion[0][1] = x_0[11]
-    distortion[0][2] = x_0[12]
-    distortion[0][3] = x_0[13]
-    distortion[0][4] = x_0[14]
-
-    number_of_frames = len(object_points)
-    rvecs = []
-    tvecs = []
-
-    # Computes pattern2camera for each pose
-    for i in range(0, number_of_frames):
-
-        p2c = h2e @ np.linalg.inv(device_tracking[i]) @ \
-              pattern_tracking[i] @ pattern2marker_matrix
-
-        rvec, tvec = vu.extrinsic_matrix_to_vecs(p2c)
-
-        rvecs.append(rvec)
-        tvecs.append(tvec)
-
-    proj, _ = vm.compute_mono_2d_err(object_points,
-                                     image_points,
-                                     rvecs,
-                                     tvecs,
-                                     intrinsics,
-                                     distortion)
-    return proj
-
-
 # pylint:disable=too-many-arguments
 def stereo_proj_err_h2e(x_0,
                         common_object_points,
@@ -320,11 +81,16 @@ def stereo_proj_err_h2e(x_0,
                         left_pattern2marker_matrix=None
                         ):
     """
-    Computes the SSE of projected image points
-    and actual image points for left and right cameras. x_0 should contain
-    the 6DOF of hand-to-eye, and if left_pattern2marker_matrix is None,
-    then an additional 6DOF of pattern-to-marker. So, x_0 can be either
-    length 6 or length 12.
+    Used with scipy.minimize for Powell or Nelder-Mead optimisation for example.
+
+    Cost function to be used when you are optimising the hand-eye matrix.
+    If left_pattern2marker_matrix is None, you are also optimising that.
+
+    So, x_0 should be of length 6 or 12. If x_0 is length 6, it corresponds to
+    3 rvec and 3 tvec parameters for hand-to-eye. If x_0 is length 12, then the
+    first 6 are hand-to-eye, and the second 6 are pattern-to-marker.
+
+    Computes the SSE of projected image points and actual image points for left and right cameras.
 
     :param x_0:
     :param common_object_points:
@@ -412,8 +178,17 @@ def stereo_proj_err_h2e_int_dist_l2r(x_0,
                                      left_pattern2marker_matrix
                                      ):
     """
-    Computes the SSE of projected image points against actual
-    image points. x_0 should be 30 DOF.
+    Similar to stereo_proj_err_h2e, except we are also
+    optimising intrinsic and distortion parameters for both cameras,
+    and the left-to-right extrinsic parameters.
+
+    So x_0 contains hand-eye rvec, hand-eye tvec, l2r rvec, l2r tvec,
+    left intrinsics (fx, fy, cx,cy), left distortion (k1, k2, p1, p2, k3),
+    right intrinsics (fx, fy, cx,cy), right distortion (k1, k2, p1, p2, k3).
+    So x_0 should be of length 30.
+
+    However, note that: https://doi.org/10.3390/s19122837
+    suggests this is a bad idea in general, as you will overfit.
     """
     h2e_rvec = np.zeros((3, 1))
     h2e_rvec[0][0] = x_0[0]
@@ -494,4 +269,260 @@ def stereo_proj_err_h2e_int_dist_l2r(x_0,
                                        rvecs,
                                        tvecs
                                        )
+    return proj
+
+
+def mono_proj_err_h2e(x_0,
+                      object_points,
+                      image_points,
+                      intrinsics,
+                      distortion,
+                      pattern_tracking,
+                      device_tracking,
+                      pattern2marker_matrix
+                      ):
+    """
+    Used with scipy.minimize for Powell or Nelder-Mead optimisation for example.
+
+    Cost function to be used when you are only optimising the hand-eye matrix.
+    So, x_0 should be of length 6, corresponding to 3 rvec and 3 tvec parameters.
+
+    Computes the SSE of projected image points and actual image points. Computes
+    the pattern-to-camera matrix for each frame, using pattern-to-marker,
+    marker-to-world (calibration pattern tracking), the inverse of the
+    device-to-world (device tracking, e.g. laparoscope), and hand-to-eye.
+    """
+    assert len(x_0) == 6
+
+    rvec = np.zeros((3, 1))
+    rvec[0][0] = x_0[0]
+    rvec[1][0] = x_0[1]
+    rvec[2][0] = x_0[2]
+
+    tvec = np.zeros((3, 1))
+    tvec[0][0] = x_0[3]
+    tvec[1][0] = x_0[4]
+    tvec[2][0] = x_0[5]
+
+    h2e = vu.extrinsic_vecs_to_matrix(rvec, tvec)
+
+    number_of_frames = len(object_points)
+    rvecs = []
+    tvecs = []
+
+    # Computes pattern2camera for each pose
+    for i in range(0, number_of_frames):
+
+        p2c = h2e @ np.linalg.inv(device_tracking[i]) @ \
+              pattern_tracking[i] @ pattern2marker_matrix
+
+        rvec, tvec = vu.extrinsic_matrix_to_vecs(p2c)
+
+        rvecs.append(rvec)
+        tvecs.append(tvec)
+
+    proj, _ = vm.compute_mono_2d_err(object_points,
+                                     image_points,
+                                     rvecs,
+                                     tvecs,
+                                     intrinsics,
+                                     distortion,
+                                     return_residuals=False)
+    return proj
+
+
+def mono_proj_err_p2m_h2e(x_0,
+                          object_points,
+                          image_points,
+                          intrinsics,
+                          distortion,
+                          pattern_tracking,
+                          device_tracking
+                          ):
+    """
+    Similar to mono_proj_err_h2e, except x_0 should be
+    of length 12, corresponding to pattern2marker and hand2eye.
+
+    So 3 pattern2marker rvec, 3 pattern2marker tvec,
+    3 hand2eye rvec, 3 hand2eye tvec.
+    """
+    assert len(x_0) == 12
+
+    rvec = np.zeros((3, 1))
+    rvec[0][0] = x_0[0]
+    rvec[1][0] = x_0[1]
+    rvec[2][0] = x_0[2]
+
+    tvec = np.zeros((3, 1))
+    tvec[0][0] = x_0[3]
+    tvec[1][0] = x_0[4]
+    tvec[2][0] = x_0[5]
+
+    p2m = vu.extrinsic_vecs_to_matrix(rvec, tvec)
+
+    rvec[0][0] = x_0[6]
+    rvec[1][0] = x_0[7]
+    rvec[2][0] = x_0[8]
+
+    tvec[0][0] = x_0[9]
+    tvec[1][0] = x_0[10]
+    tvec[2][0] = x_0[11]
+
+    h2e = vu.extrinsic_vecs_to_matrix(rvec, tvec)
+
+    number_of_frames = len(object_points)
+    rvecs = []
+    tvecs = []
+
+    # Computes pattern2camera for each pose
+    for i in range(0, number_of_frames):
+
+        p2c = h2e @ np.linalg.inv(device_tracking[i])\
+              @ pattern_tracking[i] @ p2m
+
+        rvec, tvec = vu.extrinsic_matrix_to_vecs(p2c)
+
+        rvecs.append(rvec)
+        tvecs.append(tvec)
+
+    proj, _ = vm.compute_mono_2d_err(object_points,
+                                     image_points,
+                                     rvecs,
+                                     tvecs,
+                                     intrinsics,
+                                     distortion,
+                                     return_residuals=False)
+    return proj
+
+
+def mono_proj_err_h2e_g2w(x_0,
+                          object_points,
+                          image_points,
+                          intrinsics,
+                          distortion,
+                          device_tracking
+                          ):
+    """
+    Similar to mono_proj_err_p2m_h2e, except, as is the case
+    in robot-world-hand-eye calibration, we assume we have
+    a stationary untracked pattern, and we are estimating
+    both the hand2eye and grid2world (i.e. pattern2world).
+
+    So, x_0 should be of length 12, corresponding to
+    3 hand2eye rvec, 3 hand2eye tvec,
+    3 grid2world rvec, 3 grid2world tvec.
+    """
+    assert len(x_0) == 12
+
+    rvec = np.zeros((3, 1))
+    rvec[0][0] = x_0[0]
+    rvec[1][0] = x_0[1]
+    rvec[2][0] = x_0[2]
+
+    tvec = np.zeros((3, 1))
+    tvec[0][0] = x_0[3]
+    tvec[1][0] = x_0[4]
+    tvec[2][0] = x_0[5]
+
+    h2e = vu.extrinsic_vecs_to_matrix(rvec, tvec)
+
+    rvec[0][0] = x_0[6]
+    rvec[1][0] = x_0[7]
+    rvec[2][0] = x_0[8]
+
+    tvec[0][0] = x_0[9]
+    tvec[1][0] = x_0[10]
+    tvec[2][0] = x_0[11]
+
+    g2w = vu.extrinsic_vecs_to_matrix(rvec, tvec)
+
+    number_of_frames = len(object_points)
+    rvecs = []
+    tvecs = []
+
+    # Computes pattern2camera for each pose
+    for i in range(0, number_of_frames):
+
+        p2c = h2e @ np.linalg.inv(device_tracking[i]) @ g2w
+
+        rvec, tvec = vu.extrinsic_matrix_to_vecs(p2c)
+
+        rvecs.append(rvec)
+        tvecs.append(tvec)
+
+    proj, _ = vm.compute_mono_2d_err(object_points,
+                                     image_points,
+                                     rvecs,
+                                     tvecs,
+                                     intrinsics,
+                                     distortion,
+                                     return_residuals=False)
+    return proj
+
+
+def mono_proj_err_h2e_int_dist(x_0,
+                               object_points,
+                               image_points,
+                               device_tracking,
+                               pattern_tracking,
+                               pattern2marker_matrix
+                               ):
+    """
+    Similar to mono_proj_err_h2e, except we are also optimising
+    intrinsic and distortion parameters. So, x_0 contains
+    rvec and tvec for hand2eye (6 DOF), then 4 intrinsics
+    (fx, fy, cx, cy), then 5 distortion parameters
+    (k1, k2, p1, p2, k3).
+
+    However, note that: https://doi.org/10.3390/s19122837
+    suggests this is a bad idea in general, as you will overfit.
+    """
+    assert len(x_0) == 15
+
+    rvec = np.zeros((3, 1))
+    rvec[0][0] = x_0[0]
+    rvec[1][0] = x_0[1]
+    rvec[2][0] = x_0[2]
+
+    tvec = np.zeros((3, 1))
+    tvec[0][0] = x_0[3]
+    tvec[1][0] = x_0[4]
+    tvec[2][0] = x_0[5]
+
+    h2e = vu.extrinsic_vecs_to_matrix(rvec, tvec)
+
+    intrinsics = np.zeros((3, 3))
+    intrinsics[0][0] = x_0[6]
+    intrinsics[1][1] = x_0[7]
+    intrinsics[0][2] = x_0[8]
+    intrinsics[1][2] = x_0[9]
+
+    distortion = np.zeros((1, 5))
+    distortion[0][0] = x_0[10]
+    distortion[0][1] = x_0[11]
+    distortion[0][2] = x_0[12]
+    distortion[0][3] = x_0[13]
+    distortion[0][4] = x_0[14]
+
+    number_of_frames = len(object_points)
+    rvecs = []
+    tvecs = []
+
+    # Computes pattern2camera for each pose
+    for i in range(0, number_of_frames):
+
+        p2c = h2e @ np.linalg.inv(device_tracking[i]) @ \
+              pattern_tracking[i] @ pattern2marker_matrix
+
+        rvec, tvec = vu.extrinsic_matrix_to_vecs(p2c)
+
+        rvecs.append(rvec)
+        tvecs.append(tvec)
+
+    proj, _ = vm.compute_mono_2d_err(object_points,
+                                     image_points,
+                                     rvecs,
+                                     tvecs,
+                                     intrinsics,
+                                     distortion)
     return proj

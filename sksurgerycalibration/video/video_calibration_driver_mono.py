@@ -146,8 +146,7 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
 
     def handeye_calibration(self,
                             override_pattern2marker=None,
-                            use_opencv: bool = True,
-                            do_bundle_adjust: bool = False):
+                            use_opencv: bool = True):
         """
         Do handeye calibration, returning RMS re-projection error.
 
@@ -161,7 +160,6 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         that is taken as constant.
         :param use_opencv: If True we use OpenCV based methods, if false,
         Guofang Xiao's method.
-        :param do_bundle_adjust: If True we do an additional bundle adjustment
         at the end.
 
         :return: RMS reprojection error
@@ -179,8 +177,7 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                 self.calibration_params.rvecs,
                 self.calibration_params.tvecs,
                 override_pattern2marker=override_pattern2marker,
-                use_opencv=use_opencv,
-                do_bundle_adjust=do_bundle_adjust
+                use_opencv=use_opencv
             )
 
         self.calibration_params.set_handeye(handeye, pattern2marker)
