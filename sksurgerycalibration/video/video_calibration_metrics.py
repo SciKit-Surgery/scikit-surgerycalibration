@@ -102,6 +102,76 @@ def compute_stereo_2d_err(l2r_rmat,
     return lse + rse, number_of_samples
 
 
+def compute_stereo_2d_err_handeye(common_object_points: List,
+                                  left_image_points: List,
+                                  left_camera_matrix: np.ndarray,
+                                  left_distortion: np.ndarray,
+                                  right_image_points: List,
+                                  right_camera_matrix: np.ndarray,
+                                  right_distortion: np.ndarray,
+                                  hand_tracking_array: List,
+                                  model_tracking_array: List,
+                                  left_handeye_matrix: np.ndarray,
+                                  left_pattern2marker_matrix: np.ndarray,
+                                  right_handeye_matrix: np.ndarray,
+                                  right_pattern2marker_matrix: np.ndarray):
+    """
+    Function to compute stereo reprojection error (SSE), taking into account
+    handeye calibration.
+
+    :param common_object_points: Vector of Vector of 1x3 float32
+    :type common_object_points: List
+    :param left_image_points: Vector of Vector of 1x2 float32
+    :type left_image_points: List
+    :param left_camera_matrix: Left camera matrix
+    :type left_camera_matrix: np.ndarray
+    :param left_distortion: Left camera distortion coefficients
+    :type left_distortion: np.ndarray
+    :param right_image_points: Vector of Vector of 1x2 float32
+    :type right_image_points: List
+    :param right_camera_matrix: Right camera matrix
+    :type right_camera_matrix: np.ndarray
+    :param right_distortion: Right camera distortion coefficients
+    :type right_distortion: np.ndarray
+    :param hand_tracking_array:
+    Vector of 4x4 tracking matrices for camera (hand)
+    :type hand_tracking_array: List
+    :param model_tracking_array:
+    Vector of 4x4 tracking matrices for calibration model
+    :type model_tracking_array: List
+    :param left_handeye_matrix: Left handeye transform matrix
+    :type left_handeye_matrix: np.ndarray
+    :param left_pattern2marker_matrix: Left pattern to marker transform matrix
+    :type left_pattern2marker_matrix: np.ndarray
+    :param right_handeye_matrix: Right handeye transform matrix
+    :type right_handeye_matrix: np.ndarray
+    :param right_pattern2marker_matrix: Right pattern to marker transform matrix
+    :type right_pattern2marker_matrix: np.ndarray
+    :return: SSE reprojection error, number of samples
+    :rtype: float, float
+    """
+
+    lse, l_samples = compute_mono_2d_err_handeye(common_object_points,
+                                                 left_image_points,
+                                                 left_camera_matrix,
+                                                 left_distortion,
+                                                 hand_tracking_array,
+                                                 model_tracking_array,
+                                                 left_handeye_matrix,
+                                                 left_pattern2marker_matrix)
+
+    rse, r_samples = compute_mono_2d_err_handeye(common_object_points,
+                                                 right_image_points,
+                                                 right_camera_matrix,
+                                                 right_distortion,
+                                                 hand_tracking_array,
+                                                 model_tracking_array,
+                                                 right_handeye_matrix,
+                                                 right_pattern2marker_matrix)
+
+    return lse + rse, l_samples + r_samples
+
+
 def compute_stereo_3d_error(l2r_rmat,
                             l2r_tvec,
                             common_object_points,
@@ -194,6 +264,90 @@ def compute_stereo_3d_error(l2r_rmat,
     return sse, number_of_samples
 
 
+def compute_stereo_3d_err_handeye(l2r_rmat: np.ndarray,
+                                  l2r_tvec: np.ndarray,
+                                  common_object_points: List,
+                                  common_left_image_points: List,
+                                  left_camera_matrix: np.ndarray,
+                                  left_distortion: np.ndarray,
+                                  common_right_image_points: List,
+                                  right_camera_matrix: np.ndarray,
+                                  right_distortion: np.ndarray,
+                                  hand_tracking_array: List,
+                                  model_tracking_array: List,
+                                  left_handeye_matrix: np.ndarray,
+                                  left_pattern2marker_matrix: np.ndarray):
+
+    """
+    Function to compute stereo reconstruction error (SSE), taking into account
+    handeye calibration.
+
+    :param l2r_rmat: Rotation for l2r transform
+    :type l2r_rmat: np.ndarray
+    :param l2r_tvec: Translation for l2r transform
+    :type l2r_tvec: np.ndarray
+    :param common_object_points: Vector of Vector of 1x3 float32
+    :type common_object_points: List
+    :param common_left_image_points: Vector of Vector of 1x2 float32
+    :type common_left_image_points: List
+    :param left_camera_matrix: Left camera matrix
+    :type left_camera_matrix: np.ndarray
+    :param left_distortion: Left camera distortion coefficients
+    :type left_distortion: np.ndarray
+    :param common_right_image_points: Vector of Vector of 1x2 float32
+    :type common_right_image_points: List
+    :param right_camera_matrix: Right camera matrix
+    :type right_camera_matrix: np.ndarray
+    :param right_distortion: Right camera distortion coefficients
+    :type right_distortion: np.ndarray
+    :param hand_tracking_array:
+    Vector of 4x4 tracking matrices for camera (hand)
+    :type hand_tracking_array: List
+    :param model_tracking_array:
+    Vector of 4x4 tracking matrices for calibration model
+    :type model_tracking_array: List
+    :param left_handeye_matrix: Left handeye transform matrix
+    :type left_handeye_matrix: np.ndarray
+    :param left_pattern2marker_matrix: Left pattern to marker transform matrix
+    :type left_pattern2marker_matrix: np.ndarray
+    :return: SSE reconstruction error, number of samples
+    :rtype: float, float
+    """
+
+    number_of_frames = len(common_object_points)
+    left_rvecs = []
+    left_tvecs = []
+
+    # Construct rvec/tvec array taking into account handeye calibration.
+    # Then the rest of the calculation can use 'normal' compute_stereo_3d_err()
+    for i in range(number_of_frames):
+
+        pattern_to_left_camera = \
+            left_handeye_matrix @ np.linalg.inv(hand_tracking_array[i]) @ \
+            model_tracking_array[i] @ left_pattern2marker_matrix
+
+        rvec, tvec = vu.extrinsic_matrix_to_vecs(pattern_to_left_camera)
+        left_rvecs.append(rvec)
+        left_tvecs.append(tvec)
+
+    sse, number_of_samples = compute_stereo_3d_error(l2r_rmat,
+                                                     l2r_tvec,
+                                                     common_object_points,
+                                                     common_left_image_points,
+                                                     left_camera_matrix,
+                                                     left_distortion,
+                                                     common_right_image_points,
+                                                     right_camera_matrix,
+                                                     right_distortion,
+                                                     left_rvecs,
+                                                     left_tvecs)
+
+    LOGGER.debug("Stereo Handeye RMS reconstruction: sse=%s, num=%s",
+                 str(sse), str(number_of_samples))
+
+    return sse, number_of_samples
+
+
 def compute_mono_2d_err(object_points,
                         image_points,
                         rvecs,
@@ -241,6 +395,71 @@ def compute_mono_2d_err(object_points,
 
     if return_residuals:
         return np.hstack(residuals)
+
+    return sse, number_of_samples
+
+
+def compute_mono_2d_err_handeye(model_points: List,
+                                image_points: List,
+                                camera_matrix: np.ndarray,
+                                camera_distortion: np.ndarray,
+                                hand_tracking_array: List,
+                                model_tracking_array: List,
+                                handeye_matrix: np.ndarray,
+                                pattern2marker_matrix: np.ndarray):
+    """
+    Function to compute mono reprojection error (SSE), mapping
+    from the calibration pattern coordinate system to the
+    camera coordinate system, via tracking matrices and
+    hand-eye calibration.
+
+    :param model_points: Vector of Vector of 1x3 float32
+    :type model_points: List
+    :param image_points: Vector of Vector of 1x2 float32
+    :type image_points: List
+    :param camera_matrix: Camera intrinsic matrix
+    :type camera_matrix: np.ndarray
+    :param camera_distortion: Camera distortion coefficients
+    :type camera_distortion: np.ndarray
+    :param hand_tracking_array:
+    Vector of 4x4 tracking matrices for camera (hand)
+    :type hand_tracking_array: List
+    :param model_tracking_array:
+    Vector of 4x4 tracking matrices for calibration model
+    :type model_tracking_array: List
+    :param handeye_matrix: Handeye matrix
+    :type handeye_matrix: np.ndarray
+    :param pattern2marker_matrix: Pattern to marker matrix
+    :type pattern2marker_matrix: np.ndarray
+    :return: SSE reprojection error, number of samples
+    :rtype: float, float
+    """
+
+    number_of_frames = len(model_points)
+
+    rvecs = []
+    tvecs = []
+
+    # Construct rvec/tvec array taking into account handeye calibration.
+    # Then the rest of the calculation can use 'normal' compute_mono_2d_err()
+    for i in range(number_of_frames):
+        pattern_to_camera = \
+            handeye_matrix @ np.linalg.inv(hand_tracking_array[i]) @ \
+            model_tracking_array[i] @ pattern2marker_matrix
+
+        rvec, tvec = vu.extrinsic_matrix_to_vecs(pattern_to_camera)
+        rvecs.append(rvec)
+        tvecs.append(tvec)
+
+    sse, number_of_samples = compute_mono_2d_err(model_points,
+                                                 image_points,
+                                                 rvecs,
+                                                 tvecs,
+                                                 camera_matrix,
+                                                 camera_distortion)
+
+    LOGGER.debug("Mono Handeye RMS Reprojection: sse=%s, num=%s",
+                 str(sse), str(number_of_samples))
 
     return sse, number_of_samples
 
@@ -327,71 +546,6 @@ def compute_mono_3d_err(ids,
     return sse, number_of_samples
 
 
-def compute_mono_2d_err_handeye(model_points: List,
-                                image_points: List,
-                                camera_matrix: np.ndarray,
-                                camera_distortion: np.ndarray,
-                                hand_tracking_array: List,
-                                model_tracking_array: List,
-                                handeye_matrix: np.ndarray,
-                                pattern2marker_matrix: np.ndarray):
-    """
-    Function to compute mono reprojection error (SSE), mapping
-    from the calibration pattern coordinate system to the
-    camera coordinate system, via tracking matrices and
-    hand-eye calibration.
-
-    :param model_points: Vector of Vector of 1x3 float32
-    :type model_points: List
-    :param image_points: Vector of Vector of 1x2 float32
-    :type image_points: List
-    :param camera_matrix: Camera intrinsic matrix
-    :type camera_matrix: np.ndarray
-    :param camera_distortion: Camera distortion coefficients
-    :type camera_distortion: np.ndarray
-    :param hand_tracking_array:
-    Vector of 4x4 tracking matrices for camera (hand)
-    :type hand_tracking_array: List
-    :param model_tracking_array:
-    Vector of 4x4 tracking matrices for calibration model
-    :type model_tracking_array: List
-    :param handeye_matrix: Handeye matrix
-    :type handeye_matrix: np.ndarray
-    :param pattern2marker_matrix: Pattern to marker matrix
-    :type pattern2marker_matrix: np.ndarray
-    :return: SSE reprojection error, number of samples
-    :rtype: float, float
-    """
-
-    number_of_frames = len(model_points)
-
-    rvecs = []
-    tvecs = []
-
-    # Construct rvec/tvec array taking into account handeye calibration.
-    # Then the rest of the calculation can use 'normal' compute_mono_2d_err()
-    for i in range(number_of_frames):
-        pattern_to_camera = \
-            handeye_matrix @ np.linalg.inv(hand_tracking_array[i]) @ \
-            model_tracking_array[i] @ pattern2marker_matrix
-
-        rvec, tvec = vu.extrinsic_matrix_to_vecs(pattern_to_camera)
-        rvecs.append(rvec)
-        tvecs.append(tvec)
-
-    sse, number_of_samples = compute_mono_2d_err(model_points,
-                                                 image_points,
-                                                 rvecs,
-                                                 tvecs,
-                                                 camera_matrix,
-                                                 camera_distortion)
-
-    LOGGER.debug("Mono Handeye RMS Reprojection: sse=%s, num=%s",
-                 str(sse), str(number_of_samples))
-
-    return sse, number_of_samples
-
-
 def compute_mono_3d_err_handeye(ids: List,
                                 model_points: List,
                                 image_points: List,
@@ -453,159 +607,5 @@ def compute_mono_3d_err_handeye(ids: List,
                                                  tvecs,
                                                  camera_matrix,
                                                  camera_distortion)
-
-    return sse, number_of_samples
-
-
-def compute_stereo_2d_err_handeye(common_object_points: List,
-                                  left_image_points: List,
-                                  left_camera_matrix: np.ndarray,
-                                  left_distortion: np.ndarray,
-                                  right_image_points: List,
-                                  right_camera_matrix: np.ndarray,
-                                  right_distortion: np.ndarray,
-                                  hand_tracking_array: List,
-                                  model_tracking_array: List,
-                                  left_handeye_matrix: np.ndarray,
-                                  left_pattern2marker_matrix: np.ndarray,
-                                  right_handeye_matrix: np.ndarray,
-                                  right_pattern2marker_matrix: np.ndarray):
-    """
-    Function to compute stereo reprojection error (SSE), taking into account
-    handeye calibration.
-
-    :param common_object_points: Vector of Vector of 1x3 float32
-    :type common_object_points: List
-    :param left_image_points: Vector of Vector of 1x2 float32
-    :type left_image_points: List
-    :param left_camera_matrix: Left camera matrix
-    :type left_camera_matrix: np.ndarray
-    :param left_distortion: Left camera distortion coefficients
-    :type left_distortion: np.ndarray
-    :param right_image_points: Vector of Vector of 1x2 float32
-    :type right_image_points: List
-    :param right_camera_matrix: Right camera matrix
-    :type right_camera_matrix: np.ndarray
-    :param right_distortion: Right camera distortion coefficients
-    :type right_distortion: np.ndarray
-    :param hand_tracking_array:
-    Vector of 4x4 tracking matrices for camera (hand)
-    :type hand_tracking_array: List
-    :param model_tracking_array:
-    Vector of 4x4 tracking matrices for calibration model
-    :type model_tracking_array: List
-    :param left_handeye_matrix: Left handeye transform matrix
-    :type left_handeye_matrix: np.ndarray
-    :param left_pattern2marker_matrix: Left pattern to marker transform matrix
-    :type left_pattern2marker_matrix: np.ndarray
-    :param right_handeye_matrix: Right handeye transform matrix
-    :type right_handeye_matrix: np.ndarray
-    :param right_pattern2marker_matrix: Right pattern to marker transform matrix
-    :type right_pattern2marker_matrix: np.ndarray
-    :return: SSE reprojection error, number of samples
-    :rtype: float, float
-    """
-
-    lse, l_samples = compute_mono_2d_err_handeye(common_object_points,
-                                                 left_image_points,
-                                                 left_camera_matrix,
-                                                 left_distortion,
-                                                 hand_tracking_array,
-                                                 model_tracking_array,
-                                                 left_handeye_matrix,
-                                                 left_pattern2marker_matrix)
-
-    rse, r_samples = compute_mono_2d_err_handeye(common_object_points,
-                                                 right_image_points,
-                                                 right_camera_matrix,
-                                                 right_distortion,
-                                                 hand_tracking_array,
-                                                 model_tracking_array,
-                                                 right_handeye_matrix,
-                                                 right_pattern2marker_matrix)
-
-    return lse + rse, l_samples + r_samples
-
-
-def compute_stereo_3d_err_handeye(l2r_rmat: np.ndarray,
-                                  l2r_tvec: np.ndarray,
-                                  common_object_points: List,
-                                  common_left_image_points: List,
-                                  left_camera_matrix: np.ndarray,
-                                  left_distortion: np.ndarray,
-                                  common_right_image_points: List,
-                                  right_camera_matrix: np.ndarray,
-                                  right_distortion: np.ndarray,
-                                  hand_tracking_array: List,
-                                  model_tracking_array: List,
-                                  left_handeye_matrix: np.ndarray,
-                                  left_pattern2marker_matrix: np.ndarray):
-
-    """
-    Function to compute stereo reconstruction error (SSE), taking into account
-    handeye calibration.
-
-    :param l2r_rmat: Rotation for l2r transform
-    :type l2r_rmat: np.ndarray
-    :param l2r_tvec: Translation for l2r transform
-    :type l2r_tvec: np.ndarray
-    :param common_object_points: Vector of Vector of 1x3 float32
-    :type common_object_points: List
-    :param common_left_image_points: Vector of Vector of 1x2 float32
-    :type common_left_image_points: List
-    :param left_camera_matrix: Left camera matrix
-    :type left_camera_matrix: np.ndarray
-    :param left_distortion: Left camera distortion coefficients
-    :type left_distortion: np.ndarray
-    :param common_right_image_points: Vector of Vector of 1x2 float32
-    :type common_right_image_points: List
-    :param right_camera_matrix: Right camera matrix
-    :type right_camera_matrix: np.ndarray
-    :param right_distortion: Right camera distortion coefficients
-    :type right_distortion: np.ndarray
-    :param hand_tracking_array:
-    Vector of 4x4 tracking matrices for camera (hand)
-    :type hand_tracking_array: List
-    :param model_tracking_array:
-    Vector of 4x4 tracking matrices for calibration model
-    :type model_tracking_array: List
-    :param left_handeye_matrix: Left handeye transform matrix
-    :type left_handeye_matrix: np.ndarray
-    :param left_pattern2marker_matrix: Left pattern to marker transform matrix
-    :type left_pattern2marker_matrix: np.ndarray
-    :return: SSE reconstruction error, number of samples
-    :rtype: float, float
-    """
-
-    number_of_frames = len(common_object_points)
-    left_rvecs = []
-    left_tvecs = []
-
-    # Construct rvec/tvec array taking into account handeye calibration.
-    # Then the rest of the calculation can use 'normal' compute_stereo_3d_err()
-    for i in range(number_of_frames):
-
-        pattern_to_left_camera = \
-            left_handeye_matrix @ np.linalg.inv(hand_tracking_array[i]) @ \
-            model_tracking_array[i] @ left_pattern2marker_matrix
-
-        rvec, tvec = vu.extrinsic_matrix_to_vecs(pattern_to_left_camera)
-        left_rvecs.append(rvec)
-        left_tvecs.append(tvec)
-
-    sse, number_of_samples = compute_stereo_3d_error(l2r_rmat,
-                                                     l2r_tvec,
-                                                     common_object_points,
-                                                     common_left_image_points,
-                                                     left_camera_matrix,
-                                                     left_distortion,
-                                                     common_right_image_points,
-                                                     right_camera_matrix,
-                                                     right_distortion,
-                                                     left_rvecs,
-                                                     left_tvecs)
-
-    LOGGER.debug("Stereo Handeye RMS reconstruction: sse=%s, num=%s",
-                 str(sse), str(number_of_samples))
 
     return sse, number_of_samples
