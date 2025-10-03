@@ -105,7 +105,6 @@ def get_pattern_to_marker():
 def get_projection_errs_and_params(dir_name,
                                    pattern2marker,
                                    use_open_cv,
-                                   do_bundle_adjust,
                                    save_data=False
                                    ):
     """
@@ -121,8 +120,7 @@ def get_projection_errs_and_params(dir_name,
 
     tracked_reproj_err, tracked_recon_err, params_2 = \
         calib_driver.handeye_calibration(override_pattern2marker=pattern2marker,
-                                         use_opencv=use_open_cv,
-                                         do_bundle_adjust=do_bundle_adjust
+                                         use_opencv=use_open_cv
                                          )
 
     print("After handeye calibration, tracked_reproj_err=" + str(tracked_reproj_err) + ", tracked_recon_err=" + str(tracked_recon_err))
@@ -175,7 +173,7 @@ def get_fixed_pattern_dirs():
     return dirs
 
 
-def get_calibrations(dirs, pattern2marker, use_opencv, use_bundle_adjust, save_data=False):
+def get_calibrations(dirs, pattern2marker, use_opencv, save_data=False):
     """
     Calibration driver.
     """
@@ -183,7 +181,7 @@ def get_calibrations(dirs, pattern2marker, use_opencv, use_bundle_adjust, save_d
     counter = 0
     for dir_name in dirs:
         _, _, tracked_reproj_err, tracked_recon_err, params_2 = \
-            get_projection_errs_and_params(dir_name, pattern2marker, use_opencv, use_bundle_adjust, save_data)
+            get_projection_errs_and_params(dir_name, pattern2marker, use_opencv, save_data)
         rvec = np.zeros((3,1))
         cv2.Rodrigues(params_2.left_params.handeye_matrix[0:3, 0:3], rvec)
         results[counter][0] = tracked_reproj_err
@@ -209,22 +207,17 @@ def test_gx_vs_cv():
     results_opencv = get_calibrations(dirs, None, True, False)
     results_opencv_m = np.mean(results_opencv, axis=0)
     results_opencv_s = np.std(results_opencv, axis=0)
-    results_opencv_bundle = get_calibrations(dirs, None, True, True)
-    results_opencv_bundle_m = np.mean(results_opencv_bundle, axis=0)
-    results_opencv_bundle_s = np.std(results_opencv_bundle, axis=0)
 
     print("Guofang's mean=\n" + str(results_gx_m))
     print("OpenCV's mean=\n" + str(results_opencv_m))
-    print("OpenCV's BA mean=\n" + str(results_opencv_bundle_m))
 
     print("Guofang's stddev=\n" + str(results_gx_s))
     print("OpenCV's stddev=\n" + str(results_opencv_s))
-    print("OpenCV's BA stddev=\n" + str(results_opencv_bundle_s))
 
     # 1. Just looking at data, not much obvious difference.
     # 2. Interestingly, looking at stddev of rotation and translation of
     #    hand-eye, most difference is translational.
-    # 3. Ultimately, chose OpenCV, with no bundle adjustment, as default, as then
+    # 3. Ultimately, chose OpenCV, as default, as then
     #    we can have more consistent implementation across different use-cases.
 
     # Just for regression testing:
@@ -232,12 +225,10 @@ def test_gx_vs_cv():
     # Projection error < 4, should be ok for a stereo laparoscope
     assert results_gx_m[0] < 4
     assert results_opencv_m[0] < 4
-    assert results_opencv_bundle_m[0] < 4
 
     # Reconstruction error < 1mm
     assert results_gx_m[1] < 1
     assert results_opencv_m[1] < 1
-    assert results_opencv_bundle_m[1] < 1
 
 
 def test_fixed_p2m():
@@ -311,7 +302,6 @@ def tests_for_smart_liver():
         ['tests/data/2022_02_28_fixed_position_calibs/calibration/14_58_31'],
         pattern2marker=None,
         use_opencv=False,
-        use_bundle_adjust=False,
         save_data=False)
 
     # This should save a new calibration in tests/output,
@@ -320,7 +310,6 @@ def tests_for_smart_liver():
         ['tests/data/2022_02_28_fixed_position_calibs/calibration/14_58_31'],
         pattern2marker=p2m,
         use_opencv=True,
-        use_bundle_adjust=False,
         save_data=True)
 
     print("SmartLiver, proj=" + str(results_sl[0][0]) + ", recon=" + str(results_sl[0][1]))

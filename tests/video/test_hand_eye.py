@@ -134,7 +134,7 @@ def test_handeye_calibration_stereo():
     assert recon_err_1 == pytest.approx(1.3, rel=0.2)
 
     proj_err, recon_err, _ = \
-        calibrator.handeye_calibration(use_opencv=True, do_bundle_adjust=True)
+        calibrator.handeye_calibration(use_opencv=True)
 
     print(f'Reproj err {proj_err}')
     print(f'Recon err {recon_err}')

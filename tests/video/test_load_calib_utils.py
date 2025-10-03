@@ -26,7 +26,7 @@ def get_calib_data(directory: str, idx: int) -> \
     if os.path.isfile(chessboad_tracking_file):
         chessboard_tracking = np.loadtxt(chessboad_tracking_file)
     else:
-        chessboard_tracking = None
+        chessboard_tracking = np.eye(4)
 
     scope_tracking = np.loadtxt(
         os.path.join(directory, f'calib.device_tracking.{idx}.txt')

@@ -354,6 +354,7 @@ def calibrate_hand_eye_using_stationary_pattern(
     return h2e
 
 
+# pylint:disable=too-many-positional-arguments
 def calibrate_hand_eye_using_tracked_pattern(
         camera_rvecs: List[np.ndarray],
         camera_tvecs: List[np.ndarray],
@@ -530,7 +531,7 @@ def calibrate_hand_eye_and_grid_to_world(
     Similar to calibrate_hand_eye_and_pattern_to_marker, except
     here, the calibration pattern is untracked, and assumed to be
     stationary.
-    
+
     :param camera_rvecs: list of rvecs that we get from OpenCV camera
     extrinsics, pattern_to_camera.
     :param camera_tvecs: list of tvecs that we get from OpenCV camera
