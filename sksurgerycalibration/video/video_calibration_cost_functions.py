@@ -22,9 +22,16 @@ def stereo_2d_error_for_extrinsics(x_0,
                                    l2r_tvec
                                    ):
     """
+    Used with scipy.least_squares for Levenberg-Marquardt optimisation for example.
+
+    Cost function to be used when you are only optimising
+    the left camera extrinsic parameters for multiple views,
+    and leaving intrinsics, distortion, and left-to-right constant.
+    So x_0 should be of length 6 * number_of_frames, corresponding
+    to 3 rvec (OpenCV Rodrigues rotation vector) and 3 tvec parameters per frame.
+
     Computes a vector of residuals between projected image points
-    and actual image points, for left and right image. x_0 should
-    contain left camera extrinsic parameters.
+    and actual image points, for left and right image.
     """
     rvecs = []
     tvecs = []
@@ -68,11 +75,15 @@ def mono_proj_err_h2e(x_0,
                       pattern2marker_matrix
                       ):
     """
-    Computes the SSE of projected
-    image points and actual image points, for a single camera,
-    where we have a tracked calibration pattern, and assume the
-    pattern2marker transform should remain fixed. Therefore we
-    only optimise hand-eye. So, x_0 should be of length 6.
+    Used with scipy.minimize for Powell or Nelder-Mead optimisation for example.
+
+    Cost function to be used when you are only optimising the hand-eye matrix.
+    So, x_0 should be of length 6, corresponding to 3 rvec and 3 tvec parameters.
+
+    Computes the SSE of projected image points and actual image points. Computes
+    the pattern-to-camera matrix for each frame, using pattern-to-marker,
+    marker-to-world (calibration pattern tracking), the inverse of the
+    device-to-world (device tracking, e.g. laparoscope), and hand-to-eye.
     """
     assert len(x_0) == 6
 
@@ -122,11 +133,11 @@ def mono_proj_err_p2m_h2e(x_0,
                           device_tracking
                           ):
     """
-    Computes the SSE between projected
-    image points to actual image points, for a single camera,
-    where we have a tracked pattern. Both the
-    pattern2marker and hand2eye are optimised.
-    So, x_0 should be of length 12.
+    Similar to mono_proj_err_h2e, except x_0 should be
+    of length 12, corresponding to pattern2marker and hand2eye.
+
+    So 3 pattern2marker rvec, 3 pattern2marker tvec,
+    3 hand2eye rvec, 3 hand2eye tvec.
     """
     assert len(x_0) == 12
 
@@ -185,11 +196,14 @@ def mono_proj_err_h2e_g2w(x_0,
                           device_tracking
                           ):
     """
-    Method to the SSE of projected
-    image points to actual image points, for a single camera,
-    where we have an untracked pattern. Both the
-    hand2eye and grid2world are optimised.
-    So, x_0 should be of length 12.
+    Similar to mono_proj_err_p2m_h2e, except, as is the case
+    in robot-world-hand-eye calibration, we assume we have
+    a stationary untracked pattern, and we are estimating
+    both the hand2eye and grid2world (i.e. pattern2world).
+
+    So, x_0 should be of length 12, corresponding to
+    3 hand2eye rvec, 3 hand2eye tvec,
+    3 grid2world rvec, 3 grid2world tvec.
     """
     assert len(x_0) == 12
 
