@@ -131,7 +131,7 @@ def compute_stereo_3d_error(l2r_rmat,
     :param left_tvecs: Vector of [3x1] ndarray, translations, left camera
     :param return_residuals: if True returns vector of residuals for LM,
     otherwise, returns SSE.
-    :return: SSE re-reprojection error, number_samples
+    :return: SSE re-reprojection error, number_samples, OR residuals
     """
     sse = 0
     residuals = []

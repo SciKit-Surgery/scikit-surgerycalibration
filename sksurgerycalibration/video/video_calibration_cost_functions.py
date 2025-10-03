@@ -261,11 +261,14 @@ def mono_proj_err_h2e_int_dist(x_0,
                                pattern2marker_matrix
                                ):
     """
-    Computes the SSE between projected
-    image points to actual image points, for a single camera,
-    where we have a tracked pattern. The handeye, intrinsics and
-    distortion parameters are optimised.
-    So, x_0 should be of length 6+4+5 = 15.
+    Similar to mono_proj_err_h2e, except we are also optimising
+    intrinsic and distortion parameters. So, x_0 contains
+    rvec and tvec for hand2eye (6 DOF), then 4 intrinsics
+    (fx, fy, cx, cy), then 5 distortion parameters
+    (k1, k2, p1, p2, k3).
+
+    However, note that: https://doi.org/10.3390/s19122837
+    says this is a bad idea in general, as you will overfit.
     """
     assert len(x_0) == 15
 
