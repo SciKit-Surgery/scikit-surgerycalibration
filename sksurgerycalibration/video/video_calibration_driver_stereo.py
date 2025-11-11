@@ -118,13 +118,12 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
 
     # pylint:disable=too-many-positional-arguments
     def calibrate(self,
-                  flags=cv2.CALIB_USE_INTRINSIC_GUESS,
-                  override_left_intrinsics=None,
-                  override_left_distortion=None,
-                  override_right_intrinsics=None,
-                  override_right_distortion=None,
-                  override_l2r_rmat=None,
-                  override_l2r_tvec=None
+                  left_intrinsics=None,
+                  left_distortion=None,
+                  right_intrinsics=None,
+                  right_distortion=None,
+                  mono_flags=0,
+                  stereo_flags=cv2.CALIB_USE_INTRINSIC_GUESS,
                   ):
         """
         Do the stereo video calibration, returning reprojection and
@@ -133,13 +132,12 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         This returns RMS projection error, which is a common metric, but also,
         the reconstruction / triangulation error.
 
-        :param flags: OpenCV flags, eg. cv2.CALIB_FIX_INTRINSIC
-        :param override_left_intrinsics:
-        :param override_left_distortion:
-        :param override_right_intrinsics:
-        :param override_right_distortion:
-        :param override_l2r_rmat:
-        :param override_l2r_tvec:
+        :param left_intrinsics:
+        :param left_distortion:
+        :param right_intrinsics:
+        :param right_distortion:
+        :param mono_flags: OpenCV flags to pass to calibrateCamera().
+        :param stereo_flags: OpenCV flags to pass to stereoCalibrate().
         :return: projection, reconstruction error.
         :rtype: float, float
         """
@@ -157,13 +155,12 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                 self.video_data.right_data.image_points_arrays,
                 (self.video_data.left_data.images_array[0].shape[1],
                  self.video_data.left_data.images_array[0].shape[0]),
-                flags,
-                override_left_intrinsics,
-                override_left_distortion,
-                override_right_intrinsics,
-                override_right_distortion,
-                override_l2r_rmat,
-                override_l2r_tvec
+                left_intrinsics=left_intrinsics,
+                left_distortion=left_distortion,
+                right_intrinsics=right_intrinsics,
+                right_distortion=right_distortion,
+                mono_flags=mono_flags,
+                stereo_flags=stereo_flags
             )
 
         self.calibration_params.set_data(l_c, l_d, l_rvecs, l_tvecs, r_c, r_d,
@@ -180,7 +177,12 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                               reference_ids,
                               reference_image_points,
                               reference_image_size,
-                              flags: int = cv2.CALIB_USE_INTRINSIC_GUESS
+                              left_intrinsics=None,
+                              left_distortion=None,
+                              right_intrinsics=None,
+                              right_distortion=None,
+                              mono_flags=0,
+                              stereo_flags=cv2.CALIB_USE_INTRINSIC_GUESS
                               ):
         """
         Does iterative calibration, like Datta 2009, returning reprojection
@@ -189,7 +191,12 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         :return: projection, reconstruction error.
         :rtype: float, float
         """
-        proj_err, recon_err, param_copy = self.calibrate(flags=flags)
+        proj_err, recon_err, param_copy = self.calibrate(left_intrinsics=left_intrinsics,
+                                                         left_distortion=left_distortion,
+                                                         right_intrinsics=right_intrinsics,
+                                                         right_distortion=right_distortion,
+                                                         mono_flags=mono_flags,
+                                                         stereo_flags=stereo_flags)
 
         cached_left_images = copy.deepcopy(
             self.video_data.left_data.images_array)
@@ -218,7 +225,12 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                 reference_image_size)
 
             proj_err, recon_err, param_copy = \
-                self.calibrate(flags)
+                self.calibrate(left_intrinsics=self.calibration_params.left_params.camera_matrix,
+                               left_distortion=self.calibration_params.left_params.dist_coeffs,
+                               right_intrinsics=self.calibration_params.right_params.camera_matrix,
+                               right_distortion=self.calibration_params.right_params.dist_coeffs,
+                               mono_flags=mono_flags,
+                               stereo_flags=stereo_flags)
 
             self.left_point_detector.set_camera_parameters(
                 self.calibration_params.left_params.camera_matrix,

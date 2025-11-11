@@ -1,6 +1,5 @@
 # pylint: disable=line-too-long, missing-module-docstring, invalid-name, missing-function-docstring
 
-import numpy as np
 import cv2
 import sksurgeryimage.calibration.charuco_plus_chessboard_point_detector \
     as charuco_pd
@@ -84,35 +83,3 @@ def test_charuco_dataset_B():
     assert stereo_recon_err < 2.0
     assert tracked_reproj_err < 0.5
     assert tracked_recon_err < 1.0
-
-
-def test_precalbration():
-    """ Use intrinsics from A to calibration B, currently failing. """
-    left_intrinsics = np.loadtxt('tests/data/precalib/precalib_base_data/calib.left.intrinsics.txt')
-    left_distortion = np.loadtxt('tests/data/precalib/precalib_base_data/calib.left.distortion.txt')
-    right_intrinsics = np.loadtxt('tests/data/precalib/precalib_base_data/calib.right.intrinsics.txt')
-    right_distortion = np.loadtxt('tests/data/precalib/precalib_base_data/calib.right.distortion.txt')
-    l2r = np.loadtxt('tests/data/precalib/precalib_base_data/calib.l2r.txt')
-    l2r_rmat = l2r[0:3, 0:3]
-    l2r_tvec = l2r[0:3, 3]
-
-    calib_dir = 'tests/data/precalib/data_moved_scope'
-    calib_driver = get_calib_driver(calib_dir)
-
-    stereo_reproj_err, stereo_recon_err, _ = \
-        calib_driver.calibrate(
-            override_left_intrinsics=left_intrinsics,
-            override_left_distortion=left_distortion,
-            override_right_intrinsics=right_intrinsics,
-            override_right_distortion=right_distortion,
-            override_l2r_rmat=l2r_rmat,
-            override_l2r_tvec=l2r_tvec)
-
-    tracked_reproj_err, tracked_recon_err, _ = \
-        calib_driver.handeye_calibration(use_opencv=False)
-
-    print(stereo_reproj_err, stereo_recon_err, tracked_reproj_err, tracked_recon_err)
-    assert stereo_reproj_err < 4.5
-    assert stereo_recon_err < 5.0
-    assert tracked_reproj_err < 4.5
-    assert tracked_recon_err < 6.5

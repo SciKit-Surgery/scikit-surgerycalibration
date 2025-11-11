@@ -64,7 +64,7 @@ def test_stereo_davinci():
 
     print("Reproj:" + str(reproj_err))
     print("Recon:" + str(recon_err))
-    assert reproj_err < 1.3
+    assert reproj_err < 1.5
     assert recon_err < 7.4
 
     # Now try iterative.

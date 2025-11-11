@@ -79,12 +79,6 @@ class BaseVideoCalibrationDriver:
         """
         return self.video_data.get_number_of_views()
 
-    def calibrate(self, flags=0):
-        """
-        Do the video calibration. Derived classes must implement this.
-        """
-        raise NotImplementedError("Derived classes must implement this.")
-
     def save_data(self,
                   dir_name: str,
                   file_prefix: str):
