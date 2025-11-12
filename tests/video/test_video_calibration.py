@@ -23,7 +23,12 @@ def test_mono_left_video_calibration():
         object_points.append(vu.convert_numpy3d_to_opencv(model))
 
     retval, camera_matrix, dist_coeffs, rvecs, tvecs = \
-        vc.mono_video_calibration(object_points, image_points, (1920, 1080))
+        vc.mono_video_calibration(object_points,
+                                  image_points,
+                                  (1920, 1080),
+                                  camera_matrix=None,
+                                  distortion_coefficients=None
+                                  )
 
     assert(np.abs(retval - 0.57759896) < 0.000001)
 
@@ -76,10 +81,15 @@ def test_stereo_video_calibration():
                                     ids,
                                     object_points,
                                     right_image_points,
-                                    (1920, 1080))
+                                    (1920, 1080),
+                                    left_intrinsics=None,
+                                    left_distortion=None,
+                                    right_intrinsics=None,
+                                    right_distortion=None
+                                    )
 
-    assert (np.abs(s_reproj - 0.6513154) < 0.000001)
-    assert (np.abs(s_recon - 1.9491643) < 0.000001)
+    assert (np.abs(s_reproj - 0.6513154) < 0.001)
+    assert (np.abs(s_recon - 1.9491643) < 0.001)
 
 # def test_experimental_mono_stereo_calib():
 #

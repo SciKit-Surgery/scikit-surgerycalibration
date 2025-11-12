@@ -81,7 +81,11 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         LOGGER.info("Grabbed: Returning %s points.", str(number_of_points))
         return number_of_points
 
-    def calibrate(self, flags=0):
+    def calibrate(self,
+                  camera_matrix=None,
+                  distortion_coefficients=None,
+                  flags=0
+                  ):
         """
         Do the video calibration, returning RMS re-projection error.
 
@@ -94,7 +98,9 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                 self.video_data.image_points_arrays,
                 (self.video_data.images_array[0].shape[1],
                  self.video_data.images_array[0].shape[0]),
-                flags
+                camera_matrix=camera_matrix,
+                distortion_coefficients=distortion_coefficients,
+                flags=flags
             )
 
         self.calibration_params.set_data(camera_matrix,
@@ -111,13 +117,17 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                               reference_ids,
                               reference_image_points,
                               reference_image_size,
+                              camera_matrix=None,
+                              distortion_coefficients=None,
                               flags: int = 0):
         """
         Does iterative calibration, like Datta 2009,
         returning RMS re-projection error.
         :return: RMS projection
         """
-        rms_proj_err, param_copy = self.calibrate(flags=flags)
+        rms_proj_err, param_copy = self.calibrate(camera_matrix=camera_matrix,
+                                                  distortion_coefficients=distortion_coefficients,
+                                                  flags=flags)
         cached_images = copy.deepcopy(self.video_data.images_array)
 
         for i in range(0, number_of_iterations):
@@ -133,7 +143,9 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                 reference_image_points,
                 reference_image_size)
 
-            rms_proj_err, param_copy = self.calibrate(flags=flags)
+            rms_proj_err, param_copy = self.calibrate(camera_matrix=self.calibration_params.camera_matrix,
+                                                      distortion_coefficients=self.calibration_params.dist_coeffs,
+                                                      flags=flags)
 
             self.point_detector.set_camera_parameters(
                 self.calibration_params.camera_matrix,

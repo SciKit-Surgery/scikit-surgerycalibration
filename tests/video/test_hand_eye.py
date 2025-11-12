@@ -81,7 +81,6 @@ def test_handeye_calibration_mono():
     # These values are taken from a previous successful run
     # Not objective measures of correctness
     expected_reproj_error = 10.412839
-
     assert proj_err == pytest.approx(expected_reproj_error, rel=0.1)
 
 
