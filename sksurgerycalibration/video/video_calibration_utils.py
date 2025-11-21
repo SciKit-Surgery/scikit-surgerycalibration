@@ -189,6 +189,37 @@ def convert_pd_to_opencv(ids, object_points, image_points):
     return ids, image_points, object_points
 
 
+def override_object_points(original_ids, original_3d_points, override_ids, override_3d_points):
+    """
+    For each original id, and 3D point, will search the override ids and replace the original
+    3D point with the override 3D point. So, original_3d_points is modified in place.
+    """
+    if original_ids is None:
+        raise ValueError("original_ids matrix cannot be None.")
+    if original_3d_points is None:
+        raise ValueError("original_3d_points matrix cannot be None.")
+    if override_ids is None:
+        raise ValueError("override_ids matrix cannot be None.")
+    if override_3d_points is None:
+        raise ValueError("override_3d_points matrix cannot be None.")
+    if original_ids.shape[0] > override_ids.shape[0]:
+        raise ValueError("override_ids.shape[0] must be >= original_ids.shape[0].")
+    if original_3d_points.shape[0] > override_3d_points.shape[0]:
+        raise ValueError("override_3d_points.shape[0] must be >= original_3d_points.shape[0].")
+
+    # Slow. Will do for now.
+    for original_counter in range(original_ids.shape[0]):
+        found_it = False
+        original_id = original_ids[original_counter]
+        for override_counter in range(override_ids.shape[0]):
+            if original_ids[original_counter] == override_ids[override_counter]:
+                found_it = True
+                original_3d_points[original_counter] = override_3d_points[override_counter]
+                break
+        if not found_it:
+            raise ValueError(f"ID {original_id}, not found in override IDs.")
+
+
 def array_contains_tracking_data(array_to_check):
     """
     Returns True if the array contains some tracking data.

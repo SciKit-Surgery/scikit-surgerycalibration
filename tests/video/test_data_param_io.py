@@ -9,7 +9,31 @@ import cv2
 import sksurgeryimage.calibration.chessboard_point_detector as pd
 import sksurgerycalibration.video.video_calibration_driver_mono as mc
 import sksurgerycalibration.video.video_calibration_driver_stereo as sc
+import sksurgerycalibration.video.video_calibration_params as vcp
 import tests.video.video_testing_utils as vtu
+
+
+def test_are_intrinsics_populated_mono_default():
+    params = vcp.MonoCalibrationParams()
+    assert params.camera_matrix is not None
+    assert not params.are_intrinsics_populated()
+    params.camera_matrix[0][0] = 1000
+    assert params.are_intrinsics_populated()
+
+
+def test_are_intrinsics_populated_stereo_default():
+    params = vcp.StereoCalibrationParams()
+    assert params.left_params.camera_matrix is not None
+    assert params.right_params.camera_matrix is not None
+
+    # Both must be populated, so this fails.
+    assert not params.are_intrinsics_populated()
+    params.left_params.camera_matrix[0][0] = 1000
+    assert not params.are_intrinsics_populated()
+
+    # But with both populated, this succeeds.
+    params.right_params.camera_matrix[0][0] = 1000
+    assert params.are_intrinsics_populated()
 
 
 def test_chessboard_mono_io():

@@ -61,6 +61,15 @@ class MonoCalibrationParams(BaseCalibrationParams):
         self.handeye_matrix = np.eye(4)
         self.pattern2marker_matrix = np.eye(4)
 
+    def are_intrinsics_populated(self, atol=0.1):
+        """
+        Helper method to check if the intrinsics look populated.
+        i.e. camera_matrix is not identity.
+        """
+        if self.camera_matrix is None or np.allclose(self.camera_matrix, np.eye(3), atol=atol):
+            return False
+        return True
+
     def set_data(self, camera_matrix, dist_coeffs, rvecs, tvecs):
         """
         Stores the provided parameters, by taking a copy.
@@ -188,6 +197,15 @@ class StereoCalibrationParams(BaseCalibrationParams):
         self.l2r_tvec = np.zeros((3, 1))
         self.essential = np.eye(3)
         self.fundamental = np.eye(3)
+
+    def are_intrinsics_populated(self, atol=0.1):
+        """
+        Helper method to check if the intrinsics look populated.
+        i.e. camera_matrix is not identity.
+        """
+        if self.left_params.are_intrinsics_populated(atol=atol) and self.right_params.are_intrinsics_populated(atol=atol):
+            return True
+        return False
 
     # pylint: disable=too-many-arguments, too-many-positional-arguments
     def set_data(self,
