@@ -45,25 +45,32 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         # Pass them to base class, so base class can access them.
         self._init_internal(calibration_data, calibration_params)
 
+    # pylint:disable=too-many-positional-arguments
     def grab_data(self,
                   left_image,
                   right_image,
                   device_tracking=None,
-                  calibration_object_tracking=None
+                  calibration_object_tracking=None,
+                  override_ids=None,
+                  override_obj_points=None
                   ):
         """
         Extracts points, by passing it to the PointDetector.
 
         This will throw various exceptions if the input data is invalid,
         but will return empty arrays if no points were detected.
-        So, no points is not an error. Its an expected condition.
+        So, no points is not an error. It's an expected condition.
 
         :param left_image: BGR image.
         :param right_image: BGR image.
         :param device_tracking: transformation for the tracked device
         :param calibration_object_tracking: transformation of tracked
         calibration object
-        :return: The number of points grabbed.
+        :param override_ids: An Nx1 array of point IDs, used with override_obj_points to
+        override the object points. Used to force 3D points that could be different each frame.
+        :param override_obj_points: An Nx3 array of object points used with override_ids to
+        override the object points. Used to force 3D points that could be different each frame.
+        :return: Tuple(number of left points grabbed, number of right points grabbed).
         """
         number_left = 0
         number_right = 0
@@ -84,6 +91,10 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
                 number_right = right_ids.shape[0]
 
             if number_right >= self.minimum_points_per_frame:
+
+                if override_ids is not None and override_obj_points is not None:
+                    cu.override_object_points(left_ids, left_object_points, override_ids, override_obj_points)
+                    cu.override_object_points(right_ids, right_object_points, override_ids, override_obj_points)
 
                 left_ids, left_image_points, left_object_points = \
                     cu.convert_pd_to_opencv(left_ids,
