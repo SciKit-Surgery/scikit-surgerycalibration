@@ -141,6 +141,20 @@ def test_handeye_calibration_stereo():
     assert proj_err == pytest.approx(9.807458, rel=1.7)
     assert recon_err == pytest.approx(1.738796, rel=0.3)
 
+    # Issue 70. Pretend we never ran intrinsic calibration, but we
+    # had some camera matrix and distortion coefficients, say loaded
+    # from disc.
+    calibrator.calibration_params.left_params.rvecs = []
+    calibrator.calibration_params.left_params.tvecs = []
+    calibrator.calibration_params.right_params.rvecs = []
+    calibrator.calibration_params.right_params.tvecs = []
+
+    proj_err_recomp, recon_err_recomp, _ = \
+        calibrator.handeye_calibration(use_opencv=True)
+
+    assert np.allclose(proj_err, proj_err_recomp, atol=0.1)
+    assert np.allclose(recon_err, recon_err_recomp, atol=0.1)
+
     # test save/load for hand-eye
     calibrator.save_params('tests/output/test_handeye_calibration_stereo', '')
     current_params = calibrator.get_params()
