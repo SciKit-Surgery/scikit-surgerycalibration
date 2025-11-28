@@ -139,10 +139,21 @@ def mono_handeye_calibration(object_points: List,
         raise ValueError("Must have at least 3 sets of image points.")
     if len(object_points) != len(image_points):
         raise ValueError("Image points and object points differ in length.")
-    if len(rvecs) != len(image_points):
-        raise ValueError("The camera rotation vector and image points differ in length.")
-    if len(tvecs) != len(image_points):
-        raise ValueError("The camera translation vector and image points differ in length.")
+    if rvecs is None or len(rvecs) == 0 or tvecs is None or len(tvecs) == 0 or \
+        len(rvecs) != len(image_points) or len(tvecs) != len(object_points):
+        # If we don't have all the rvecs and tvecs, its likely that the caller
+        # has not run OpenCV calibrateCamera, but instead has provided
+        # camera_matrix and camera_distortion. In this case, we can compute
+        # rvec and tvec by using solvePnP.
+        rvecs = []
+        tvecs = []
+        for counter, _ in enumerate(object_points):
+            _, rvec, tvec = cv2.solvePnP(objectPoints=object_points[counter],
+                                              imagePoints=image_points[counter],
+                                              cameraMatrix=camera_matrix,
+                                              distCoeffs=camera_distortion)
+            rvecs.append(rvec)
+            tvecs.append(tvec)
     has_device_tracking = False
     if device_tracking_array is not None and len(device_tracking_array) >= 3:
         for item in device_tracking_array:
