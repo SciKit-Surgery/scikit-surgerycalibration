@@ -86,8 +86,8 @@ def compute_stereo_2d_err(l2r_rmat,
             + len(left_image_points[i]) \
             + len(right_image_points[i])
 
-        diff_left = left_image_points[i] - projected_left
-        diff_right = right_image_points[i] - projected_right
+        diff_left = left_image_points[i] - projected_left.astype(np.float64)
+        diff_right = right_image_points[i] - projected_right.astype(np.float64)
 
         if return_residuals:
             residuals.append(diff_left.reshape((-1)))
@@ -240,12 +240,12 @@ def compute_stereo_3d_error(l2r_rmat,
         # Need to map back to model (chessboard space) for comparison.
         # Or, map chessboard points into left-camera space. Chose latter.
         rmat = (cv2.Rodrigues(left_rvecs[i]))[0]
-        rotated = np.matmul(rmat, np.transpose(model_points))
+        rotated = np.dot(rmat, np.transpose(model_points))
         translated = rotated + left_tvecs[i]  # uses broadcasting
         transformed = np.transpose(translated)
 
         # Now compute squared error
-        diff = triangulated - transformed
+        diff = triangulated - transformed.astype(np.float64)
 
         if return_residuals:
             residuals.append(diff.reshape((-1)))
@@ -381,7 +381,7 @@ def compute_mono_2d_err(object_points,
                                          camera_matrix,
                                          distortion)
 
-        diff = image_points[i] - projected
+        diff = image_points[i] - projected.astype(np.float64)
 
         if return_residuals:
             residuals.append(diff.reshape((-1)))
