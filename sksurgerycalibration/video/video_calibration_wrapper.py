@@ -6,7 +6,7 @@
 
 import copy
 import logging
-from typing import List
+from typing import List, Tuple
 
 import cv2
 import numpy as np
@@ -23,18 +23,18 @@ import sksurgerycalibration.video.video_calibration_utils as vu
 LOGGER = logging.getLogger(__name__)
 
 
-def mono_video_calibration(object_points,
-                           image_points,
-                           image_size,
-                           camera_matrix,
-                           distortion_coefficients,
+def mono_video_calibration(object_points: List,
+                           image_points: List,
+                           image_size: Tuple[int, int],
+                           camera_matrix: np.ndarray,
+                           distortion_coefficients: np.ndarray,
                            flags=0):
     """
     Calibrates a video camera using Zhang's 2000 method, as implemented in
     OpenCV. We wrap it here, so we have a place to add extra validation code,
     and a space for documentation. The aim is to check everything before
     we pass it to OpenCV, and raise Exceptions consistently for any error
-    we can detect before we pass it to OpenCV, as OpenCV just dies
+    we can detect before we pass it to OpenCV, as OpenCV may die
     without throwing exceptions.
 
       - N = number of images
@@ -50,7 +50,7 @@ def mono_video_calibration(object_points,
     :param camera_matrix: Initial camera intrinsic matrix
     :param distortion_coefficients: Initial camera distortion coefficients
     :param flags: OpenCV flags to pass to calibrateCamera().
-    :return: RMS projection error, camera_matrix, dist_coeffs, rvecs, tvecs
+    :return: RMS reprojection error, camera_matrix, dist_coeffs, rvecs, tvecs
     """
     if image_size[0] < 1:
         raise ValueError("Image width must be > 0.")
@@ -72,7 +72,7 @@ def mono_video_calibration(object_points,
     if camera_matrix is not None:
         cvm.validate_camera_matrix(camera_matrix)
 
-    _, camera_matrix, dist_coeffs, rvecs, tvecs \
+    rms, camera_matrix, dist_coeffs, rvecs, tvecs \
         = cv2.calibrateCamera(object_points,
                               image_points,
                               image_size,
@@ -80,18 +80,7 @@ def mono_video_calibration(object_points,
                               distCoeffs=distortion_coefficients,
                               flags=flags)
 
-    # Recompute this, for consistency with stereo methods.
-    # i.e. so we know what the calculation is exactly.
-    sse, num = vm.compute_mono_2d_err(object_points,
-                                      image_points,
-                                      rvecs,
-                                      tvecs,
-                                      camera_matrix,
-                                      dist_coeffs)
-    mse = sse / num
-    final_rms = np.sqrt(mse)
-
-    return final_rms, camera_matrix, dist_coeffs, rvecs, tvecs
+    return rms, camera_matrix, dist_coeffs, rvecs, tvecs
 
 
 # pylint:disable=too-many-arguments,too-many-statements,too-many-branches
@@ -110,28 +99,17 @@ def mono_handeye_calibration(object_points: List,
     reconstruction error metrics.
 
     :param object_points: Vector of Vectors of 1x3 object points, float32
-    :type object_points: List
     :param image_points: Vector of Vectors of 1x2 object points, float32
-    :type image_points: List
-    :param ids: Vector of ndarrays containing integer point ids.
-    :type ids: List
     :param camera_matrix: Camera intrinsic matrix
-    :type camera_matrix: np.ndarray
     :param camera_distortion: Camera distortion coefficients
-    :type camera_distortion: np.ndarray
     :param device_tracking_array: Tracking data for camera (hand)
-    :type device_tracking_array: List
     :param pattern_tracking_array: Tracking data for calibration target
-    :type pattern_tracking_array: List
-    :param rvecs: Vector of 3x1 ndarray, Rodrigues rotations for each camera
-    :type rvecs: List[np.ndarray]
+    :param rvecs: Vector of [3x1] ndarray, Rodrigues rotations for each camera
     :param tvecs: Vector of [3x1] ndarray, translations for each camera
-    :type tvecs: List[np.ndarray]
     :param override_pattern2marker: If provided a 4x4 pattern2marker that
-    is taken as constant.
+        is taken as constant.
     :param use_opencv: If false, use Guofang Xiao's method, otherwise OpenCV.
-    :return: Reprojection error, handeye matrix, pattern to marker matrix
-    :rtype: float, float, np.ndarray, np.ndarray
+    :return: RMS reprojection error, handeye matrix, pattern to marker matrix
     """
     if len(object_points) < 3:
         raise ValueError("Must have at least 3 sets of object points.")
@@ -324,6 +302,7 @@ def stereo_video_calibration(left_ids,
                              right_distortion,
                              mono_flags = 0,
                              stereo_flags = 0,
+                             minimum_points = 10
                              ):
     """
     Default stereo calibration, using OpenCV methods.
@@ -340,8 +319,13 @@ def stereo_video_calibration(left_ids,
     :param right_object_points: Vector of Vectors of 1x3 object points, float32
     :param right_image_points: Vector of Vectors of 1x2 object points, float32
     :param image_size: (x, y) tuple, size in pixels, e.g. (1920, 1080)
+    :param left_intrinsics: Initial camera intrinsic matrix
+    :param left_distortion: Initial camera distortion coefficients
+    :param right_intrinsics: Initial camera intrinsic matrix
+    :param right_distortion: Initial camera distortion coefficients
     :param mono_flags: OpenCV flags to pass to calibrateCamera().
     :param stereo_flags: OpenCV flags to pass to stereoCalibrate().
+    :param minimum_points: Minimum number of points that must match in left and right views.
     :return:
     """
 
@@ -370,25 +354,12 @@ def stereo_video_calibration(left_ids,
                                              left_object_points,
                                              left_image_points,
                                              right_ids,
-                                             right_image_points, 10)
+                                             right_image_points, minimum_points=minimum_points)
 
     # This needs resetting, as the frames with common points may be fewer.
     number_of_frames = len(common_object_points)
 
-    # Do OpenCV stereo calibration, using intrinsics from OpenCV mono.
-    _, l_c, l_d, r_c, r_d, \
-        l2r_r, l2r_t, essential, fundamental = cv2.stereoCalibrate(
-            common_object_points,
-            common_left_image_points,
-            common_right_image_points,
-            l_c,
-            l_d,
-            r_c,
-            r_d,
-            image_size,
-            flags=cv2.CALIB_USE_INTRINSIC_GUESS | cv2.CALIB_FIX_INTRINSIC)
-
-    # Then do it again, using the passed in flags.
+    # Now, the stereo calib.
     _, l_c, l_d, r_c, r_d, \
         l2r_r, l2r_t, essential, fundamental = cv2.stereoCalibrate(
             common_object_points,
@@ -494,54 +465,36 @@ def stereo_handeye_calibration(l2r_rmat: np.ndarray,
                                left_rvecs: List[np.ndarray],
                                left_tvecs: List[np.ndarray],
                                override_pattern2marker=None,
-                               use_opencv: bool = True
+                               use_opencv: bool = True,
+                               minimum_points = 10
                                ):
     """
     Wrapper around handeye calibration functions and reprojection /
     reconstruction error metrics.
 
     :param l2r_rmat: [3x3] ndarray, rotation for l2r transform
-    :type l2r_rmat: np.ndarray
     :param l2r_tvec: [3x1] ndarray, translation for l2r transform
-    :type l2r_tvec: np.ndarray
     :param left_ids: Vector of ndarrays containing integer point ids.
-    :type left_ids: List
     :param left_object_points: Vector of Vector of 1x3 of type float32
-    :type left_object_points: List
     :param left_image_points: Vector of Vector of 1x2 of type float32
-    :type left_image_points: List
     :param right_ids: Vector of ndarrays containing integer point ids.
-    :type right_ids: List
     :param right_image_points: Vector of Vector of 1x3 of type float32
-    :type right_image_points: List
     :param left_camera_matrix: Camera intrinsic matrix
-    :type left_camera_matrix: np.ndarray
     :param left_camera_distortion: Camera distortion coefficients
-    :type left_camera_distortion: np.ndarray
     :param right_camera_matrix: Camera intrinsic matrix
-    :type right_camera_matrix: np.ndarray
     :param right_camera_distortion: Camera distortion coefficients
-    :type right_camera_distortion: np.ndarray
     :param device_tracking_array: Tracking data for camera (hand)
-    :type device_tracking_array: List
     :param calibration_tracking_array: Tracking data for calibration target
-    :type calibration_tracking_array: List
     :param left_rvecs: Vector of 3x1 ndarray, Rodrigues rotations for each
-    camera
-    :type left_rvecs: List[np.ndarray]
+        camera
     :param left_tvecs: Vector of [3x1] ndarray, translations for each camera
-    :type left_tvecs: List[np.ndarray]
-    :param right_rvecs: Vector of 3x1 ndarray, Rodrigues rotations for each
-    camera
-    :type right_rvecs: List[np.ndarray]
-    :param right_tvecs: Vector of [3x1] ndarray, translations for each camera
-    :type right_tvecs: List[np.ndarray]
     :param override_pattern2marker: If provided a 4x4 pattern2marker that
-    is taken as constant.
+        is taken as constant.
     :param use_opencv: If True we use OpenCV based methods, if false,
-    Guofang Xiao's method.
+        Guofang Xiao's method.
+    :param minimum_points: Minimum number of points that must match in left and right views.
     :return: Reprojection error, reconstruction error, left handeye matrix,
-    left pattern to marker matrix, right handeye, right pattern to marker
+        left pattern to marker matrix, right handeye, right pattern to marker
     :rtype: float, float, np.ndarray, np.ndarray, np.ndarray, np.ndarray
     """
 
@@ -561,7 +514,6 @@ def stereo_handeye_calibration(l2r_rmat: np.ndarray,
         )
 
     # Filter common image points
-    minimum_points = 10
     _, common_object_pts, common_l_image_pts, common_r_image_pts = \
         vu.filter_common_points_all_images(
             left_ids, left_object_points, left_image_points,
