@@ -58,10 +58,23 @@ class BaseVideoCalibrationDriver:
         Resets this object, which means, removes stored calibration data
         and reset the calibration parameters to identity/zero.
         """
+        self.reset_data()
+        self.reset_params()
+
+    def reset_data(self):
+        """
+        Resets the stored calibration data.
+        """
         self.tracking_data.reinit()
         self.video_data.reinit()
+        LOGGER.info("reset_data: Removed the collected data.")
+
+    def reset_params(self):
+        """
+        Resets the stored parameters.
+        """
         self.calibration_params.reinit()
-        LOGGER.info("Reset: Now zero frames.")
+        LOGGER.info("reset_params: Reset the calibration parameters.")
 
     def pop(self):
         """

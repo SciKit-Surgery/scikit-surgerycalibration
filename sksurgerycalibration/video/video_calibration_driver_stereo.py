@@ -65,11 +65,11 @@ class StereoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         :param right_image: BGR image.
         :param device_tracking: transformation for the tracked device
         :param calibration_object_tracking: transformation of tracked
-        calibration object
+            calibration object
         :param override_ids: An Nx1 array of point IDs, used with override_obj_points to
-        override the object points. Used to force 3D points that could be different each frame.
+            override the object points. Used to force 3D points that could be different each frame.
         :param override_obj_points: An Nx3 array of object points used with override_ids to
-        override the object points. Used to force 3D points that could be different each frame.
+            override the object points. Used to force 3D points that could be different each frame.
         :return: Tuple(number of left points grabbed, number of right points grabbed).
         """
         number_left = 0
