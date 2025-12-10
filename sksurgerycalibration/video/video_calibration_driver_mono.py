@@ -17,7 +17,9 @@ LOGGER = logging.getLogger(__name__)
 
 
 class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
-    """ Class to do stateful video calibration of a mono camera. """
+    """
+    Class to do stateful video calibration of a mono camera.
+    """
     def __init__(self,
                  point_detector: pd.PointDetector,
                  minimum_points_per_frame: int
@@ -25,8 +27,8 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         """
         Stateful class for mono video calibration.
 
-        :param point_detector: Class derived from PointDetector
-        :param minimum_points_per_frame: Minimum number to accept frame
+        :param point_detector: Class derived from PointDetector.
+        :param minimum_points_per_frame: Minimum number to accept per frame
         """
         super().__init__(minimum_points_per_frame)
 
@@ -51,10 +53,10 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         Extracts points, by passing it to the PointDetector.
 
         This will throw various exceptions if the input data is invalid,
-        but will return empty arrays if no points were detected.
-        So, no points is not an error. Its an expected condition.
+        and will return empty arrays if no points were detected.
+        So, no points is not an error. It's an expected condition.
 
-        :param image: RGB image.
+        :param image: BGR image.
         :param device_tracking: transformation for the tracked device (e.g. laparoscope)
         :param calibration_object_tracking: transformation of tracked
         calibration object
@@ -100,7 +102,7 @@ class MonoVideoCalibrationDriver(vdb.BaseVideoCalibrationDriver):
         """
         Do the video calibration, returning RMS re-projection error.
 
-        :param flags: OpenCV calibration flags, eg. cv2.CALIB_FIX_ASPECT_RATIO
+        :param flags: OpenCV calibration flags, eg. cv2.CALIB_USE_INTRINSIC_GUESS.
         :return: RMS projection
         """
         rms_proj_err, camera_matrix, dist_coeffs, rvecs, tvecs = \
