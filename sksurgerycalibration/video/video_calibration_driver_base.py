@@ -132,6 +132,12 @@ class BaseVideoCalibrationDriver:
         """
         return copy.deepcopy(self.calibration_params)
 
+    def set_params(self, params):
+        """
+        Sets the calibration parameters.
+        """
+        self.calibration_params = copy.deepcopy(params)
+
     def get_video_data(self):
         """
         Copies and returns the video data.
