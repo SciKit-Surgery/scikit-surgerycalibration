@@ -30,6 +30,41 @@ def get_iterative_reference_data():
     reference_image_size = ((x_size + 4) * pixels_per_square, (y_size + 4) * pixels_per_square)
     return reference_ids, reference_points, reference_image_size
 
+def test_chessboard_mono_pop_goes_to_zero():
+
+    images = []
+
+    files = glob.glob('tests/data/laparoscope_calibration/left/*.png')
+    for file in files:
+        image = cv2.imread(file)
+        images.append(image)
+
+    # This illustrates that the PointDetector sub-class holds the knowledge of the model.
+    chessboard_detector = \
+        pd.ChessboardPointDetector((14, 10),    # (Width, height), number of internal corners
+                                   3,           # Actual square size in mm
+                                   (1, 1)       # Scale factors. Here, images are 1920x1080 so no scaling needed.
+                                   )            # If images were 1920x540, you'd pass in (1920, 540),
+                                                # and PointDetector base class would scale it up.
+
+    # Pass a PointDetector sub-class to the calibration driver.
+    calibrator = \
+        mc.MonoVideoCalibrationDriver(chessboard_detector, 140)
+
+    # Repeatedly grab data, until you have enough.
+    for image in images:
+        successful = calibrator.grab_data(image, np.eye(4))
+        assert successful > 0
+    assert calibrator.is_device_tracked()
+    assert not calibrator.is_calibration_target_tracked()
+
+    # Extra checking, as its a unit test
+    expected_number_views = 9
+    assert calibrator.get_number_of_views() == expected_number_views
+    for i in range(expected_number_views):
+        calibrator.pop()
+    assert calibrator.get_number_of_views() == 0
+
 
 def test_chessboard_mono():
 

@@ -77,8 +77,10 @@ class TrackingData(BaseVideoCalibrationData):
         """
         Removes the last (most recent) view of data.
         """
-        if self.device_tracking_array:
+        if self.device_tracking_array and len(self.device_tracking_array) > 0:
             self.device_tracking_array.pop(-1)
+
+        if self.calibration_tracking_array and len(self.calibration_tracking_array) > 0:
             self.calibration_tracking_array.pop(-1)
 
     def get_number_of_views(self):
@@ -172,7 +174,7 @@ class MonoVideoData(BaseVideoCalibrationData):
         """
         Removes the last (most recent) view of data.
         """
-        if len(self.images_array) > 1:
+        if self.images_array and len(self.images_array) > 0:
             self.images_array.pop(-1)
             self.ids_arrays.pop(-1)
             self.object_points_arrays.pop(-1)
